@@ -11,6 +11,9 @@ no build step, no dependencies, no network calls, no tracking.
 - **Water Sort** — pour liquid between tubes until each holds one color. Levels
   are generated on the fly and checked with a solver before being handed over,
   so no deal is ever impossible. Unlimited undo.
+- **Block Blast** — drag three dealt shapes onto an 8x8 board; full rows and
+  columns clear. No falling pieces and no timer. Combo bonuses for multiple
+  lines and consecutive clears; best score is kept.
 
 ## Running it
 
@@ -39,6 +42,11 @@ games/watersort/               Water Sort
   js/level.js                  rules, deal generation, solvability check
   js/game.js                   state, moves, undo
   js/ui.js                     rendering and taps
+games/blockblast/              Block Blast
+  js/pieces.js                 shape table and weighted piece picking
+  js/game.js                   board, placement, line clears, scoring
+  js/ui.js                     drag and drop, previews, animations
+diag.html                      device check page (see Troubleshooting)
 ```
 
 Each game is self-contained: its own folder, its own CSS, no shared runtime and
@@ -58,3 +66,11 @@ blank (stays white, never needs painting). Legend order sets the swatch numbers.
 - Targets Safari 16 (iPhone 8 Plus and X both top out at iOS 16.7).
 - Scripts are plain `<script>` tags, not modules, so the folder also works when
   opened directly from `file://`.
+
+## Troubleshooting a phone
+
+If a game shows a blank screen on a phone, open `/diag.html` on that device. It
+renders a series of plain checks — HTML, inline styles, grid, `env()`,
+gradients, then JavaScript — and prints the user agent, screen size and whether
+`localStorage` is blocked. Whichever step is the last one visible tells you what
+the browser choked on.

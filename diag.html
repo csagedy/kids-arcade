@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diag</title>
+</head>
+<body>
+<h1>Step 1: plain HTML works</h1>
+<p>If you can read this, the phone is reaching the server and rendering.</p>
+
+<div style="background:#14161c;color:#f2f4f8;padding:12px">
+  Step 2: inline dark styling works
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+  <div style="background:#e8792b;padding:12px">Step 3a: grid</div>
+  <div style="background:#4fa3f7;padding:12px">Step 3b: gap</div>
+</div>
+
+<div style="padding-top:calc(env(safe-area-inset-top) + 8px);background:#3fb950">
+  Step 4: env() safe-area works
+</div>
+
+<div style="background:radial-gradient(120% 70% at 50% 0%, #1d2233 0%, #14161c 65%);color:#fff;padding:12px">
+  Step 5: radial-gradient works
+</div>
+
+<h2>Step 6: JavaScript</h2>
+<pre id="out" style="white-space:pre-wrap;word-break:break-all">JavaScript did NOT run.</pre>
+
+<script>
+try {
+  var lines = [
+    'JS runs: yes',
+    'screen: ' + window.innerWidth + ' x ' + window.innerHeight,
+    'dpr: ' + window.devicePixelRatio,
+    'UA: ' + navigator.userAgent,
+    'pointer events: ' + (typeof PointerEvent === 'function'),
+    'canvas: ' + !!document.createElement('canvas').getContext,
+    'localStorage: ' + (function () { try { localStorage.setItem('t','1'); return 'yes'; } catch (e) { return 'BLOCKED: ' + e.name; } })()
+  ];
+  document.getElementById('out').textContent = lines.join('\n');
+} catch (e) {
+  document.getElementById('out').textContent = 'JS ERROR: ' + e.message;
+}
+window.onerror = function (m, u, l) {
+  document.getElementById('out').textContent += '\nONERROR: ' + m + ' @ ' + (u || '?') + ':' + l;
+};
+</script>
+</body>
+</html>
