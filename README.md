@@ -67,6 +67,34 @@ blank (stays white, never needs painting). Legend order sets the swatch numbers.
 - Scripts are plain `<script>` tags, not modules, so the folder also works when
   opened directly from `file://`.
 
+## Deploying to GitHub Pages
+
+The site is plain static files, so Pages needs no build step or workflow —
+serving the repository root is enough.
+
+```bash
+gh repo create kids-arcade --public --source=. --remote=origin --push
+gh api -X POST repos/:owner/kids-arcade/pages -f source[branch]=main -f source[path]=/
+```
+
+The site then lives at `https://<user>.github.io/kids-arcade/`. All paths in the
+project are relative, so serving from a subdirectory works as-is.
+
+Pages from a **private** repository requires a paid GitHub plan; a public repo
+is free.
+
+### After changing any file
+
+Bump `CACHE` in `sw.js` (`arcade-v1` -> `arcade-v2`, and so on). The service
+worker serves from its cache first, so without a version bump phones keep
+running the old copy until it happens to refresh.
+
+## Adding to the home screen
+
+Open the site in Safari, then Share -> Add to Home Screen. Each game has its own
+icon and manifest, so games can be added individually as well as the arcade.
+Once added, they launch fullscreen with no browser chrome and work offline.
+
 ## Troubleshooting a phone
 
 If a game shows a blank screen on a phone, open `/diag.html` on that device. It
