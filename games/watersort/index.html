@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Water Sort</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="head">
+  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
+  <div class="level">Level <span id="level-n">1</span></div>
+  <button id="undo-btn" class="icon-btn" aria-label="Undo">↺</button>
+  <button id="restart-btn" class="icon-btn" aria-label="Restart">⟳</button>
+</header>
+
+<main id="board" class="board"></main>
+<div id="stuck" class="stuck hidden">No moves left — tap ↺ to undo</div>
+
+<div id="win" class="win hidden">
+  <div class="win-card">
+    <div class="win-emoji">🎉</div>
+    <h2>Level <span id="win-n">1</span> done!</h2>
+    <div class="win-actions">
+      <button id="win-replay" class="pill">Again</button>
+      <button id="win-next" class="pill primary">Next level</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/level.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

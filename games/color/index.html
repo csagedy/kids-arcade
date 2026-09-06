@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Color by Number</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section id="library" class="screen">
+  <header class="lib-head">
+    <a class="icon-btn" href="../../index.html" aria-label="Arcade">‹</a>
+    <h1>Color by Number</h1>
+    <button id="photo-btn" class="pill">＋ From a Photo</button>
+  </header>
+  <div id="lib-grid" class="lib-grid"></div>
+  <input type="file" id="photo-input" accept="image/*" hidden>
+</section>
+
+<section id="game" class="screen hidden">
+  <header class="game-head">
+    <button id="back-btn" class="icon-btn" aria-label="Back">‹</button>
+    <div class="progress-wrap"><div id="progress-bar" class="progress-bar"></div></div>
+    <button id="hint-btn" class="icon-btn" aria-label="Hint">?</button>
+  </header>
+  <div id="stage" class="stage"><canvas id="canvas"></canvas></div>
+  <div id="palette" class="palette"></div>
+</section>
+
+<div id="done" class="done hidden">
+  <div class="done-card">
+    <canvas id="done-thumb" width="240" height="240"></canvas>
+    <h2>Nice work!</h2>
+    <div class="done-actions">
+      <button id="done-again" class="pill">Do it again</button>
+      <button id="done-back" class="pill primary">Pick another</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/quantize.js"></script>
+<script src="js/puzzles-data.js"></script>
+<script src="js/puzzle.js"></script>
+<script src="js/render.js"></script>
+<script src="js/input.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

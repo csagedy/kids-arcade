@@ -29,7 +29,8 @@ html, body {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: calc(env(safe-area-inset-top) + 14px) 16px 10px;
 }
-.lib-head h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+.lib-head h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; flex: 1; }
+a.icon-btn { text-decoration: none; line-height: 38px; text-align: center; }
 
 .lib-grid {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
