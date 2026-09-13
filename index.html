@@ -144,7 +144,8 @@
     { id: 'color',      name: 'Color by Number', emoji: '🎨', art: 'color',  href: 'games/color/index.html' },
     { id: 'watersort',  name: 'Water Sort',      emoji: '🧪', art: 'water',  href: 'games/watersort/index.html' },
     { id: 'blockblast', name: 'Block Blast',     emoji: '🧱', art: 'blocks', href: 'games/blockblast/index.html' },
-    { id: '2048',       name: '2048',            emoji: '🔢', art: 'g2048',  href: 'games/2048/index.html', isNew: true }
+    { id: '2048',       name: '2048',            emoji: '🔢', art: 'g2048',  href: 'games/2048/index.html', isNew: true },
+    { id: 'memory',     name: 'Memory Match',    emoji: '🃏', art: 'memory', href: 'games/memory/index.html', isNew: true }
   ];
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -157,7 +158,7 @@
       a.className = 'game'; a.href = g.href;
       var stat = get('arcade.stat.' + g.id);
       a.innerHTML =
-        '<div class="art ' + g.art + '">' + g.emoji + (g.isNew ? '<span class="new">NEW</span>' : '') + '</div>' +
+        '<div class="art ' + g.art + '">' + g.emoji + (g.isNew && !stat ? '<span class="new">NEW</span>' : '') + '</div>' +
         '<div class="meta"><div class="name"></div><div class="stat' + (stat ? ' has' : '') + '"></div></div>';
       a.querySelector('.name').textContent = g.name;
       a.querySelector('.stat').textContent = stat || 'Not played yet';

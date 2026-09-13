@@ -49,6 +49,9 @@ games/blockblast/              Block Blast
 games/2048/                    2048
   js/game.js                   grid as exponents, slide/merge, save
   js/ui.js                     swipes, tile animation
+games/memory/                  Memory Match
+  js/game.js                   deck, flips, matches, save
+  js/ui.js                     card flip animation, sizes
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)
