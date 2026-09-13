@@ -45,7 +45,9 @@ body { display: flex; flex-direction: column; }
 
 /* ---- screen ---- */
 .cab-screen-wrap {
-  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  /* Column flex so the bezel can take the space with flex:1 — Safari does not
+     reliably resolve a percentage height inside a flex item. */
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch;
   padding: 8px 8px 6px;
   background: linear-gradient(90deg, var(--cab-body-2) 0%, var(--cab-body) 12%, var(--cab-body) 88%, var(--cab-body-2) 100%);
 }
@@ -53,7 +55,7 @@ body { display: flex; flex-direction: column; }
   position: relative; padding: 10px; border-radius: 14px;
   background: #07080c;
   box-shadow: inset 0 0 0 2px #23263a, inset 0 0 30px rgba(0,0,0,0.9), 0 6px 18px rgba(0,0,0,0.6);
-  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
 }
 .cab-crt { position: relative; border-radius: 8px; overflow: hidden; background: #000; }
 .cab-crt canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; }

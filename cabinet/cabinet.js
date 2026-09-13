@@ -19,12 +19,18 @@ var Cabinet = (function () {
     var pad = 2 * (parseFloat(getComputedStyle(bezel).paddingLeft) || 10);
     function avail() { return { w: bezel.clientWidth - pad, h: bezel.clientHeight - pad }; }
     var a = avail();
-    if (a.w < 40 || a.h < 40) a = { w: 335, h: 560 };   // mid-layout fallback
+    // If the bezel hasn't laid out yet, estimate from the window: marquee and
+    // deck are about 60 and 70px, plus safe areas and padding.
+    var est = { w: window.innerWidth - 36, h: window.innerHeight - 180 };
+    if (a.w < 40 || a.h < 40 || a.h < est.h * 0.6) a = est;
     var h = hMax === undefined ? hMin : Math.max(hMin, Math.min(hMax, Math.round(w * a.h / a.w)));
     canvas.width = w; canvas.height = h;
     function apply() {
       var s = avail();
       if (s.w < 40 || s.h < 40) return;
+      // Never let a suspiciously short measurement shrink the screen below
+      // full width; the bezel is always at least as tall as it is wide here.
+      if (s.h < s.w) s.h = Math.max(s.h, window.innerHeight - 180);
       var raw = Math.min(s.w / w, s.h / h);
       var scale = raw < 1.5 ? raw : Math.floor(raw);   // integer scales keep pixels crisp
       canvas.style.width = Math.floor(w * scale) + 'px';
