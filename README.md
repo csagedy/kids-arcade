@@ -52,9 +52,14 @@ games/2048/                    2048
 games/memory/                  Memory Match
   js/game.js                   deck, flips, matches, save
   js/ui.js                     card flip animation, sizes
+games/nonogram/                Picture Puzzles (nonograms)
+  js/puzzles-data.js           pictures as character art, '#' filled
+  js/game.js                   clues, cell state, per-puzzle save
+  js/ui.js                     library, grid, drag painting
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)
+tools/nono-check.py            verify nonograms need no guessing
 ```
 
 Each game is self-contained: its own folder, its own CSS, no shared runtime and
@@ -70,6 +75,13 @@ the tile shows.
 Append to `BUILTIN_PUZZLES` in `js/puzzles-data.js`: a `legend` mapping single
 characters to hex colors, and an `art` array of equal-length strings. `.` means
 blank (stays white, never needs painting). Legend order sets the swatch numbers.
+
+## Adding a nonogram
+
+Append to `NONO_PUZZLES` in `games/nonogram/js/puzzles-data.js`: an `art`
+array of equal-length strings with `#` for filled cells, plus a `color` used
+when the picture is revealed. Then run `python3 tools/nono-check.py`; it
+rejects any picture that would force a kid to guess.
 
 ## Notes
 

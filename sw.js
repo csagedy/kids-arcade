@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v4';
+var CACHE = 'arcade-v5';
 
 var FILES = [
   './',
@@ -37,6 +37,13 @@ var FILES = [
   './games/memory/style.css',
   './games/memory/js/game.js',
   './games/memory/js/ui.js',
+  './games/nonogram/icon.png',
+  './games/nonogram/index.html',
+  './games/nonogram/manifest.webmanifest',
+  './games/nonogram/style.css',
+  './games/nonogram/js/game.js',
+  './games/nonogram/js/puzzles-data.js',
+  './games/nonogram/js/ui.js',
   './games/watersort/icon.png',
   './games/watersort/index.html',
   './games/watersort/manifest.webmanifest',
