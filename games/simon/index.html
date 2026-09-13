@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#14161c">
+<title>Simon</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="head">
+  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
+  <div class="scores">
+    <div class="score">Round <span id="round">0</span></div>
+    <div class="best">Best <span id="best">0</span></div>
+  </div>
+  <button id="mute-btn" class="icon-btn" aria-label="Sound">🔊</button>
+</header>
+
+<div id="status" class="status">&nbsp;</div>
+
+<main class="board-wrap">
+  <div class="simon">
+    <button class="pad p0" aria-label="Green"></button>
+    <button class="pad p1" aria-label="Red"></button>
+    <button class="pad p2" aria-label="Yellow"></button>
+    <button class="pad p3" aria-label="Blue"></button>
+    <div class="hub"></div>
+  </div>
+</main>
+
+<div id="start" class="start">
+  <button id="start-btn" class="pill primary big">Start</button>
+  <div class="hint">Watch the pads light up, then tap them in the same order.</div>
+</div>
+
+<div id="over" class="over hidden">
+  <div class="over-card">
+    <h2>Oops!</h2>
+    <div class="over-score"><span id="over-n">0</span> <small>rounds</small></div>
+    <div class="over-best">Best <span id="over-best">0</span></div>
+    <button id="over-again" class="pill primary">Play again</button>
+  </div>
+</div>
+
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("../../sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

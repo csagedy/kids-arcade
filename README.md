@@ -60,6 +60,9 @@ games/flow/                    Flow
   js/level.js                  seeded RNG, carve grid into paths
   js/game.js                   path drawing rules, cut/backtrack, save
   js/ui.js                     canvas rendering, finger tracking
+games/simon/                   Simon
+  js/game.js                   sequence, best round
+  js/ui.js                     playback timing, Web Audio tones
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)
