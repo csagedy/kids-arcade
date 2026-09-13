@@ -161,6 +161,10 @@ its cache first, so without a version bump phones keep running the old copy.
 
 The menu shows a pill in the corner: **Ready offline** once every file is
 cached, or a count if some were missed. Glance at it before a road trip.
+The installed version (`v13` and so on) is printed at the bottom of the
+menu, and **Update now** asks the worker to check for a newer one and
+reloads when it takes over. The worker fetches with the HTTP cache bypassed,
+since GitHub Pages sends a 10-minute cache header.
 
 ## Adding to the home screen
 

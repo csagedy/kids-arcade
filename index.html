@@ -100,7 +100,8 @@
   }
   .cab-stat { font-family: "Courier New", Courier, monospace; font-size: 11px; color: #7cf2ff; text-align: center; margin-top: 2px; min-height: 14px; letter-spacing: 0.06em; }
 
-  .foot { margin-top: 26px; display: flex; justify-content: center; }
+  .foot { margin-top: 26px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .version { text-align: center; color: var(--muted); font-size: 11px; margin-top: 10px; opacity: 0.7; }
   .link-btn {
     border: none; background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 600;
     border-radius: 999px; padding: 10px 16px;
@@ -154,7 +155,9 @@
 
   <div class="foot">
     <button id="backup-btn" class="link-btn">Backup &amp; restore progress</button>
+    <button id="update-btn" class="link-btn">Update now</button>
   </div>
+  <div class="version" id="version"></div>
 </div>
 
 <div id="sheet" class="sheet-bg hidden">
@@ -235,7 +238,17 @@
   var pill = document.getElementById('offline'), pillText = document.getElementById('offline-text');
   function setPill(cls, text) { pill.className = 'pill-status ' + cls; pillText.textContent = text; }
 
+  /* The installed version is the name of the cache the worker filled. */
+  function showVersion() {
+    if (!('caches' in window)) return;
+    caches.keys().then(function (keys) {
+      var v = keys.filter(function (k) { return k.indexOf('arcade-v') === 0; }).sort().pop();
+      document.getElementById('version').textContent = v ? 'Installed: ' + v.replace('arcade-', '') : '';
+    }).catch(function () {});
+  }
+
   function checkOffline() {
+    showVersion();
     if (!('caches' in window) || !('serviceWorker' in navigator)) { setPill('', 'Online only'); return; }
     // The service worker writes __precache after installing: "got/total" files.
     caches.match('./__precache').then(function (r) { return r ? r.text() : null; }).then(function (t) {
@@ -260,9 +273,32 @@
         if (e.data && e.data.type === 'precached') checkOffline();
       });
       setTimeout(checkOffline, 3000);
+
+      // "Update now": ask the worker to check for a new version, then reload
+      // once the new one takes over. Handy when a phone seems stuck.
+      var updateBtn = document.getElementById('update-btn');
+      updateBtn.addEventListener('click', function () {
+        updateBtn.textContent = 'Checking…';
+        var reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!reloaded) { reloaded = true; location.reload(); }
+        });
+        navigator.serviceWorker.getRegistration().then(function (reg) {
+          if (!reg) { location.reload(); return; }
+          return reg.update().then(function () {
+            setTimeout(function () {
+              if (reloaded) return;
+              updateBtn.textContent = 'Up to date';
+              setTimeout(function () { updateBtn.textContent = 'Update now'; }, 2000);
+              checkOffline();
+            }, 4000);
+          });
+        }).catch(function () { location.reload(); });
+      });
     });
   } else {
     setPill('', 'Online only');
+    document.getElementById('update-btn').addEventListener('click', function () { location.reload(); });
   }
 
   /* ---- backup & restore ----

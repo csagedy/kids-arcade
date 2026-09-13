@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v13';
+var CACHE = 'arcade-v14';
 
 var FILES = [
   './',
@@ -104,8 +104,10 @@ self.addEventListener('install', function (e) {
       // should know: record "got/total" so it can show whether the phone
       // is really ready for a road trip.
       var got = 0;
+      // cache: 'reload' skips the browser's HTTP cache, otherwise a phone
+      // that fetched a file minutes ago can "install" the stale copy.
       return Promise.all(FILES.map(function (f) {
-        return c.add(f).then(function () { got++; }).catch(function () {});
+        return c.add(new Request(f, { cache: 'reload' })).then(function () { got++; }).catch(function () {});
       })).then(function () {
         return c.put('./__precache', new Response(got + '/' + FILES.length, { headers: { 'Content-Type': 'text/plain' } }));
       }).then(function () {
@@ -134,7 +136,7 @@ self.addEventListener('fetch', function (e) {
 
   e.respondWith(
     caches.match(e.request).then(function (hit) {
-      var live = fetch(e.request).then(function (res) {
+      var live = fetch(e.request, { cache: 'no-cache' }).then(function (res) {
         if (res && res.status === 200) {
           var copy = res.clone();
           caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
