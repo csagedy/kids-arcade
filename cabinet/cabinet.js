@@ -8,48 +8,29 @@ var Cabinet = (function () {
   var C = {};
 
   /* ---------- canvas ---------- */
-  /* Size the canvas to the bezel and keep it sized. The logical width is
-     fixed (240) and the logical height follows the phone's aspect between
-     hMin and hMax, so the picture fills the screen instead of floating in a
-     3:4 box. The height is decided once so a game's layout doesn't shift.
-     Returns { ctx, w, h }. getContext returns the same object every time. */
+  /* Pick the logical size. Width is fixed (240); height follows the phone's
+     aspect between hMin and hMax so the picture fills the screen. The CSS
+     stretches the canvas to the bezel with object-fit: contain, so the only
+     job here is choosing h and setting the backing store. Returns { ctx, w, h }. */
   C.fit = function (canvas, w, hMin, hMax) {
     var bezel = canvas.closest('.cab-bezel') || canvas.parentNode;
     var ctx = canvas.getContext('2d');
-    var pad = 2 * (parseFloat(getComputedStyle(bezel).paddingLeft) || 10);
-    function avail() { return { w: bezel.clientWidth - pad, h: bezel.clientHeight - pad }; }
-    var a = avail();
-    // If the bezel hasn't laid out yet, estimate from the window: marquee and
-    // deck are about 60 and 70px, plus safe areas and padding.
-    var est = { w: window.innerWidth - 36, h: window.innerHeight - 180 };
-    if (a.w < 40 || a.h < 40 || a.h < est.h * 0.6) a = est;
-    var h = hMax === undefined ? hMin : Math.max(hMin, Math.min(hMax, Math.round(w * a.h / a.w)));
+    var aw = bezel.clientWidth - 20, ah = bezel.clientHeight - 20;
+    // If layout isn't settled, estimate from the window (marquee + deck ~180px).
+    if (aw < 40 || ah < 40 || ah < aw) { aw = window.innerWidth - 36; ah = window.innerHeight - 180; }
+    var h = hMax === undefined ? hMin : Math.max(hMin, Math.min(hMax, Math.round(w * ah / aw)));
     canvas.width = w; canvas.height = h;
-    function apply() {
-      var s = avail();
-      if (s.w < 40 || s.h < 40) return;
-      // Never let a suspiciously short measurement shrink the screen below
-      // full width; the bezel is always at least as tall as it is wide here.
-      if (s.h < s.w) s.h = Math.max(s.h, window.innerHeight - 180);
-      var raw = Math.min(s.w / w, s.h / h);
-      var scale = raw < 1.5 ? raw : Math.floor(raw);   // integer scales keep pixels crisp
-      canvas.style.width = Math.floor(w * scale) + 'px';
-      canvas.style.height = Math.floor(h * scale) + 'px';
-      ctx.imageSmoothingEnabled = false;
-    }
-    apply();
-    if (!canvas.__fitted) {
-      canvas.__fitted = true;
-      if (window.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(apply); }).observe(bezel);
-      else window.addEventListener('resize', apply);
-    }
+    ctx.imageSmoothingEnabled = false;
     return { ctx: ctx, w: w, h: h };
   };
 
-  /* Pointer position in logical pixels. */
+  /* Pointer position in logical pixels, allowing for object-fit letterboxing. */
   C.pointer = function (canvas, e) {
     var r = canvas.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height };
+    var scale = Math.min(r.width / canvas.width, r.height / canvas.height);
+    var dw = canvas.width * scale, dh = canvas.height * scale;
+    var ox = r.left + (r.width - dw) / 2, oy = r.top + (r.height - dh) / 2;
+    return { x: (e.clientX - ox) / scale, y: (e.clientY - oy) / scale };
   };
 
   /* ---------- 3x5 bitmap font ---------- */

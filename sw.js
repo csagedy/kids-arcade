@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v14';
+var CACHE = 'arcade-v15';
 
 var FILES = [
   './',
