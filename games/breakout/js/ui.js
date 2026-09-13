@@ -1,6 +1,8 @@
 (function () {
   var canvas = document.getElementById('screen');
-  var ctx = Cabinet.fit(canvas, W, H);
+  var fit = Cabinet.fit(canvas, W, 320, 460);
+  var ctx = fit.ctx;
+  H = fit.h;   // layout is relative to H, so set it before the first game is built
   var game = null, playing = false, flash = 0, shake = 0, message = null;
 
   function attract() {
@@ -104,7 +106,6 @@
   canvas.addEventListener('pointercancel', up);
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
-  window.addEventListener('resize', function () { ctx = Cabinet.fit(canvas, W, H); });
 
   attract();
   Cabinet.loop(update, render);

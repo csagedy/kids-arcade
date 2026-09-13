@@ -1,6 +1,8 @@
 (function () {
   var canvas = document.getElementById('screen');
-  var ctx = Cabinet.fit(canvas, W, H);
+  var fit = Cabinet.fit(canvas, W, 320, 460);
+  var ctx = fit.ctx;
+  H = fit.h; GROUND = H - 22;
   var game = new MissileGame(), playing = false, shake = 0, message = null;
 
   function attract() {
@@ -98,7 +100,6 @@
   });
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
-  window.addEventListener('resize', function () { ctx = Cabinet.fit(canvas, W, H); });
   attract();
   Cabinet.loop(update, render);
   window.__mc = { game: function () { return game; }, start: start };

@@ -1,6 +1,10 @@
 (function () {
   var canvas = document.getElementById('screen');
-  var ctx = Cabinet.fit(canvas, W, H);
+  var fit = Cabinet.fit(canvas, W, 320, 460);
+  // Snap the height to whole cells, then refit at exactly that size.
+  H = 16 + Math.floor((fit.h - 16) / CELL) * CELL;
+  ROWS = (H - 16) / CELL;
+  var ctx = Cabinet.fit(canvas, W, H).ctx;
   var game = new SnakeGame(), playing = false, flash = 0;
 
   function attract() {
@@ -65,7 +69,6 @@
   });
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
-  window.addEventListener('resize', function () { ctx = Cabinet.fit(canvas, W, H); });
   attract();
   Cabinet.loop(update, render);
   window.__snake = { game: function () { return game; }, start: start };

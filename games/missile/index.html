@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<header class="cab-head">
+<header class="cab-marquee">
   <a class="cab-btn-icon" href="../../index.html#action" aria-label="Back">‹</a>
   <div class="ttl">Missile Command</div>
   <button id="mute-btn" class="cab-btn-icon" aria-label="Sound">🔊</button>
@@ -23,7 +23,12 @@
 <div class="cab-screen-wrap">
   <div class="cab-bezel"><div class="cab-crt"><canvas id="screen"></canvas></div></div>
 </div>
-<div class="cab-hint">TAP WHERE THE MISSILE SHOULD EXPLODE</div>
+
+<div class="cab-deck">
+  <div class="cab-stick"></div>
+  <div class="cab-hint">Tap to fire · Save the cities</div>
+  <div class="cab-buttons"><i></i><i></i></div>
+</div>
 
 <script src="../../cabinet/cabinet.js"></script>
 <script src="js/game.js"></script>

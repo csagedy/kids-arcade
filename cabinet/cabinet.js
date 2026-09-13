@@ -8,19 +8,25 @@ var Cabinet = (function () {
   var C = {};
 
   /* ---------- canvas ---------- */
-  /* Size the canvas to the bezel and keep it sized: the bezel is measured
-     with a ResizeObserver, so games never need to handle resize themselves.
-     getContext returns the same object every time, so the ctx stays valid. */
-  C.fit = function (canvas, w, h) {
+  /* Size the canvas to the bezel and keep it sized. The logical width is
+     fixed (240) and the logical height follows the phone's aspect between
+     hMin and hMax, so the picture fills the screen instead of floating in a
+     3:4 box. The height is decided once so a game's layout doesn't shift.
+     Returns { ctx, w, h }. getContext returns the same object every time. */
+  C.fit = function (canvas, w, hMin, hMax) {
     var bezel = canvas.closest('.cab-bezel') || canvas.parentNode;
     var ctx = canvas.getContext('2d');
+    var pad = 2 * (parseFloat(getComputedStyle(bezel).paddingLeft) || 10);
+    function avail() { return { w: bezel.clientWidth - pad, h: bezel.clientHeight - pad }; }
+    var a = avail();
+    if (a.w < 40 || a.h < 40) a = { w: 335, h: 560 };   // mid-layout fallback
+    var h = hMax === undefined ? hMin : Math.max(hMin, Math.min(hMax, Math.round(w * a.h / a.w)));
+    canvas.width = w; canvas.height = h;
     function apply() {
-      var cw = bezel.clientWidth - 20, ch = bezel.clientHeight - 20;   // bezel padding
-      if (cw < 40 || ch < 40) return;   // mid-layout; the observer will call again
-      var raw = Math.min(cw / w, ch / h);
-      // Integer scales keep pixels crisp; below 1.5x that wastes too much screen.
-      var scale = raw < 1.5 ? raw : Math.floor(raw);
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      var s = avail();
+      if (s.w < 40 || s.h < 40) return;
+      var raw = Math.min(s.w / w, s.h / h);
+      var scale = raw < 1.5 ? raw : Math.floor(raw);   // integer scales keep pixels crisp
       canvas.style.width = Math.floor(w * scale) + 'px';
       canvas.style.height = Math.floor(h * scale) + 'px';
       ctx.imageSmoothingEnabled = false;
@@ -31,7 +37,7 @@ var Cabinet = (function () {
       if (window.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(apply); }).observe(bezel);
       else window.addEventListener('resize', apply);
     }
-    return ctx;
+    return { ctx: ctx, w: w, h: h };
   };
 
   /* Pointer position in logical pixels. */
