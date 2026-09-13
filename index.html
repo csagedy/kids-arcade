@@ -143,7 +143,8 @@
   var GAMES = [
     { id: 'color',      name: 'Color by Number', emoji: '🎨', art: 'color',  href: 'games/color/index.html' },
     { id: 'watersort',  name: 'Water Sort',      emoji: '🧪', art: 'water',  href: 'games/watersort/index.html' },
-    { id: 'blockblast', name: 'Block Blast',     emoji: '🧱', art: 'blocks', href: 'games/blockblast/index.html' }
+    { id: 'blockblast', name: 'Block Blast',     emoji: '🧱', art: 'blocks', href: 'games/blockblast/index.html' },
+    { id: '2048',       name: '2048',            emoji: '🔢', art: 'g2048',  href: 'games/2048/index.html', isNew: true }
   ];
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }

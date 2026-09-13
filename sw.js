@@ -1,12 +1,18 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v2';
+var CACHE = 'arcade-v3';
 
 var FILES = [
   './',
   './icon-arcade.png',
   './index.html',
   './manifest.webmanifest',
+  './games/2048/icon.png',
+  './games/2048/index.html',
+  './games/2048/manifest.webmanifest',
+  './games/2048/style.css',
+  './games/2048/js/game.js',
+  './games/2048/js/ui.js',
   './games/blockblast/icon.png',
   './games/blockblast/index.html',
   './games/blockblast/manifest.webmanifest',

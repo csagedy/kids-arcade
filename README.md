@@ -46,7 +46,12 @@ games/blockblast/              Block Blast
   js/pieces.js                 shape table and weighted piece picking
   js/game.js                   board, placement, line clears, scoring
   js/ui.js                     drag and drop, previews, animations
+games/2048/                    2048
+  js/game.js                   grid as exponents, slide/merge, save
+  js/ui.js                     swipes, tile animation
 diag.html                      device check page (see Troubleshooting)
+tools/update-sw.py             regenerate the service worker precache list
+tools/make-icon.py             draw a home-screen icon (gradient + motif)
 ```
 
 Each game is self-contained: its own folder, its own CSS, no shared runtime and
