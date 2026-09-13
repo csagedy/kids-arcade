@@ -31,6 +31,12 @@ games that do have timers, lives and high scores. They share `cabinet/`:
 - **Snake** — swipe to turn. Speeds up every four apples.
 - **Missile Command** — tap where the counter-missile should explode. Six
   cities, growing waves, ammo per wave, bonus for cities and ammo left.
+- **Frogger** — tap above the frog to hop up, beside it to sidestep. Five
+  lanes of traffic, a median, five lanes of logs and turtles, five homes.
+- **Space Invaders** — slide to move; the ship fires itself. The block
+  speeds up as it thins, shields erode (including from your own shots).
+- **Pong** — portrait, paddles top and bottom. Two kids share the phone,
+  each dragging their own half, or the top paddle plays itself. First to 7.
 
 ## Running it
 
@@ -90,6 +96,7 @@ games/dots/                    Dot to Dot
   js/ui.js                     canvas, tap detection, library thumbnails
 cabinet/                       shared kit for the action games (see above)
 games/breakout/ games/snake/ games/missile/
+games/frogger/ games/invaders/ games/pong/
                                action games: js/game.js rules, js/ui.js drawing + input
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list

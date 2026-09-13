@@ -175,9 +175,12 @@ var Cabinet = (function () {
         card.appendChild(tbl);
       }
     }
-    var btn = el('button', 'cab-btn', opts.button || 'PRESS START');
-    btn.addEventListener('click', function () { C.unlockAudio(); C.closeOverlay(); opts.onButton && opts.onButton(); });
-    card.appendChild(btn);
+    var buttons = opts.buttons || [{ text: opts.button || 'PRESS START', onClick: opts.onButton }];
+    buttons.forEach(function (b) {
+      var btn = el('button', 'cab-btn', b.text);
+      btn.addEventListener('click', function () { C.unlockAudio(); C.closeOverlay(); b.onClick && b.onClick(); });
+      card.appendChild(btn);
+    });
     overlay.appendChild(card);
     document.body.appendChild(overlay);
   };

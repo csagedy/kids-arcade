@@ -117,7 +117,7 @@ body { display: flex; flex-direction: column; }
 .cab-row { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 0.1em; padding: 2px 0; color: var(--cab-glow); }
 .cab-row:first-child { color: var(--cab-amber); }
 .cab-btn {
-  margin-top: 16px; border: none; border-radius: 4px; padding: 12px 22px;
+  margin: 16px 4px 0; border: none; border-radius: 4px; padding: 12px 22px;
   background: var(--cab-amber); color: #1a1200; font-family: var(--pixel-font); font-weight: 700;
   font-size: 15px; letter-spacing: 0.12em; box-shadow: 0 4px 0 #8a5e00;
   animation: blink 1.2s steps(2) infinite;

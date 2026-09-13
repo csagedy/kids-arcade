@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v15';
+var CACHE = 'arcade-v16';
 
 var FILES = [
   './',
@@ -52,6 +52,16 @@ var FILES = [
   './games/flow/js/game.js',
   './games/flow/js/level.js',
   './games/flow/js/ui.js',
+  './games/frogger/icon.png',
+  './games/frogger/index.html',
+  './games/frogger/manifest.webmanifest',
+  './games/frogger/js/game.js',
+  './games/frogger/js/ui.js',
+  './games/invaders/icon.png',
+  './games/invaders/index.html',
+  './games/invaders/manifest.webmanifest',
+  './games/invaders/js/game.js',
+  './games/invaders/js/ui.js',
   './games/memory/icon.png',
   './games/memory/index.html',
   './games/memory/manifest.webmanifest',
@@ -70,6 +80,11 @@ var FILES = [
   './games/nonogram/js/game.js',
   './games/nonogram/js/puzzles-data.js',
   './games/nonogram/js/ui.js',
+  './games/pong/icon.png',
+  './games/pong/index.html',
+  './games/pong/manifest.webmanifest',
+  './games/pong/js/game.js',
+  './games/pong/js/ui.js',
   './games/shapes/icon.png',
   './games/shapes/index.html',
   './games/shapes/manifest.webmanifest',
