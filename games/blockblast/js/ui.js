@@ -182,7 +182,19 @@
   }
 
   function newGame() {
+    BBGame.clearSaved();
     game = new BBGame();
+    game.save();
+    document.getElementById('over').classList.add('hidden');
+    render();
+  }
+
+  /* Pick up a saved board if there is one; a finished board starts fresh. */
+  function resumeOrNew() {
+    var saved = BBGame.loadSaved();
+    if (!saved) { newGame(); return; }
+    game = new BBGame(saved);
+    if (game.isOver()) { newGame(); return; }
     document.getElementById('over').classList.add('hidden');
     render();
   }
@@ -192,7 +204,7 @@
   window.addEventListener('resize', render);
 
   build();
-  newGame();
+  resumeOrNew();
 
   window.__bb = {
     game: function () { return game; },

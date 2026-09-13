@@ -46,6 +46,7 @@ var SHAPES = [
 
 function makePiece(shape, colorIndex) {
   var cells = [];
+  var shapeIndex = SHAPES.indexOf(shape);
   for (var r = 0; r < shape.art.length; r++) {
     for (var c = 0; c < shape.art[r].length; c++) {
       if (shape.art[r][c] === '#') cells.push([r, c]);
@@ -55,7 +56,8 @@ function makePiece(shape, colorIndex) {
     cells: cells,
     rows: shape.art.length,
     cols: shape.art[0].length,
-    color: colorIndex
+    color: colorIndex,
+    shape: shapeIndex   // index into SHAPES, so a tray can be saved and restored
   };
 }
 

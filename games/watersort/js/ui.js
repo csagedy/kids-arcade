@@ -5,19 +5,46 @@
   var justPoured = {};   // tube index -> how many segments to animate in
 
   /* localStorage can throw in private browsing; never let that stop play. */
-  function saveLevel(n) { try { localStorage.setItem('ws.level', String(n)); } catch (e) {} }
+  function saveLevel(n) {
+    try {
+      localStorage.setItem('ws.level', String(n));
+      localStorage.setItem('arcade.stat.watersort', 'Level ' + n);   // shown on the arcade menu
+    } catch (e) {}
+  }
   function loadLevel() {
     try { return Math.max(1, parseInt(localStorage.getItem('ws.level'), 10) || 1); }
     catch (e) { return 1; }
   }
 
-  function start(n) {
-    game = new Game(makeLevel(n));
+  /* The deal in progress is saved after every pour: the starting layout plus
+     the moves made so far. Reopening the app replays them instead of dealing
+     a fresh board, so half-solved puzzles survive a phone going to sleep. */
+  function saveGame() {
+    try {
+      localStorage.setItem('ws.game', JSON.stringify({
+        level: game.level, colors: game.colors, start: game.start,
+        moves: game.history.map(function (m) { return [m.from, m.to]; })
+      }));
+    } catch (e) {}
+  }
+  function loadGame() {
+    try {
+      var s = JSON.parse(localStorage.getItem('ws.game'));
+      if (!s || !s.start || s.level !== loadLevel()) return null;
+      var g = new Game({ number: s.level, colors: s.colors, state: s.start });
+      (s.moves || []).forEach(function (m) { g.pour(m[0], m[1]); });
+      return g.isSolved() ? null : g;
+    } catch (e) { return null; }
+  }
+
+  function start(n, resumed) {
+    game = resumed || new Game(makeLevel(n));
     selected = -1;
     justPoured = {};
     document.getElementById('level-n').textContent = n;
     document.getElementById('win').classList.add('hidden');
     saveLevel(n);
+    saveGame();
     render();
   }
 
@@ -68,6 +95,7 @@
     if (n > 0) {
       justPoured[i] = n;
       selected = -1;
+      saveGame();
       render();
       if (game.isSolved()) setTimeout(win, 380);
     } else {
@@ -85,12 +113,13 @@
   }
 
   document.getElementById('undo-btn').addEventListener('click', function () {
-    if (game.undo()) { selected = -1; render(); }
+    if (game.undo()) { selected = -1; saveGame(); render(); }
   });
 
   document.getElementById('restart-btn').addEventListener('click', function () {
     game.reset();
     selected = -1;
+    saveGame();
     render();
   });
 
@@ -99,10 +128,12 @@
     document.getElementById('win').classList.add('hidden');
     game.reset();
     selected = -1;
+    saveGame();
     render();
   });
 
-  start(loadLevel());
+  var resumed = loadGame();
+  start(resumed ? resumed.level : loadLevel(), resumed);
 
   window.__ws = { game: function () { return game; }, start: start, tap: tap };
 })();

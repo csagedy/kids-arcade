@@ -1,28 +1,56 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v1';
+var CACHE = 'arcade-v2';
 
 var FILES = [
-  './', './index.html', './icon-arcade.png', './manifest.webmanifest',
-  './games/color/index.html', './games/color/icon.png', './games/color/manifest.webmanifest',
-  './games/color/css/style.css',
-  './games/color/js/util.js', './games/color/js/quantize.js', './games/color/js/puzzles-data.js',
-  './games/color/js/puzzle.js', './games/color/js/render.js', './games/color/js/input.js',
-  './games/color/js/app.js',
-  './games/watersort/index.html', './games/watersort/icon.png', './games/watersort/manifest.webmanifest',
-  './games/watersort/style.css',
-  './games/watersort/js/level.js', './games/watersort/js/game.js', './games/watersort/js/ui.js',
-  './games/blockblast/index.html', './games/blockblast/icon.png', './games/blockblast/manifest.webmanifest',
+  './',
+  './icon-arcade.png',
+  './index.html',
+  './manifest.webmanifest',
+  './games/blockblast/icon.png',
+  './games/blockblast/index.html',
+  './games/blockblast/manifest.webmanifest',
   './games/blockblast/style.css',
-  './games/blockblast/js/pieces.js', './games/blockblast/js/game.js', './games/blockblast/js/ui.js'
+  './games/blockblast/js/game.js',
+  './games/blockblast/js/pieces.js',
+  './games/blockblast/js/ui.js',
+  './games/color/icon.png',
+  './games/color/index.html',
+  './games/color/manifest.webmanifest',
+  './games/color/css/style.css',
+  './games/color/js/app.js',
+  './games/color/js/input.js',
+  './games/color/js/puzzle.js',
+  './games/color/js/puzzles-data.js',
+  './games/color/js/quantize.js',
+  './games/color/js/render.js',
+  './games/color/js/util.js',
+  './games/watersort/icon.png',
+  './games/watersort/index.html',
+  './games/watersort/manifest.webmanifest',
+  './games/watersort/style.css',
+  './games/watersort/js/game.js',
+  './games/watersort/js/level.js',
+  './games/watersort/js/ui.js'
 ];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(CACHE)
-      // One missing file shouldn't fail the whole install.
-      .then(function (c) { return Promise.all(FILES.map(function (f) { return c.add(f).catch(function () {}); })); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(CACHE).then(function (c) {
+      // One missing file shouldn't fail the whole install, but the menu
+      // should know: record "got/total" so it can show whether the phone
+      // is really ready for a road trip.
+      var got = 0;
+      return Promise.all(FILES.map(function (f) {
+        return c.add(f).then(function () { got++; }).catch(function () {});
+      })).then(function () {
+        return c.put('./__precache', new Response(got + '/' + FILES.length, { headers: { 'Content-Type': 'text/plain' } }));
+      }).then(function () {
+        return self.clients.matchAll({ includeUncontrolled: true });
+      }).then(function (clients) {
+        clients.forEach(function (cl) { cl.postMessage({ type: 'precached' }); });
+      });
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 

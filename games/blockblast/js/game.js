@@ -3,21 +3,64 @@
 
 var SIZE = 8;
 
-function BBGame() {
+function BBGame(saved) {
   this.board = new Uint8Array(SIZE * SIZE);   // 0 empty, else colour + 1
   this.score = 0;
   this.streak = 0;
   this.best = this.loadBest();
   this.tray = [null, null, null];
+  if (saved && this.restore(saved)) return;
   this.deal();
 }
+
+/* The board in play is saved after every move, so closing the app mid-game
+   (which on a kid's phone is every game) picks up where it left off. */
+var BB_SAVE_KEY = 'bb.game';
+
+BBGame.prototype.snapshot = function () {
+  return {
+    board: Array.prototype.slice.call(this.board),
+    score: this.score,
+    streak: this.streak,
+    tray: this.tray.map(function (p) { return p ? [p.shape, p.color] : null; })
+  };
+};
+
+BBGame.prototype.restore = function (s) {
+  try {
+    if (!s || !s.board || s.board.length !== SIZE * SIZE || !s.tray) return false;
+    for (var i = 0; i < SIZE * SIZE; i++) this.board[i] = s.board[i] | 0;
+    this.score = s.score | 0;
+    this.streak = s.streak | 0;
+    this.tray = s.tray.map(function (t) {
+      return t && SHAPES[t[0]] ? makePiece(SHAPES[t[0]], t[1] % BB_COLORS.length) : null;
+    });
+    if (this.tray.every(function (p) { return p === null; })) this.deal();
+    return true;
+  } catch (e) { return false; }
+};
+
+BBGame.prototype.save = function () {
+  try { localStorage.setItem(BB_SAVE_KEY, JSON.stringify(this.snapshot())); } catch (e) {}
+};
+
+BBGame.loadSaved = function () {
+  try { return JSON.parse(localStorage.getItem(BB_SAVE_KEY)); } catch (e) { return null; }
+};
+
+BBGame.clearSaved = function () {
+  try { localStorage.removeItem(BB_SAVE_KEY); } catch (e) {}
+};
 
 BBGame.prototype.loadBest = function () {
   try { return parseInt(localStorage.getItem('bb.best'), 10) || 0; } catch (e) { return 0; }
 };
 
 BBGame.prototype.saveBest = function () {
-  try { localStorage.setItem('bb.best', String(this.best)); } catch (e) {}
+  try {
+    localStorage.setItem('bb.best', String(this.best));
+    localStorage.setItem('arcade.stat.blockblast', 'Best ' + this.best);   // shown on the arcade menu
+  } catch (e) {}
 };
 
 BBGame.prototype.at = function (r, c) { return this.board[r * SIZE + c]; };
@@ -69,6 +112,7 @@ BBGame.prototype.place = function (slot, r0, c0) {
   if (this.tray.every(function (p) { return p === null; })) this.deal();
 
   if (this.score > this.best) { this.best = this.score; this.saveBest(); }
+  this.save();
   return result;
 };
 

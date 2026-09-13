@@ -11,55 +11,280 @@
 <meta name="theme-color" content="#14161c">
 <title>Arcade</title>
 <style>
+  :root {
+    --bg: #14161c; --panel: #1e222b; --panel-2: #272c37;
+    --text: #f2f4f8; --muted: #97a0b3; --accent: #ffc53d; --good: #3fb950;
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; min-height: 100%;
-    background: radial-gradient(120% 70% at 50% 0%, #1d2233 0%, #14161c 65%);
-    color: #f2f4f8;
+    background: radial-gradient(120% 70% at 50% 0%, #1d2233 0%, var(--bg) 65%);
+    color: var(--text);
     font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     -webkit-user-select: none; user-select: none;
   }
-  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
-  .sub { color: #97a0b3; font-size: 14px; margin-bottom: 22px; }
-  .wrap { padding: calc(env(safe-area-inset-top) + 26px) 20px calc(env(safe-area-inset-bottom) + 30px); max-width: 620px; margin: 0 auto; }
-  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+  .wrap { padding: calc(env(safe-area-inset-top) + 22px) 18px calc(env(safe-area-inset-bottom) + 30px); max-width: 620px; margin: 0 auto; }
+
+  .top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.02em; flex: 1; }
+  .pill-status {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    background: var(--panel); border-radius: 999px; padding: 6px 11px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pill-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill-status.ok { color: var(--good); }
+  .pill-status.ok .dot { background: var(--good); box-shadow: 0 0 6px var(--good); }
+  .pill-status.partial { color: var(--accent); }
+  .pill-status.partial .dot { background: var(--accent); }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+
+  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
   .game {
     display: block; text-decoration: none; color: inherit;
-    background: #1e222b; border-radius: 18px; overflow: hidden;
+    background: var(--panel); border-radius: 18px; overflow: hidden;
+    transition: transform 0.12s;
   }
-  .game:active { transform: scale(0.97); }
-  .art { height: 108px; display: flex; align-items: center; justify-content: center; font-size: 44px; }
-  .name { padding: 12px 14px 15px; font-weight: 600; }
-  .art.color { background: linear-gradient(135deg, #e8792b, #f06ca8); }
-  .art.water { background: linear-gradient(135deg, #4fa3f7, #3fb950); }
+  .game:active { transform: scale(0.96); }
+  .art { height: 104px; display: flex; align-items: center; justify-content: center; font-size: 46px; position: relative; }
+  .art .new {
+    position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.06em; background: rgba(0,0,0,0.45); color: #fff; border-radius: 999px; padding: 3px 7px;
+  }
+  .meta { padding: 11px 13px 13px; }
+  .name { font-weight: 700; font-size: 15px; }
+  .stat { font-size: 12.5px; color: var(--muted); margin-top: 2px; min-height: 17px; }
+  .stat.has { color: var(--accent); font-weight: 600; }
+
+  .art.color  { background: linear-gradient(135deg, #e8792b, #f06ca8); }
+  .art.water  { background: linear-gradient(135deg, #4fa3f7, #3fb950); }
   .art.blocks { background: linear-gradient(135deg, #a06cf0, #4fa3f7); }
+  .art.g2048  { background: linear-gradient(135deg, #f2b179, #edc22e); }
+  .art.memory { background: linear-gradient(135deg, #26c6c6, #a06cf0); }
+  .art.nono   { background: linear-gradient(135deg, #3d4a5c, #8fa3bf); }
+  .art.flow   { background: linear-gradient(135deg, #e5484d, #ffd645); }
+  .art.simon  { background: linear-gradient(135deg, #3fb950, #e5484d); }
+  .art.tangram{ background: linear-gradient(135deg, #ff8a3d, #a06cf0); }
+  .art.dots   { background: linear-gradient(135deg, #f06ca8, #26c6c6); }
+
+  .foot { margin-top: 26px; display: flex; justify-content: center; }
+  .link-btn {
+    border: none; background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 600;
+    border-radius: 999px; padding: 10px 16px;
+  }
+  .link-btn:active { opacity: 0.7; }
+
+  /* backup sheet */
+  .sheet-bg { position: fixed; inset: 0; background: rgba(10,12,16,0.8); z-index: 30; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet {
+    width: 100%; max-width: 560px; background: var(--panel); border-radius: 22px 22px 0 0;
+    padding: 20px 20px calc(env(safe-area-inset-bottom) + 20px);
+    animation: up 0.24s cubic-bezier(.2,1.2,.5,1);
+  }
+  @keyframes up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .sheet h2 { margin: 0 0 4px; font-size: 19px; }
+  .sheet p { margin: 0 0 14px; color: var(--muted); font-size: 13.5px; }
+  .row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .btn {
+    flex: 1; border: none; border-radius: 12px; padding: 13px 10px;
+    background: var(--panel-2); color: var(--text); font-size: 15px; font-weight: 600;
+  }
+  .btn.primary { background: var(--accent); color: #24201a; }
+  .btn.danger { background: #4a2326; color: #ff9ea1; }
+  .btn:active { opacity: 0.75; }
+  .btn:disabled { opacity: 0.4; }
+  textarea {
+    width: 100%; height: 88px; resize: none; border: none; border-radius: 12px;
+    background: var(--bg); color: var(--text); font: 12px/1.4 ui-monospace, Menlo, monospace;
+    padding: 10px; -webkit-user-select: text; user-select: text;
+  }
+  .msg { font-size: 13px; color: var(--muted); min-height: 18px; margin-top: 8px; text-align: center; }
+  .msg.ok { color: var(--good); }
+  .msg.bad { color: #ff9ea1; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Arcade</h1>
+  <div class="top">
+    <h1>Arcade</h1>
+    <div id="offline" class="pill-status"><span class="dot"></span><span id="offline-text">Checking…</span></div>
+  </div>
   <div class="sub">No ads. No timers. Just games.</div>
-  <div class="games">
-    <a class="game" href="games/color/index.html">
-      <div class="art color">🎨</div>
-      <div class="name">Color by Number</div>
-    </a>
-    <a class="game" href="games/watersort/index.html">
-      <div class="art water">🧪</div>
-      <div class="name">Water Sort</div>
-    </a>
-    <a class="game" href="games/blockblast/index.html">
-      <div class="art blocks">🧱</div>
-      <div class="name">Block Blast</div>
-    </a>
+
+  <div class="games" id="games"></div>
+
+  <div class="foot">
+    <button id="backup-btn" class="link-btn">Backup &amp; restore progress</button>
   </div>
 </div>
+
+<div id="sheet" class="sheet-bg hidden">
+  <div class="sheet">
+    <h2>Backup &amp; restore</h2>
+    <p>Progress lives on this phone. Copy a backup code to move it to another phone, or paste one here to restore it.</p>
+    <div class="row">
+      <button id="copy-btn" class="btn primary">Copy backup code</button>
+      <button id="share-btn" class="btn">Share…</button>
+    </div>
+    <textarea id="code" placeholder="Paste a backup code here to restore" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="restore-btn" class="btn" disabled>Restore from code</button>
+      <button id="close-btn" class="btn">Close</button>
+    </div>
+    <div id="msg" class="msg"></div>
+  </div>
+</div>
+
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("sw.js").catch(function () {});
+(function () {
+  /* Every game gets a tile. `stat` is a localStorage key the game writes a
+     short progress line to ("Level 12", "Best 3180"); the menu just shows it. */
+  var GAMES = [
+    { id: 'color',      name: 'Color by Number', emoji: '🎨', art: 'color',  href: 'games/color/index.html' },
+    { id: 'watersort',  name: 'Water Sort',      emoji: '🧪', art: 'water',  href: 'games/watersort/index.html' },
+    { id: 'blockblast', name: 'Block Blast',     emoji: '🧱', art: 'blocks', href: 'games/blockblast/index.html' }
+  ];
+
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function renderTiles() {
+    var root = document.getElementById('games');
+    root.innerHTML = '';
+    GAMES.forEach(function (g) {
+      var a = document.createElement('a');
+      a.className = 'game'; a.href = g.href;
+      var stat = get('arcade.stat.' + g.id);
+      a.innerHTML =
+        '<div class="art ' + g.art + '">' + g.emoji + (g.isNew ? '<span class="new">NEW</span>' : '') + '</div>' +
+        '<div class="meta"><div class="name"></div><div class="stat' + (stat ? ' has' : '') + '"></div></div>';
+      a.querySelector('.name').textContent = g.name;
+      a.querySelector('.stat').textContent = stat || 'Not played yet';
+      root.appendChild(a);
+    });
+  }
+  renderTiles();
+  window.addEventListener('pageshow', renderTiles);   // back-swipe from a game refreshes stats
+
+  /* ---- offline readiness ---- */
+  var pill = document.getElementById('offline'), pillText = document.getElementById('offline-text');
+  function setPill(cls, text) { pill.className = 'pill-status ' + cls; pillText.textContent = text; }
+
+  function checkOffline() {
+    if (!('caches' in window) || !('serviceWorker' in navigator)) { setPill('', 'Online only'); return; }
+    // The service worker writes __precache after installing: "got/total" files.
+    caches.match('./__precache').then(function (r) { return r ? r.text() : null; }).then(function (t) {
+      if (!t) { setPill('', 'Preparing offline…'); return; }
+      var p = t.split('/'), got = +p[0], total = +p[1];
+      if (got >= total) setPill('ok', 'Ready offline');
+      else setPill('partial', 'Offline: ' + got + '/' + total + ' files');
+    }).catch(function () { setPill('', 'Online only'); });
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        checkOffline();
+        // When a new worker installs, re-check once it has finished.
+        reg.addEventListener('updatefound', function () {
+          var w = reg.installing;
+          if (w) w.addEventListener('statechange', function () { if (w.state === 'activated') checkOffline(); });
+        });
+      }).catch(function () { setPill('', 'Online only'); });
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        if (e.data && e.data.type === 'precached') checkOffline();
+      });
+      setTimeout(checkOffline, 3000);
+    });
+  } else {
+    setPill('', 'Online only');
+  }
+
+  /* ---- backup & restore ----
+     A backup code is base64 JSON of every saved key. It's meant to be pasted
+     into Messages or Notes, not typed, so length isn't a concern. */
+  var PREFIX = 'ARCADE1:';
+  var sheet = document.getElementById('sheet');
+  var code = document.getElementById('code');
+  var msg = document.getElementById('msg');
+
+  function say(text, cls) { msg.textContent = text; msg.className = 'msg ' + (cls || ''); }
+
+  function allKeys() {
+    var out = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        out[k] = localStorage.getItem(k);
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  function encode() {
+    var json = JSON.stringify({ v: 1, t: Date.now(), d: allKeys() });
+    return PREFIX + btoa(unescape(encodeURIComponent(json)));
+  }
+
+  function decode(text) {
+    text = (text || '').replace(/\s+/g, '');
+    var i = text.indexOf(PREFIX);
+    if (i < 0) throw new Error('not a backup code');
+    var json = decodeURIComponent(escape(atob(text.slice(i + PREFIX.length))));
+    var obj = JSON.parse(json);
+    if (!obj || obj.v !== 1 || typeof obj.d !== 'object') throw new Error('bad version');
+    return obj;
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      code.value = text; code.focus(); code.select();
+      try { document.execCommand('copy') ? resolve() : reject(); } catch (e) { reject(e); }
+    });
+  }
+
+  document.getElementById('backup-btn').addEventListener('click', function () {
+    sheet.classList.remove('hidden'); code.value = ''; say('');
+    document.getElementById('share-btn').classList.toggle('hidden', !navigator.share);
   });
-}
+  document.getElementById('close-btn').addEventListener('click', function () { sheet.classList.add('hidden'); });
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.classList.add('hidden'); });
+
+  document.getElementById('copy-btn').addEventListener('click', function () {
+    var text = encode();
+    copyText(text).then(function () {
+      say('Copied. Paste it into Notes or a message to keep it safe.', 'ok');
+    }, function () {
+      code.value = text; code.select();
+      say('Select the code above and copy it.', '');
+    });
+  });
+
+  document.getElementById('share-btn').addEventListener('click', function () {
+    navigator.share({ title: 'Arcade backup', text: encode() }).catch(function () {});
+  });
+
+  code.addEventListener('input', function () {
+    document.getElementById('restore-btn').disabled = code.value.indexOf(PREFIX) < 0;
+  });
+
+  document.getElementById('restore-btn').addEventListener('click', function () {
+    var obj;
+    try { obj = decode(code.value); } catch (e) { say("That doesn't look like a backup code.", 'bad'); return; }
+    var n = Object.keys(obj.d).length;
+    var when = obj.t ? new Date(obj.t).toLocaleDateString() : 'unknown date';
+    if (!confirm('Replace the progress on this phone with the backup from ' + when + ' (' + n + ' items)?')) return;
+    try {
+      localStorage.clear();
+      Object.keys(obj.d).forEach(function (k) { localStorage.setItem(k, obj.d[k]); });
+    } catch (e) { say('Could not write to storage on this phone.', 'bad'); return; }
+    say('Restored ' + n + ' items.', 'ok');
+    renderTiles();
+  });
+
+  window.__arcade = { GAMES: GAMES, encode: encode, decode: decode };
+})();
 </script>
 </body>
 </html>

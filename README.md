@@ -50,8 +50,12 @@ diag.html                      device check page (see Troubleshooting)
 ```
 
 Each game is self-contained: its own folder, its own CSS, no shared runtime and
-no build step. Adding a game means dropping in a folder and adding a tile to the
-root `index.html`.
+no build step. Adding a game means dropping in a folder, adding an entry to
+`GAMES` in the root `index.html`, and running `python3 tools/update-sw.py`.
+
+The only contract between a game and the menu is one localStorage key:
+`arcade.stat.<id>` holds a short progress line ("Level 12", "Best 3180") that
+the tile shows.
 
 ## Adding a picture
 
@@ -63,6 +67,13 @@ blank (stays white, never needs painting). Legend order sets the swatch numbers.
 
 - Progress saves to `localStorage` per puzzle; photo puzzles are stored whole,
   run-length encoded (about 600 bytes each).
+- Water Sort and Block Blast save the board in play after every move, so a
+  phone going to sleep mid-puzzle picks up exactly where it was.
+- **Backup & restore** on the arcade menu turns every saved key into one
+  `ARCADE1:` code (base64 JSON). Paste it into Notes or a message; paste it
+  back on another phone to restore. Home-screen web apps are exempt from
+  Safari's 7-day storage purge, so the main way to lose progress is deleting
+  the icon.
 - Targets Safari 16 (iPhone 8 Plus and X both top out at iOS 16.7).
 - Scripts are plain `<script>` tags, not modules, so the folder also works when
   opened directly from `file://`.
@@ -85,9 +96,16 @@ is free.
 
 ### After changing any file
 
-Bump `CACHE` in `sw.js` (`arcade-v1` -> `arcade-v2`, and so on). The service
-worker serves from its cache first, so without a version bump phones keep
-running the old copy until it happens to refresh.
+```bash
+python3 tools/update-sw.py
+```
+
+This rewrites the precache list in `sw.js` from the files on disk and bumps
+`CACHE` (`arcade-v1` -> `arcade-v2`, and so on). The service worker serves from
+its cache first, so without a version bump phones keep running the old copy.
+
+The menu shows a pill in the corner: **Ready offline** once every file is
+cached, or a count if some were missed. Glance at it before a road trip.
 
 ## Adding to the home screen
 

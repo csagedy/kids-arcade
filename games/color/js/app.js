@@ -16,6 +16,13 @@
     return BUILTIN_PUZZLES.map(puzzleFromArt).concat(listCustomPuzzles());
   }
 
+  /* One line for the arcade menu tile, e.g. "3 finished". */
+  function publishStat() {
+    var list = allPuzzles(), finished = 0;
+    list.forEach(function (p) { if (paintedCount(p, loadProgress(p)) === p.total) finished++; });
+    store.set('arcade.stat.color', finished === 1 ? '1 finished' : finished + ' finished');
+  }
+
   function thumb(puzzle, size) {
     var c = document.createElement('canvas');
     c.width = puzzle.w; c.height = puzzle.h;
@@ -37,6 +44,7 @@
   function renderLibrary() {
     var grid = $('#lib-grid');
     grid.innerHTML = '';
+    publishStat();
 
     allPuzzles().forEach(function (p) {
       var wrap = el('div', 'card-wrap');
