@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#14161c">
+<title>Shape Fit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="head">
+  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
+  <div class="mid">
+    <button id="prev-btn" class="arrow" aria-label="Previous level">‹</button>
+    <div class="level">Level <span id="level-n">1</span></div>
+    <button id="next-btn" class="arrow" aria-label="Next level">›</button>
+  </div>
+  <button id="restart-btn" class="icon-btn" aria-label="Restart">⟳</button>
+</header>
+
+<div class="stats"><span id="count">0 / 0</span> pieces placed</div>
+
+<div class="board-wrap"><div id="board" class="board"></div></div>
+
+<div class="hint">Drag pieces into the outline. Tap a piece to turn it.</div>
+<div id="tray" class="tray"></div>
+
+<div id="win" class="over hidden">
+  <div class="over-card">
+    <div class="over-emoji">🧩</div>
+    <h2>Level <span id="win-n">1</span> done!</h2>
+    <div class="over-actions">
+      <button id="win-replay" class="pill">Again</button>
+      <button id="win-next" class="pill primary">Next level</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/level.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("../../sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

@@ -63,6 +63,10 @@ games/flow/                    Flow
 games/simon/                   Simon
   js/game.js                   sequence, best round
   js/ui.js                     playback timing, Web Audio tones
+games/shapes/                  Shape Fit
+  js/level.js                  grow an outline, cut it into pieces
+  js/game.js                   placement, rotation, occupancy, save
+  js/ui.js                     drag from tray or board, tap to rotate/lift
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)

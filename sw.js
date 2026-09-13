@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v7';
+var CACHE = 'arcade-v8';
 
 var FILES = [
   './',
@@ -51,6 +51,13 @@ var FILES = [
   './games/nonogram/js/game.js',
   './games/nonogram/js/puzzles-data.js',
   './games/nonogram/js/ui.js',
+  './games/shapes/icon.png',
+  './games/shapes/index.html',
+  './games/shapes/manifest.webmanifest',
+  './games/shapes/style.css',
+  './games/shapes/js/game.js',
+  './games/shapes/js/level.js',
+  './games/shapes/js/ui.js',
   './games/simon/icon.png',
   './games/simon/index.html',
   './games/simon/manifest.webmanifest',
