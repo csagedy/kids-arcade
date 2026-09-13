@@ -56,6 +56,10 @@ games/nonogram/                Picture Puzzles (nonograms)
   js/puzzles-data.js           pictures as character art, '#' filled
   js/game.js                   clues, cell state, per-puzzle save
   js/ui.js                     library, grid, drag painting
+games/flow/                    Flow
+  js/level.js                  seeded RNG, carve grid into paths
+  js/game.js                   path drawing rules, cut/backtrack, save
+  js/ui.js                     canvas rendering, finger tracking
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)

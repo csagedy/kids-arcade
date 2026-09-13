@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v5';
+var CACHE = 'arcade-v6';
 
 var FILES = [
   './',
@@ -31,6 +31,13 @@ var FILES = [
   './games/color/js/quantize.js',
   './games/color/js/render.js',
   './games/color/js/util.js',
+  './games/flow/icon.png',
+  './games/flow/index.html',
+  './games/flow/manifest.webmanifest',
+  './games/flow/style.css',
+  './games/flow/js/game.js',
+  './games/flow/js/level.js',
+  './games/flow/js/ui.js',
   './games/memory/icon.png',
   './games/memory/index.html',
   './games/memory/manifest.webmanifest',
