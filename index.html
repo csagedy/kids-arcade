@@ -67,6 +67,39 @@
   .art.tangram{ background: linear-gradient(135deg, #ff8a3d, #a06cf0); }
   .art.dots   { background: linear-gradient(135deg, #f06ca8, #26c6c6); }
 
+  /* action section: little arcade cabinets */
+  .section { margin-top: 30px; }
+  .section-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .marquee {
+    font-family: "Courier New", Courier, ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: 0.18em;
+    color: #7cf2ff; text-shadow: 0 0 10px rgba(124,242,255,0.6); font-size: 15px;
+  }
+  .section-sub { color: var(--muted); font-size: 12px; }
+  .cabinet-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+  .cab {
+    display: block; text-decoration: none; color: inherit;
+    background: linear-gradient(180deg, #262a36, #1a1c24); border-radius: 12px 12px 8px 8px;
+    padding: 8px 8px 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform 0.12s;
+  }
+  .cab:active { transform: scale(0.96); }
+  .cab-screen {
+    height: 78px; border-radius: 8px; background: #000; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; font-size: 34px;
+    box-shadow: inset 0 0 0 2px #0b0c10;
+  }
+  .cab-screen::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.3) 0 1px, transparent 1px 3px),
+                radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.6) 100%);
+  }
+  .cab-name {
+    margin-top: 8px; font-family: "Courier New", Courier, ui-monospace, Menlo, monospace; font-weight: 700;
+    font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #ffb300; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cab-stat { font-family: "Courier New", Courier, monospace; font-size: 11px; color: #7cf2ff; text-align: center; margin-top: 2px; min-height: 14px; letter-spacing: 0.06em; }
+
   .foot { margin-top: 26px; display: flex; justify-content: center; }
   .link-btn {
     border: none; background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 600;
@@ -114,6 +147,11 @@
 
   <div class="games" id="games"></div>
 
+  <div class="section" id="action">
+    <div class="section-title"><span class="marquee">ACTION</span><span class="section-sub">timers, lives, high scores</span></div>
+    <div class="cabinet-row" id="cabinet"></div>
+  </div>
+
   <div class="foot">
     <button id="backup-btn" class="link-btn">Backup &amp; restore progress</button>
   </div>
@@ -153,11 +191,31 @@
     { id: 'dots',       name: 'Dot to Dot',      emoji: '🔵', art: 'dots',   href: 'games/dots/index.html', isNew: true }
   ];
 
+  /* Action games live in their own "cabinet" section: timers, lives, high
+     scores. Kept apart so the puzzle games above stay calm. */
+  var ACTION = [
+    { id: 'breakout', name: 'Breakout',        emoji: '🧱', href: 'games/breakout/index.html', isNew: true },
+    { id: 'snake',    name: 'Snake',           emoji: '🐍', href: 'games/snake/index.html', isNew: true },
+    { id: 'missile',  name: 'Missile Command', emoji: '🚀', href: 'games/missile/index.html', isNew: true }
+  ];
+
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
   function renderTiles() {
     var root = document.getElementById('games');
     root.innerHTML = '';
+    var cab = document.getElementById('cabinet');
+    cab.innerHTML = '';
+    ACTION.forEach(function (g) {
+      var a = document.createElement('a');
+      a.className = 'cab'; a.href = g.href; a.id = 'cab-' + g.id;
+      var stat = get('arcade.stat.' + g.id);
+      a.innerHTML = '<div class="cab-screen"><span class="cab-emoji"></span></div><div class="cab-name"></div><div class="cab-stat"></div>';
+      a.querySelector('.cab-emoji').textContent = g.emoji;
+      a.querySelector('.cab-name').textContent = g.name;
+      a.querySelector('.cab-stat').textContent = stat || (g.isNew ? 'NEW' : '');
+      cab.appendChild(a);
+    });
     GAMES.forEach(function (g) {
       var a = document.createElement('a');
       a.className = 'game'; a.href = g.href;

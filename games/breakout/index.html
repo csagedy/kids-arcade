@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#0b0c10">
+<title>Breakout</title>
+<link rel="stylesheet" href="../../cabinet/cabinet.css">
+</head>
+<body>
+
+<header class="cab-head">
+  <a class="cab-btn-icon" href="../../index.html#action" aria-label="Back">‹</a>
+  <div class="ttl">Breakout</div>
+  <button id="mute-btn" class="cab-btn-icon" aria-label="Sound">🔊</button>
+</header>
+
+<div class="cab-screen-wrap">
+  <div class="cab-bezel"><div class="cab-crt"><canvas id="screen"></canvas></div></div>
+</div>
+<div class="cab-hint">SLIDE TO MOVE · TAP TO LAUNCH</div>
+
+<script src="../../cabinet/cabinet.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("../../sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

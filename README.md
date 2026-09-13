@@ -15,6 +15,23 @@ no build step, no dependencies, no network calls, no tracking.
   columns clear. No falling pieces and no timer. Combo bonuses for multiple
   lines and consecutive clears; best score is kept.
 
+### Action games (the cabinet)
+
+A separate section on the menu, styled as little arcade cabinets, for the
+games that do have timers, lives and high scores. They share `cabinet/`:
+
+- `cabinet/cabinet.js` — scaled-up 240x320 canvas with no smoothing, a 3x5
+  bitmap font, square-wave beeps, a fixed-step game loop, five-entry high
+  score tables with three-letter initials, and the attract / game-over cards.
+- `cabinet/cabinet.css` — bezel, CRT scanlines and vignette, pixel-style
+  overlays.
+
+- **Breakout** — slide to steer, tap to launch. Seven brick layouts that loop
+  faster; two-hit bricks in capitals.
+- **Snake** — swipe to turn. Speeds up every four apples.
+- **Missile Command** — tap where the counter-missile should explode. Six
+  cities, growing waves, ammo per wave, bonus for cities and ammo left.
+
 ## Running it
 
 Any static file server works:
@@ -71,6 +88,9 @@ games/dots/                    Dot to Dot
   js/pictures-data.js          outlines as [x, y] points in a 0..100 square
   js/game.js                   next-dot state, per-picture save
   js/ui.js                     canvas, tap detection, library thumbnails
+cabinet/                       shared kit for the action games (see above)
+games/breakout/ games/snake/ games/missile/
+                               action games: js/game.js rules, js/ui.js drawing + input
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)
@@ -150,10 +170,10 @@ Once added, they launch fullscreen with no browser chrome and work offline.
 
 ## Developing
 
-The service worker serves cached files first, so after editing a game the
-browser may keep running the old copy. While developing, unregister the
-worker in devtools (Application > Service Workers) or run this in the console
-before reloading:
+The service worker serves cached files first, except on `localhost`, where
+it steps aside so edits show up on reload. If you test through another
+hostname (the Mac's LAN address, say), unregister the worker in devtools
+(Application > Service Workers) or run this in the console before reloading:
 
 ```js
 navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()))

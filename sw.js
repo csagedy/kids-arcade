@@ -1,12 +1,14 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v9';
+var CACHE = 'arcade-v10';
 
 var FILES = [
   './',
   './icon-arcade.png',
   './index.html',
   './manifest.webmanifest',
+  './cabinet/cabinet.css',
+  './cabinet/cabinet.js',
   './games/2048/icon.png',
   './games/2048/index.html',
   './games/2048/manifest.webmanifest',
@@ -20,6 +22,11 @@ var FILES = [
   './games/blockblast/js/game.js',
   './games/blockblast/js/pieces.js',
   './games/blockblast/js/ui.js',
+  './games/breakout/icon.png',
+  './games/breakout/index.html',
+  './games/breakout/manifest.webmanifest',
+  './games/breakout/js/game.js',
+  './games/breakout/js/ui.js',
   './games/color/icon.png',
   './games/color/index.html',
   './games/color/manifest.webmanifest',
@@ -51,6 +58,11 @@ var FILES = [
   './games/memory/style.css',
   './games/memory/js/game.js',
   './games/memory/js/ui.js',
+  './games/missile/icon.png',
+  './games/missile/index.html',
+  './games/missile/manifest.webmanifest',
+  './games/missile/js/game.js',
+  './games/missile/js/ui.js',
   './games/nonogram/icon.png',
   './games/nonogram/index.html',
   './games/nonogram/manifest.webmanifest',
@@ -71,6 +83,11 @@ var FILES = [
   './games/simon/style.css',
   './games/simon/js/game.js',
   './games/simon/js/ui.js',
+  './games/snake/icon.png',
+  './games/snake/index.html',
+  './games/snake/manifest.webmanifest',
+  './games/snake/js/game.js',
+  './games/snake/js/ui.js',
   './games/watersort/icon.png',
   './games/watersort/index.html',
   './games/watersort/manifest.webmanifest',
@@ -112,6 +129,8 @@ self.addEventListener('activate', function (e) {
    next launch has the newest files. */
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
+  // On a dev server, always go to the network so edits show up on reload.
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
 
   e.respondWith(
     caches.match(e.request).then(function (hit) {
