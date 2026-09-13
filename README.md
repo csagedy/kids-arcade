@@ -67,6 +67,10 @@ games/shapes/                  Shape Fit
   js/level.js                  grow an outline, cut it into pieces
   js/game.js                   placement, rotation, occupancy, save
   js/ui.js                     drag from tray or board, tap to rotate/lift
+games/dots/                    Dot to Dot
+  js/pictures-data.js          outlines as [x, y] points in a 0..100 square
+  js/game.js                   next-dot state, per-picture save
+  js/ui.js                     canvas, tap detection, library thumbnails
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list
 tools/make-icon.py             draw a home-screen icon (gradient + motif)
@@ -143,6 +147,17 @@ cached, or a count if some were missed. Glance at it before a road trip.
 Open the site in Safari, then Share -> Add to Home Screen. Each game has its own
 icon and manifest, so games can be added individually as well as the arcade.
 Once added, they launch fullscreen with no browser chrome and work offline.
+
+## Developing
+
+The service worker serves cached files first, so after editing a game the
+browser may keep running the old copy. While developing, unregister the
+worker in devtools (Application > Service Workers) or run this in the console
+before reloading:
+
+```js
+navigator.serviceWorker.getRegistrations().then(r => r.forEach(x => x.unregister()))
+```
 
 ## Troubleshooting a phone
 
