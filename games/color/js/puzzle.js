@@ -45,6 +45,9 @@ function puzzleFromImage(img, opts) {
   var c = document.createElement('canvas');
   c.width = w; c.height = h;
   var ctx = c.getContext('2d');
+  // Transparent pixels read as black once flattened, so lay down white paper first.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
   // Two-step downscale keeps detail that a single huge jump would alias away.
   ctx.drawImage(img, 0, 0, w, h);
   var data = ctx.getImageData(0, 0, w, h).data;

@@ -75,6 +75,15 @@
     document.getElementById('mute-btn').textContent = m ? '🔇' : '🔊';
   }
 
+  /* iPhones mute Web Audio when the side switch is on silent, and there is no
+     way to detect that. Say so once, the first time sound is meant to play. */
+  function soundHint() {
+    try { if (localStorage.getItem('simon.hint') === '1') return; localStorage.setItem('simon.hint', '1'); } catch (e) {}
+    var el = document.getElementById('sound-hint');
+    el.classList.remove('hidden');
+    setTimeout(function () { el.classList.add('hidden'); }, 6000);
+  }
+
   function light(i, ms) {
     pads[i].classList.add('lit');
     tone(i, ms);
@@ -118,6 +127,7 @@
 
   function startGame() {
     ensureAudio();
+    if (!muted()) soundHint();
     game = new SimonGame();
     document.getElementById('over').classList.add('hidden');
     document.getElementById('start').classList.add('hidden');
@@ -166,7 +176,7 @@
   document.getElementById('mute-btn').addEventListener('click', function () {
     ensureAudio();
     setMuted(!muted());
-    if (!muted()) tone(0, 200);
+    if (!muted()) { tone(0, 200); soundHint(); }
   });
 
   setMuted(muted());

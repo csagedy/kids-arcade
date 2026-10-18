@@ -1,7 +1,7 @@
 /* One finger paints, two fingers pinch and pan. Dropping a second finger
    cancels the stroke in progress so a zoom never smears colour across the grid. */
 
-function bindInput(stage, renderer, onPaintCell, onTapOther) {
+function bindInput(stage, renderer, onPaintCell, onTapOther, onStrokeEnd) {
   var pointers = {};
   var painting = false;
   var last = null;
@@ -40,6 +40,7 @@ function bindInput(stage, renderer, onPaintCell, onTapOther) {
       painting = false;
       last = null;
       tap = null;
+      if (onStrokeEnd) onStrokeEnd();
       pinch = startPinch();
     }
     e.preventDefault();
@@ -71,6 +72,7 @@ function bindInput(stage, renderer, onPaintCell, onTapOther) {
     if (e.type === 'pointerup' && tap && count() === 1 && onTapOther) onTapOther(tap.idx);
     tap = null;
     delete pointers[e.pointerId];
+    if (count() === 0 && onStrokeEnd) onStrokeEnd();
     if (count() < 2) pinch = null;
     if (count() === 0) { painting = false; last = null; }
   }

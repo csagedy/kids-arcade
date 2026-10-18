@@ -99,6 +99,13 @@ Renderer.prototype.markPainted = function (i) {
   this.dirty = true;
 };
 
+Renderer.prototype.unmarkPainted = function (i) {
+  var p = this.puzzle;
+  this.flags[i] = 0;
+  this.pctx.clearRect(i % p.w, Math.floor(i / p.w), 1, 1);
+  this.dirty = true;
+};
+
 Renderer.prototype.resize = function () {
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var r = this.stage.getBoundingClientRect();

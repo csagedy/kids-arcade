@@ -16,9 +16,22 @@ function FroggerGame() {
   this.score = 0;
   this.lives = 3;
   this.homes = [false, false, false, false, false];
+  this.time = 0;
+  this.fly = null;                 // { bay, t } a bonus fly sitting in an empty bay
+  this.flyIn = 6;                  // seconds until the next fly may show up
+  this.gotFly = false;             // set by hop() when the frog lands on the fly
   this.buildLanes();
   this.resetFrog();
 }
+
+/* From level 2 some turtles dive. Every dive is announced by a clear blink
+   first, and only every other turtle group in a lane dives, so there is
+   always a safe ride nearby. Returns 0 surface, 1 warning blink, 2 under. */
+FroggerGame.prototype.turtleState = function (lane, i) {
+  if (!lane.dives || i % 2) return 0;
+  var t = (this.time + i * 3.1) % 9;   // 9s cycle: 5.5 up, 2 blinking, 1.5 under
+  return t < 5.5 ? 0 : t < 7.5 ? 1 : 2;
+};
 
 /* Lanes are described bottom-up. dir +1 moves right. */
 FroggerGame.prototype.buildLanes = function () {
@@ -33,10 +46,10 @@ FroggerGame.prototype.buildLanes = function () {
     { row: s - 5, kind: 'car', dir: -1, speed: 48 * sp, len: 32, gap: 96, color: '#ff3b3b' },
     // s - 6 is the median
     { row: s - 7,  kind: 'log', dir: 1,  speed: 24 * sp, len: 48, gap: 56, color: '#b3772e' },
-    { row: s - 8,  kind: 'turtle', dir: -1, speed: 30 * sp, len: 40, gap: 48, color: '#3fb950' },
+    { row: s - 8,  kind: 'turtle', dir: -1, speed: 30 * sp, len: 40, gap: 48, color: '#3fb950', dives: this.level >= 4 },
     { row: s - 9,  kind: 'log', dir: 1,  speed: 44 * sp, len: 80, gap: 72, color: '#b3772e' },
     { row: s - 10, kind: 'log', dir: 1,  speed: 20 * sp, len: 40, gap: 48, color: '#b3772e' },
-    { row: s - 11, kind: 'turtle', dir: -1, speed: 36 * sp, len: 32, gap: 56, color: '#3fb950' }
+    { row: s - 11, kind: 'turtle', dir: -1, speed: 36 * sp, len: 32, gap: 56, color: '#3fb950', dives: this.level >= 2 }
   ];
   this.lanes.forEach(function (l, i) {
     l.items = [];
@@ -79,11 +92,16 @@ FroggerGame.prototype.hop = function (dx, dy) {
     f.x = bayCenter - f.w / 2;
     this.homes[bay] = true;
     this.score += 50;
+    this.gotFly = !!(this.fly && this.fly.bay === bay);
+    if (this.gotFly) this.score += 200;
+    this.fly = null;
+    this.flyIn = 5 + Math.random() * 4;
     if (this.homes.every(function (h) { return h; })) {
       this.score += 500;
       this.level++;
       if (this.lives < 5) this.lives++;   // a bonus frog for clearing the board
       this.homes = [false, false, false, false, false];
+      this.fly = null;
       this.buildLanes();
       this.resetFrog();
       return 'level';
@@ -102,6 +120,19 @@ FroggerGame.prototype.kill = function (kind) {
 /* Returns 'die', 'over' or null. */
 FroggerGame.prototype.update = function (dt) {
   var self = this;
+  this.time += dt;
+  // a fly drops into a random empty bay now and then, and leaves after a while
+  if (!this.over && !this.dead) {
+    if (this.fly) {
+      this.fly.t -= dt;
+      if (this.fly.t <= 0) { this.fly = null; this.flyIn = 5 + Math.random() * 4; }
+    } else if ((this.flyIn -= dt) <= 0) {
+      var free = [];
+      for (var b = 0; b < 5; b++) if (!this.homes[b]) free.push(b);
+      if (free.length > 1) this.fly = { bay: free[Math.floor(Math.random() * free.length)], t: 5 };
+      else this.flyIn = 3;
+    }
+  }
   this.lanes.forEach(function (l) {
     var period = l.len + l.gap;
     for (var i = 0; i < l.items.length; i++) {
@@ -130,6 +161,7 @@ FroggerGame.prototype.update = function (dt) {
   var fx1 = f.x + 3, fx2 = f.x + f.w - 3;
   for (var k = 0; k < lane.items.length; k++) {
     var x1 = lane.items[k], x2 = x1 + lane.len;
+    if (lane.kind === 'turtle' && this.turtleState(lane, k) === 2) continue;   // underwater
     if (road ? (fx2 > x1 + 1 && fx1 < x2 - 1) : (cx > x1 - 3 && cx < x2 + 3)) { onThing = true; break; }
   }
   if (road && onThing) { this.kill('splat'); return 'die'; }

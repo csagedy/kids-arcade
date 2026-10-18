@@ -30,6 +30,10 @@
     else if (r === 'home') {
       Cabinet.beep(880, 80); setTimeout(function () { Cabinet.beep(1320, 120); }, 90);
       burst(lastBay.x, lastBay.y, 18, ['#5eff5e', '#ffe93b', '#fff'], 60, 20); say('SAFE!', 700, '#5eff5e');
+      if (game.gotFly) {
+        setTimeout(function () { Cabinet.beep(1760, 160); }, 200);
+        burst(lastBay.x, lastBay.y, 14, ['#ffe93b', '#fff'], 70, 30); say('BONUS FLY +200', 1000, '#ffe93b');
+      }
     } else if (r === 'level') {
       Cabinet.beep(660, 100); setTimeout(function () { Cabinet.beep(990, 200); }, 120);
       burst(W / 2, H / 3, 40, ['#ffe93b', '#ff6bd6', '#4de8ff', '#5eff5e'], 90, 30);
@@ -80,14 +84,31 @@
       var bx = b * (W / 5) + W / 10;
       ctx.fillStyle = '#0d2a52'; ctx.fillRect(bx - 14, hr * CELL, 28, CELL);
       if (g.homes[b]) drawFrog(bx - 6, hr * CELL + 2, '#5eff5e');
+      else if (g.fly && g.fly.bay === b) {   // bonus fly: buzzes about, blinks when about to leave
+        if (g.fly.t > 1.5 || Math.floor(g.time * 8) % 2) {
+          var fx = bx + Math.round(Math.sin(g.time * 7) * 4), fyy = hr * CELL + 6 + Math.round(Math.cos(g.time * 9) * 2);
+          ctx.fillStyle = '#fff'; ctx.fillRect(fx - 3, fyy - 2, 3, 2); ctx.fillRect(fx + 1, fyy - 2, 3, 2);
+          ctx.fillStyle = '#ffe93b'; ctx.fillRect(fx - 1, fyy, 3, 3);
+        }
+      }
     }
     // lanes
     g.lanes.forEach(function (l) {
       var y = l.row * CELL;
-      l.items.forEach(function (x) {
+      l.items.forEach(function (x, ix) {
         if (l.kind === 'turtle') {
-          ctx.fillStyle = l.color;
-          for (var t = 0; t < l.len; t += 16) { ctx.fillRect(x + t + 2, y + 4, 12, 9); ctx.fillStyle = '#1f7a2f'; ctx.fillRect(x + t + 5, y + 6, 6, 5); ctx.fillStyle = l.color; }
+          var st = g.turtleState(l, ix);
+          if (st === 2) {   // underwater: just a few bubbles
+            ctx.fillStyle = '#9fd4ff';
+            ctx.fillRect(Math.round(x + 6), y + 6, 2, 2); ctx.fillRect(Math.round(x + l.len - 8), y + 9, 2, 2);
+            return;
+          }
+          // about to dive: flash between green and a pale warning colour and sink a little
+          var warn = st === 1, flash = warn && Math.floor(g.time * 5) % 2 === 0;
+          ctx.fillStyle = flash ? '#e8ffe8' : l.color;
+          if (warn) y += 2;
+          for (var t = 0; t < l.len; t += 16) { ctx.fillRect(x + t + 2, y + 4, 12, 9); ctx.fillStyle = flash ? '#ff6b6b' : '#1f7a2f'; ctx.fillRect(x + t + 5, y + 6, 6, 5); ctx.fillStyle = flash ? '#e8ffe8' : l.color; }
+          if (warn) y -= 2;
         } else if (l.kind === 'log') {
           ctx.fillStyle = l.color; ctx.fillRect(x, y + 3, l.len, 10);
           ctx.fillStyle = '#7a4d1a'; ctx.fillRect(x + 4, y + 5, l.len - 8, 2);

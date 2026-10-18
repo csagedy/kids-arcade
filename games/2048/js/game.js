@@ -10,7 +10,7 @@ function G2048(saved) {
   this.best = G2048.loadBest();
   this.won = false;      // 2048 reached at least once; play continues
   this.keepGoing = false;
-  this.prev = null;      // one-step undo snapshot (not saved)
+  this.prev = null;      // one-step undo snapshot (saved as an optional field)
   if (saved && this.restore(saved)) return;
   this.spawn(); this.spawn();
 }
@@ -32,7 +32,11 @@ G2048.prototype.save = function () {
   try {
     localStorage.setItem(G2048.SAVE_KEY, JSON.stringify({
       grid: Array.prototype.slice.call(this.grid), score: this.score,
-      won: this.won, keepGoing: this.keepGoing
+      won: this.won, keepGoing: this.keepGoing,
+      prev: this.prev ? {
+        grid: Array.prototype.slice.call(this.prev.grid), score: this.prev.score,
+        won: this.prev.won, keepGoing: this.prev.keepGoing
+      } : null
     }));
   } catch (e) {}
 };
@@ -47,6 +51,13 @@ G2048.prototype.restore = function (s) {
   this.score = s.score | 0;
   this.won = !!s.won;
   this.keepGoing = !!s.keepGoing;
+  // Older saves have no `prev`; a malformed one is just dropped.
+  var p = s.prev;
+  if (p && p.grid && p.grid.length === N * N) {
+    var pg = new Uint8Array(N * N);
+    for (var j = 0; j < N * N; j++) pg[j] = p.grid[j] | 0;
+    this.prev = { grid: pg, score: p.score | 0, won: !!p.won, keepGoing: !!p.keepGoing };
+  }
   return true;
 };
 

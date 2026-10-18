@@ -25,10 +25,10 @@ html, body {
 .hidden { display: none !important; }
 
 .head {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 6px;
   padding: calc(env(safe-area-inset-top) + 12px) 14px 6px;
 }
-.level { flex: 1; font-weight: 700; font-size: 17px; }
+.level { flex: 1; min-width: 0; font-weight: 700; font-size: 17px; white-space: nowrap; }
 .icon-btn {
   width: 44px; height: 44px; flex: none; border: none; border-radius: 50%;
   background: var(--panel-2); color: var(--text); font-size: 20px; line-height: 44px;

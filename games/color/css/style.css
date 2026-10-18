@@ -74,6 +74,8 @@ a.icon-btn { text-decoration: none; line-height: 38px; text-align: center; }
   background: var(--panel-2); color: var(--text); font-size: 20px; line-height: 1;
 }
 .icon-btn:active { opacity: 0.7; }
+.icon-btn:disabled { opacity: 0.3; }
+.game-head .icon-btn { width: 44px; height: 44px; }
 .progress-wrap { flex: 1; height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
 .progress-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 999px; transition: width 0.18s ease-out; }
 

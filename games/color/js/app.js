@@ -2,13 +2,15 @@
   var stage = $('#stage');
   var canvas = $('#canvas');
   var renderer = new Renderer(canvas, stage);
-  bindInput(stage, renderer, onPaintCell, onTapOther);
+  bindInput(stage, renderer, onPaintCell, onTapOther, endStroke);
 
   var current = null;     // active puzzle
   var flags = null;       // painted flags for it
   var remaining = [];     // cells left per colour
   var painted = 0;
   var saveTimer = null;
+  var strokes = [];       // each finger-stroke's painted cells, for undo
+  var stroke = null;      // the stroke in progress
 
   /* ---------------- library ---------------- */
 
@@ -88,6 +90,8 @@
 
   function openPuzzle(p) {
     current = p;
+    strokes = []; stroke = null;
+    $('#undo-btn').disabled = true;
     flags = loadProgress(p);
     painted = paintedCount(p, flags);
 
@@ -152,6 +156,7 @@
       b.classList.add('done');
       if (left) left.textContent = '✓';
     } else if (left) {
+      b.classList.remove('done');
       left.textContent = String(remaining[n]);
     }
   }
@@ -171,6 +176,9 @@
     if (flags[idx] || current.cells[idx] !== renderer.active) return false;
     var n = renderer.active;
 
+    if (!stroke) { stroke = []; strokes.push(stroke); }
+    stroke.push(idx);
+    $('#undo-btn').disabled = false;
     renderer.markPainted(idx);
     remaining[n]--;
     painted++;
@@ -184,6 +192,33 @@
       else setTimeout(function () { selectColor(firstUnfinished()); }, 260);
     }
     return true;
+  }
+
+  function endStroke() {
+    stroke = null;
+    if (strokes.length > 30) strokes.shift();   // plenty of history, bounded memory
+  }
+
+  /* Take back the last stroke: unpaint its cells and hand the colour back. */
+  function undoStroke() {
+    endStroke();
+    var s = strokes.pop();
+    if (!s || !current) return;
+    var color = 0;
+    s.forEach(function (idx) {
+      var n = current.cells[idx];
+      renderer.unmarkPainted(idx);
+      remaining[n]++;
+      painted--;
+      updateSwatch(n);
+      color = n;
+    });
+    renderer.rebuildOverlay();
+    renderer.dirty = true;
+    updateProgress();
+    queueSave();
+    $('#undo-btn').disabled = strokes.length === 0;
+    if (color) selectColor(color);
   }
 
   function popSwatch(n) {
@@ -291,6 +326,8 @@
     $('#game').classList.add('hidden');
     $('#library').classList.remove('hidden');
   });
+
+  $('#undo-btn').addEventListener('click', undoStroke);
 
   $('#hint-btn').addEventListener('click', function () {
     for (var i = 0; i < current.cells.length; i++) {

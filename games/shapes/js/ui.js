@@ -1,7 +1,7 @@
 (function () {
   var boardEl = document.getElementById('board');
   var trayEl = document.getElementById('tray');
-  var game, level, cells = [], ghost = null, drag = null, spun = -1;
+  var game, level, cells = [], ghost = null, drag = null, spun = -1, busy = false;
 
   function loadLevel() {
     try { return Math.max(1, parseInt(localStorage.getItem('shapes.level'), 10) || 1); } catch (e) { return 1; }
@@ -86,7 +86,7 @@
   /* Drag from the tray or from the board. A drag that hardly moves is a tap:
      tray tap rotates, board tap lifts the piece back to the tray. */
   function startDrag(e, idx, srcEl, fromBoard) {
-    if (drag) return;
+    if (drag || busy) return;
     e.preventDefault();
     var shape = game.shape(idx);
     var rows = Math.max.apply(null, shape.map(function (c) { return c[0]; })) + 1;
@@ -148,6 +148,12 @@
     preview();
   }
 
+  /* Play a short animation class on every cell of a placed piece. */
+  function markPiece(idx, cls) {
+    var occ = game.occupancy();
+    for (var k = 0; k < occ.length; k++) if (occ[k] === idx) cells[k].classList.add(cls);
+  }
+
   function clearPreview() {
     for (var i = 0; i < cells.length; i++) cells[i].classList.remove('preview', 'preview-bad');
   }
@@ -176,9 +182,12 @@
 
     if (!d.moved) {
       // A tap.
-      if (d.fromBoard) game.lift(d.idx); else { game.rotate(d.idx); spun = d.idx; }
-      render();
-      spun = -1;
+      if (!d.fromBoard) { game.rotate(d.idx); spun = d.idx; render(); spun = -1; return; }
+      if (game.rotateInPlace(d.idx)) { render(); markPiece(d.idx, 'turn'); return; }
+      // no room to turn: shake the piece, then it hops back to the tray
+      markPiece(d.idx, 'nope');
+      busy = true;
+      setTimeout(function () { busy = false; game.lift(d.idx); render(); }, 320);
       return;
     }
     game.place(d.idx, t.r, t.c);   // falls back to the tray if it doesn't fit

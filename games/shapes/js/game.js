@@ -97,6 +97,33 @@ ShapesGame.prototype.rotate = function (i) {
   this.save();
 };
 
+/* Turn a placed piece a quarter turn where it sits. Tries the same top-left
+   corner first, then corners that keep the piece's middle roughly still.
+   Returns true if it turned; false leaves the piece untouched. */
+ShapesGame.prototype.rotateInPlace = function (i) {
+  var p = this.pieces[i];
+  if (!p.pos) return false;
+  var next = (p.rot + 1) % 4;
+  var old = rotateCells(p.cells, p.rot), nw = rotateCells(p.cells, next);
+  function dims(s) {
+    return [Math.max.apply(null, s.map(function (c) { return c[0]; })) + 1,
+            Math.max.apply(null, s.map(function (c) { return c[1]; })) + 1];
+  }
+  var o = dims(old), n = dims(nw);
+  var dr = (o[0] - n[0]) / 2, dc = (o[1] - n[1]) / 2;
+  var tries = [[0, 0], [Math.floor(dr), Math.floor(dc)], [Math.ceil(dr), Math.ceil(dc)],
+               [Math.floor(dr), Math.ceil(dc)], [Math.ceil(dr), Math.floor(dc)]];
+  for (var k = 0; k < tries.length; k++) {
+    var r = p.pos[0] + tries[k][0], c = p.pos[1] + tries[k][1];
+    if (this.canPlace(i, r, c, next)) {
+      p.rot = next; p.pos = [r, c];
+      this.save();
+      return true;
+    }
+  }
+  return false;
+};
+
 ShapesGame.prototype.isSolved = function () {
   for (var i = 0; i < this.pieces.length; i++) if (!this.pieces[i].pos) return false;
   return true;   // every piece placed means the outline is exactly covered

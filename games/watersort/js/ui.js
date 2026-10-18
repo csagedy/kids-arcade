@@ -9,6 +9,53 @@
   var won = false;        // true between solving a level and leaving the win card
   var tipWanted = false;  // first-ever level: show how to play
   var cheerNext = {};    // tubes that just became complete
+  var muted = false;
+  try { muted = localStorage.getItem('ws.mute') === '1'; } catch (e) {}
+
+  /* ---- sound: soft synthesised blips, no files. iOS only starts audio from a
+     touch, so the context is created and resumed on the first gesture. ---- */
+  var actx = null;
+  function audio() {
+    if (!actx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { actx = new AC(); } catch (e) { return null; }
+    }
+    if (actx.state === 'suspended' && actx.resume) actx.resume();
+    return actx;
+  }
+  function tone(freq, when, dur, vol, glideTo) {
+    if (muted || !actx) return;
+    try {
+      var t = actx.currentTime + when;
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(freq, t);
+      if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  var sfx = {
+    select: function () { tone(520, 0, 0.09, 0.08, 700); },
+    pour: function (n) {   // a few rising glugs, one per segment poured
+      for (var i = 0; i < Math.min(n, 4); i++) tone(300 + i * 40, 0.12 + i * 0.09, 0.1, 0.1, 480 + i * 40);
+    },
+    done: function () { [659, 784, 1047].forEach(function (f, i) { tone(f, 0.35 + i * 0.08, 0.25, 0.1); }); },
+    win: function () { [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, i * 0.11, 0.35, 0.12); }); }
+  };
+  // iOS counts touchend/click (not always pointerdown) as the unlocking gesture.
+  ['pointerdown', 'pointerup', 'touchend', 'click'].forEach(function (n) {
+    document.addEventListener(n, audio, { passive: true });
+  });
+  function setMuteButton() {
+    var b = document.getElementById('mute-btn');
+    b.textContent = muted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+    b.setAttribute('aria-label', muted ? 'Sound off' : 'Sound on');
+  }
 
   /* localStorage can throw in private browsing; never let that stop play. */
   function saveLevel(n) {
@@ -63,7 +110,13 @@
     var avail = board.clientWidth - 28;
     var w = Math.max(40, Math.min(62, Math.floor((avail - (perRow - 1) * 14) / perRow)));
     board.style.setProperty('--tube-w', w + 'px');
-    board.style.setProperty('--seg-h', Math.round(w * 0.62) + 'px');
+    // Few tubes on a tall screen: let the liquid grow taller so small hands
+    // have a big target, as far as the board height allows.
+    var rows = n <= 6 ? 1 : 2;
+    var segH = Math.round(w * 0.62);
+    var roomH = (board.clientHeight - rows * 70) / (rows * CAP);
+    if (roomH > segH) segH = Math.round(Math.min(w * 1.05, roomH));
+    board.style.setProperty('--seg-h', segH + 'px');
     game.tubes.forEach(function (tube, i) {
       var el = document.createElement('div');
       el.className = 'tube';
@@ -143,7 +196,7 @@
     if (won) return;
     hintTo = -1;
     if (selected < 0) {
-      if (game.tubes[i].length) { selected = i; render(); }
+      if (game.tubes[i].length) { selected = i; sfx.select(); render(); }
       return;
     }
     if (selected === i) { selected = -1; render(); return; }
@@ -168,7 +221,8 @@
         };
       }
       tipWanted = false;
-      if (!wasDone && game.isDone(i)) cheerNext[i] = true;
+      sfx.pour(n);
+      if (!wasDone && game.isDone(i)) { cheerNext[i] = true; sfx.done(); }
       selected = -1;
       saveGame();
       render();
@@ -177,6 +231,7 @@
       // Not a legal pour — treat the tap as picking a different tube instead
       // of just rejecting it, which is what a kid expects.
       selected = game.tubes[i].length ? i : -1;
+      if (selected >= 0) sfx.select();
       render();
     }
   }
@@ -184,6 +239,7 @@
   function win() {
     if (!game.isSolved()) { won = false; return; }
     confetti();
+    sfx.win();
     document.getElementById('win-n').textContent = game.level;
     document.getElementById('win').classList.remove('hidden');
     saveLevel(game.level + 1);
@@ -269,6 +325,14 @@
       requestAnimationFrame(tick);
     })(t0);
   }
+
+  document.getElementById('mute-btn').addEventListener('click', function () {
+    muted = !muted;
+    try { localStorage.setItem('ws.mute', muted ? '1' : '0'); } catch (e) {}
+    setMuteButton();
+    if (!muted) { audio(); sfx.select(); }
+  });
+  setMuteButton();
 
   var resumed = loadGame();
   // First time ever: a line of how-to under the tubes until the first pour.

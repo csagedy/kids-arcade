@@ -19,6 +19,7 @@
 
   function showLibrary() {
     game = null;
+    tutEnd();
     playEl.classList.add('hidden');
     libEl.classList.remove('hidden');
     document.getElementById('win').classList.add('hidden');
@@ -59,6 +60,7 @@
     var tip = document.getElementById('tip');
     tip.classList.toggle('hidden', Object.keys(NonoGame.solvedSet()).length > 0);
     build();
+    if (tutStart()) tip.classList.add('hidden');
   }
 
   function build() {
@@ -116,7 +118,68 @@
     document.getElementById('mode-fill').classList.toggle('on', mode === 1);
     document.getElementById('mode-x').classList.toggle('on', mode === 2);
     document.getElementById('undo-btn').disabled = !undoStack.length;
+    tutCheck();
   }
+
+  /* ---------- first-run tutorial (3x3 starter, shown once) ---------- */
+  var tutEl = document.getElementById('tut'), tutStep = -1, tutLine = -1, tutHl = [];
+
+  function tutClear() {
+    tutHl.forEach(function (el) { el.classList.remove('tuthl'); });
+    tutHl = [];
+  }
+  function tutHighlight(els) {
+    tutClear();
+    els.forEach(function (el) { if (el) { el.classList.add('tuthl'); tutHl.push(el); } });
+  }
+  function tutStart() {
+    var seen = false;
+    try { seen = !!localStorage.getItem('nono.tut'); } catch (e) {}
+    tutStep = -1;
+    tutEl.classList.add('hidden');
+    if (seen || game.w !== 3 || game.cells.some(function (v) { return v; }) ||
+        Object.keys(NonoGame.solvedSet()).length) return false;
+    try { localStorage.setItem('nono.tut', '1'); } catch (e) {}
+    tutLine = -1;   // a row whose clue fills the whole line
+    for (var r = 0; r < game.h; r++) if (game.rowClues[r][0] === game.w) { tutLine = r; break; }
+    tutShow(0);
+    return true;
+  }
+  function tutShow(n) {
+    tutStep = n;
+    var txt, btn = 'Next', hl = [];
+    if (n === 0) {
+      txt = 'The number says how many squares to fill in that row.';
+      if (tutLine >= 0) hl = [document.getElementById('rc' + tutLine)];
+    } else if (n === 1 && tutLine >= 0) {
+      txt = 'A ' + game.w + ' fills the whole row. Tap the squares, or drag across them!';
+      for (var c = 0; c < game.w; c++) hl.push(cellEls[tutLine * game.w + c]);
+      btn = 'Skip';
+    } else if (n === 2) {
+      txt = 'Nice! A finished row fades its number, and any spare squares get crossed out.';
+    } else {
+      txt = 'Now the columns: their numbers go down. Stuck? Tap Hint!';
+      btn = 'Got it';
+      n = 3;
+    }
+    tutStep = n;
+    tutEl.querySelector('.tut-txt').textContent = txt;
+    document.getElementById('tut-next').textContent = btn;
+    tutEl.classList.remove('hidden');
+    tutHighlight(hl);
+  }
+  function tutNext() {
+    if (tutStep < 0) return;
+    if (tutStep >= 3) { tutEnd(); return; }
+    tutShow(tutStep === 0 && tutLine < 0 ? 2 : tutStep + 1);
+  }
+  function tutEnd() {
+    tutStep = -1; tutClear(); tutEl.classList.add('hidden');
+  }
+  function tutCheck() {
+    if (tutStep === 1 && game && game.rowDone(tutLine)) tutShow(2);
+  }
+  document.getElementById('tut-next').addEventListener('click', tutNext);
 
   function toast(msg) {
     var t = document.getElementById('toast');
@@ -162,7 +225,24 @@
     }
     if (cur === drag.value) return;
     if (!drag.pushed) { pushUndo(); drag.pushed = true; }
-    game.set(i, drag.value); game.save(); render();
+    game.set(i, drag.value);
+    if (drag.value === 1) autoCross(i);
+    game.save(); render();
+  }
+
+  /* When a fill makes its row or column match the clue exactly, cross out the
+     rest of that line for the player (the clue dims too). Only on fills, so a
+     kid can still clear a cross by tapping it. */
+  function autoCross(i) {
+    var r = Math.floor(i / game.w), c = i % game.w, k;
+    // Only when the fills are the right ones: a wrong fill can still match
+    // the clue's counts, and crossing out the true squares would mislead.
+    function right(idx) { return (game.cells[idx] === 1) === (game.solution[idx] === 1); }
+    var rowOk = game.rowDone(r), colOk = game.colDone(c);
+    for (k = 0; k < game.w; k++) if (!right(r * game.w + k)) rowOk = false;
+    for (k = 0; k < game.h; k++) if (!right(k * game.w + c)) colOk = false;
+    if (rowOk) for (k = 0; k < game.w; k++) if (!game.cells[r * game.w + k]) game.cells[r * game.w + k] = 2;
+    if (colOk) for (k = 0; k < game.h; k++) if (!game.cells[k * game.w + c]) game.cells[k * game.w + c] = 2;
   }
 
   window.addEventListener('pointermove', function (e) {
