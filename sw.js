@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v16';
+var CACHE = 'arcade-v17';
 
 var FILES = [
   './',
@@ -15,6 +15,11 @@ var FILES = [
   './games/2048/style.css',
   './games/2048/js/game.js',
   './games/2048/js/ui.js',
+  './games/asteroids/icon.png',
+  './games/asteroids/index.html',
+  './games/asteroids/manifest.webmanifest',
+  './games/asteroids/js/game.js',
+  './games/asteroids/js/ui.js',
   './games/blockblast/icon.png',
   './games/blockblast/index.html',
   './games/blockblast/manifest.webmanifest',
@@ -38,6 +43,12 @@ var FILES = [
   './games/color/js/quantize.js',
   './games/color/js/render.js',
   './games/color/js/util.js',
+  './games/connect4/icon.png',
+  './games/connect4/index.html',
+  './games/connect4/manifest.webmanifest',
+  './games/connect4/style.css',
+  './games/connect4/js/game.js',
+  './games/connect4/js/ui.js',
   './games/dots/icon.png',
   './games/dots/index.html',
   './games/dots/manifest.webmanifest',
@@ -62,6 +73,12 @@ var FILES = [
   './games/invaders/manifest.webmanifest',
   './games/invaders/js/game.js',
   './games/invaders/js/ui.js',
+  './games/maze/icon.png',
+  './games/maze/index.html',
+  './games/maze/manifest.webmanifest',
+  './games/maze/style.css',
+  './games/maze/js/game.js',
+  './games/maze/js/ui.js',
   './games/memory/icon.png',
   './games/memory/index.html',
   './games/memory/manifest.webmanifest',

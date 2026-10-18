@@ -6,7 +6,10 @@ function SimonGame() {
   this.seq = [];
   this.pos = 0;        // how far through the sequence the player is
   this.best = SimonGame.loadBest();
+  this.lives = SimonGame.LIVES;   // misses allowed before the game ends
 }
+
+SimonGame.LIVES = 3;
 
 SimonGame.loadBest = function () {
   try { return parseInt(localStorage.getItem('simon.best'), 10) || 0; } catch (e) { return 0; }
@@ -36,3 +39,11 @@ SimonGame.prototype.press = function (pad) {
 };
 
 SimonGame.prototype.expected = function () { return this.seq[this.pos]; };
+
+/* A miss costs a heart and restarts the current sequence. Returns true if
+   the kid gets another go, false when the hearts have run out. */
+SimonGame.prototype.oops = function () {
+  this.lives--;
+  this.pos = 0;
+  return this.lives > 0;
+};

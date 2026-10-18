@@ -22,7 +22,8 @@ function seededRandom(seed) {
 
 /* How big and how many colours a level is. Ramps gently. */
 function flowLevelSpec(n) {
-  if (n <= 8)  return { size: 5, paths: 4 + (n > 4 ? 1 : 0) };
+  if (n <= 2)  return { size: 4, paths: 3 };
+  if (n <= 8)  return { size: 5, paths: 4 + (n > 5 ? 1 : 0) };
   if (n <= 20) return { size: 6, paths: 5 + (n > 14 ? 1 : 0) };
   if (n <= 40) return { size: 7, paths: 6 + (n > 30 ? 1 : 0) };
   if (n <= 70) return { size: 8, paths: 7 + (n > 55 ? 1 : 0) };

@@ -22,8 +22,13 @@ function BreakoutGame() {
   this.score = 0;
   this.lives = 3;
   this.levelIndex = 0;
+  this.paddleBase = 44;
   this.paddleW = 44;
   this.px = W / 2;
+  this.caps = [];        // falling power-up capsules
+  this.fxQueue = [];     // broken bricks for the UI's particles
+  this.wide = 0;         // seconds of wide paddle left
+  this.slow = 0;         // seconds of slow ball left
   this.loadLevel(0);
   this.serve();
 }
@@ -31,6 +36,7 @@ function BreakoutGame() {
 BreakoutGame.prototype.loadLevel = function (i) {
   this.levelIndex = i;
   this.bricks = [];
+  this.caps = [];
   var rows = LEVELS[i % LEVELS.length];
   var speedup = Math.floor(i / LEVELS.length);   // loop the layouts, faster each time
   this.baseSpeed = 120 + i * 8 + speedup * 20;
@@ -46,17 +52,32 @@ BreakoutGame.prototype.loadLevel = function (i) {
   }
 };
 
+/* Power-ups drop from about one brick in eight: W wide paddle, S slow ball,
+   + extra life (rare, max 5 lives). They fall straight down; catch with the paddle. */
+var POWERS = ['W', 'W', 'S', 'S', '+'];
+BreakoutGame.prototype.dropPower = function (k) {
+  if (Math.random() > 0.125) return;
+  this.caps.push({ x: k.x + BRICK_W / 2, y: k.y + BRICK_H, type: POWERS[Math.floor(Math.random() * POWERS.length)] });
+};
+
 BreakoutGame.prototype.serve = function () {
   this.ball = { x: this.px, y: H - 40, vx: 0, vy: 0, r: 3 };
   this.stuck = true;      // ball rides the paddle until the first tap
+  this.slow = 0;
+  this.lockT = 0.45;      // brief grace so a finger lifting from the last ball doesn't launch the next
 };
 
 BreakoutGame.prototype.launch = function () {
-  if (!this.stuck) return;
+  if (!this.stuck || this.lockT > 0) return;
   this.stuck = false;
   var a = (Math.random() - 0.5) * 0.8;
   this.ball.vx = Math.sin(a) * this.baseSpeed;
   this.ball.vy = -Math.cos(a) * this.baseSpeed;
+};
+
+BreakoutGame.prototype.setWide = function (on) {
+  this.paddleW = on ? 64 : this.paddleBase;
+  this.movePaddle(this.px);
 };
 
 BreakoutGame.prototype.movePaddle = function (x) {
@@ -66,20 +87,46 @@ BreakoutGame.prototype.movePaddle = function (x) {
 
 /* Returns a list of events for the UI to react to: 'brick', 'paddle', 'wall', 'lose', 'clear', 'over'. */
 BreakoutGame.prototype.update = function (dt) {
-  var ev = [];
+  var ev = [], py = H - 24;
+
+  // power-up timers and falling capsules keep going even while the ball is parked
+  if (this.wide > 0) { this.wide -= dt; if (this.wide <= 0) this.setWide(false); }
+  if (this.slow > 0) this.slow -= dt;
+  if (this.lockT > 0) this.lockT -= dt;
+  if (this.lockT > 0) this.lockT -= dt;
+  for (var c = this.caps.length - 1; c >= 0; c--) {
+    var cp = this.caps[c];
+    cp.y += 55 * dt;
+    if (cp.y + 4 >= py && cp.y <= py + 6 && Math.abs(cp.x - this.px) <= this.paddleW / 2 + 5) {
+      this.caps.splice(c, 1);
+      this.score += 50;
+      if (cp.type === 'W') { this.wide = 10; this.setWide(true); }
+      else if (cp.type === 'S') this.slow = 8;
+      else this.lives = Math.min(5, this.lives + 1);
+      ev.push('power');
+      this.lastPower = cp.type;
+    } else if (cp.y > H + 6) this.caps.splice(c, 1);
+  }
+
   if (this.stuck) return ev;
-  var b = this.ball;
+  var b = this.ball, mul = this.slow > 0 ? 0.7 : 1;
   var steps = 3;   // sub-steps so a fast ball can't tunnel through a brick
   for (var s = 0; s < steps; s++) {
-    b.x += b.vx * dt / steps;
-    b.y += b.vy * dt / steps;
+    b.x += b.vx * mul * dt / steps;
+    b.y += b.vy * mul * dt / steps;
 
     if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); ev.push('wall'); }
     if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); ev.push('wall'); }
     if (b.y < 12 + b.r) { b.y = 12 + b.r; b.vy = Math.abs(b.vy); ev.push('wall'); }
 
+    // never let the ball go nearly horizontal (it would bounce side to side for ages)
+    var sp = Math.hypot(b.vx, b.vy), minVy = sp * 0.3;
+    if (sp > 0 && Math.abs(b.vy) < minVy) {
+      b.vy = (b.vy < 0 ? -1 : 1) * minVy;
+      b.vx = (b.vx < 0 ? -1 : 1) * Math.sqrt(sp * sp - minVy * minVy);
+    }
+
     // paddle
-    var py = H - 24;
     if (b.vy > 0 && b.y + b.r >= py && b.y + b.r <= py + 6 && Math.abs(b.x - this.px) <= this.paddleW / 2 + b.r) {
       var hit = (b.x - this.px) / (this.paddleW / 2);   // -1..1
       var speed = Math.min(this.baseSpeed * 1.6, Math.hypot(b.vx, b.vy) + 3);
@@ -100,7 +147,11 @@ BreakoutGame.prototype.update = function (dt) {
       if (dx < dy) b.vx = -b.vx; else b.vy = -b.vy;
       k.hp--;
       this.score += 10 * (LEVELS[this.levelIndex % LEVELS.length].length - k.row);
-      if (k.hp <= 0) this.bricks.splice(i, 1);
+      if (k.hp <= 0) {
+        this.bricks.splice(i, 1);
+        this.fxQueue.push({ x: k.x + BRICK_W / 2, y: k.y + BRICK_H / 2, color: k.color });
+        this.dropPower(k);
+      }
       ev.push('brick');
       break;
     }
@@ -114,6 +165,7 @@ BreakoutGame.prototype.update = function (dt) {
   }
   if (!this.bricks.length) {
     ev.push('clear');
+    this.wide = 0; this.setWide(false);
     this.loadLevel(this.levelIndex + 1);
     this.serve();
   }

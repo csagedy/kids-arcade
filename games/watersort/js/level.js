@@ -42,18 +42,47 @@ function keyOf(state) {
   return state.map(function (t) { return t.join(','); }).sort().join('|');
 }
 
-/* Depth-first search with a visited set. Small state spaces, so this is
-   comfortably fast; the node cap stops a pathological deal hanging the page. */
-function isSolvable(state, nodeCap) {
+/* How far a position is from finished: the number of separate single-colour
+   runs across all tubes. Done is one run per colour, so lower is closer. */
+function runCount(state) {
+  var runs = 0;
+  for (var i = 0; i < state.length; i++) {
+    for (var j = 0; j < state[i].length; j++) {
+      if (j === 0 || state[i][j] !== state[i][j - 1]) runs++;
+    }
+  }
+  return runs;
+}
+
+/* Best-first search with a visited set: positions with fewer runs are tried
+   first, which finds short solutions (so hints don't wander). It is still a
+   complete search, and small enough that this is comfortably fast; the node
+   cap stops a pathological deal hanging the page.
+   Returns { moves: [[from,to], ...] or null, exhausted: bool } — `exhausted`
+   means the whole space was searched, so a null `moves` is a proven dead end
+   rather than just "ran out of patience". */
+function solve(state, nodeCap) {
   nodeCap = nodeCap || 120000;
   var seen = {};
-  var stack = [state.map(function (t) { return t.slice(); })];
-  var nodes = 0;
+  var buckets = [];          // buckets[h] is a LIFO list of positions with h runs
+  var low = 0, pending = 0, nodes = 0;
 
-  while (stack.length) {
-    var cur = stack.pop();
-    if (isSolved(cur)) return true;
-    if (++nodes > nodeCap) return false;
+  function add(s, path) {
+    var h = runCount(s);
+    (buckets[h] = buckets[h] || []).push({ s: s, path: path });
+    if (h < low) low = h;
+    pending++;
+  }
+  var start = state.map(function (t) { return t.slice(); });
+  low = runCount(start);
+  add(start, null);
+
+  while (pending) {
+    while (!buckets[low] || !buckets[low].length) low++;
+    var item = buckets[low].pop(), cur = item.s;
+    pending--;
+    if (isSolved(cur)) return { moves: flattenPath(item.path), exhausted: false };
+    if (++nodes > nodeCap) return { moves: null, exhausted: false };
 
     var k = keyOf(cur);
     if (seen[k]) continue;
@@ -68,11 +97,21 @@ function isSolvable(state, nodeCap) {
         var next = cur.map(function (t) { return t.slice(); });
         var n = pourCount(cur, from, to);
         for (var i = 0; i < n; i++) next[to].push(next[from].pop());
-        stack.push(next);
+        add(next, { m: [from, to], prev: item.path });
       }
     }
   }
-  return false;
+  return { moves: null, exhausted: true };
+}
+
+function flattenPath(path) {
+  var out = [];
+  for (; path; path = path.prev) out.unshift(path.m);
+  return out;
+}
+
+function isSolvable(state, nodeCap) {
+  return !!solve(state, nodeCap).moves;
 }
 
 function shuffle(arr) {
@@ -96,8 +135,9 @@ function deal(colorCount, emptyTubes) {
 }
 
 function makeLevel(n) {
-  // Ramp up slowly: three colours at first, one more every couple of levels.
-  var colorCount = Math.min(3 + Math.floor((n - 1) / 2), 9);
+  // Ramp up slowly: three colours at first, one more every couple of levels
+  // (so ten colours only arrive around level 15).
+  var colorCount = Math.min(3 + Math.floor((n - 1) / 2), 10);
   var empties = 2;
 
   for (var attempt = 0; attempt < 60; attempt++) {
@@ -105,6 +145,13 @@ function makeLevel(n) {
     if (isSolved(state)) continue;
     if (isSolvable(state)) return { number: n, colors: colorCount, state: state };
   }
-  // Give the player an easier board rather than an unsolvable one.
-  return { number: n, colors: colorCount, state: deal(Math.max(3, colorCount - 1), empties + 1) };
+  // Give the player an easier board rather than an unsolvable one: fewer
+  // colours and a spare tube, checked the same way.
+  for (var c = colorCount - 1; c >= 3; c--) {
+    for (var again = 0; again < 20; again++) {
+      var easier = deal(c, empties + 1);
+      if (!isSolved(easier) && isSolvable(easier)) return { number: n, colors: c, state: easier };
+    }
+  }
+  return { number: n, colors: 3, state: deal(3, 3) };
 }

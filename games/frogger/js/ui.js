@@ -4,19 +4,58 @@
   var ctx = fit.ctx;
   H = fit.h;
   var game = new FroggerGame(), playing = false, message = null;
+  var parts = [];   // particles: { x, y, vx, vy, life, max, c, s }
 
   function attract() {
     playing = false;
     game = new FroggerGame();
-    Cabinet.showOverlay({ title: 'FROGGER', lines: ['Tap above the frog to hop up', 'Tap beside it to sidestep'], scores: 'frogger', button: 'PRESS START', onButton: start });
+    Cabinet.showOverlay({ title: 'FROGGER', lines: ['Tap above the frog to hop up', 'Tap beside it to sidestep', 'Ride the logs, dodge cars'], scores: 'frogger', button: 'PRESS START', onButton: start });
   }
   function start() { game = new FroggerGame(); playing = true; }
-  function say(t, ms) { message = { text: t, until: performance.now() + ms }; }
+  function say(t, ms, c) { message = { text: t, until: performance.now() + ms, color: c || '#ffb300' }; }
+
+  function burst(x, y, n, colors, speed, up) {
+    for (var i = 0; i < n; i++) {
+      var a = Math.random() * Math.PI * 2, v = speed * (0.4 + Math.random() * 0.6);
+      parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (up || 0), life: 0.5 + Math.random() * 0.4, max: 0.9,
+        c: colors[Math.floor(Math.random() * colors.length)], s: Math.random() < 0.3 ? 2 : 1 });
+    }
+  }
+  function froggyXY() { return { x: game.frog.x + game.frog.w / 2, y: game.frog.row * CELL + CELL / 2 }; }
+
+  /* React to a result from hop() or update(). */
+  function react(r) {
+    var p = froggyXY();
+    if (r === 'hop') Cabinet.beep(520, 40, 'square', 0.06);
+    else if (r === 'home') {
+      Cabinet.beep(880, 80); setTimeout(function () { Cabinet.beep(1320, 120); }, 90);
+      burst(lastBay.x, lastBay.y, 18, ['#5eff5e', '#ffe93b', '#fff'], 60, 20); say('SAFE!', 700, '#5eff5e');
+    } else if (r === 'level') {
+      Cabinet.beep(660, 100); setTimeout(function () { Cabinet.beep(990, 200); }, 120);
+      burst(W / 2, H / 3, 40, ['#ffe93b', '#ff6bd6', '#4de8ff', '#5eff5e'], 90, 30);
+      say('LEVEL ' + game.level, 1400);
+    } else if (r === 'die') {
+      if (game.deathKind === 'splash') {
+        Cabinet.noise(220, 0.14); Cabinet.beep(320, 260, 'sine', 0.1, 90);
+        burst(p.x, p.y, 22, ['#4da3ff', '#9fd4ff', '#fff'], 70, 40); say('SPLASH!', 800, '#7cf2ff');
+      } else {
+        Cabinet.beep(200, 300, 'sawtooth', 0.15, 60);
+        burst(p.x, p.y, 22, ['#5eff5e', '#ff3b3b', '#ffe93b'], 80, 10); say('SPLAT!', 800, '#ff6b6b');
+      }
+      if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
+    }
+  }
+  var lastBay = { x: 0, y: 0 };
 
   function update(dt) {
     if (!playing) return;
+    for (var i = parts.length - 1; i >= 0; i--) {
+      var q = parts[i];
+      q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 120 * dt;
+      if (q.life <= 0) parts.splice(i, 1);
+    }
     var r = game.update(dt);
-    if (r === 'die') Cabinet.beep(200, 300, 'sawtooth', 0.15, 60);
+    if (r === 'die') react('die');
     else if (r === 'over') {
       playing = false;
       Cabinet.beep(90, 700, 'sawtooth', 0.18, 30);
@@ -39,7 +78,7 @@
     // home bays
     for (var b = 0; b < 5; b++) {
       var bx = b * (W / 5) + W / 10;
-      ctx.fillStyle = '#0d2a52'; ctx.fillRect(bx - 12, hr * CELL, 24, CELL);
+      ctx.fillStyle = '#0d2a52'; ctx.fillRect(bx - 14, hr * CELL, 28, CELL);
       if (g.homes[b]) drawFrog(bx - 6, hr * CELL + 2, '#5eff5e');
     }
     // lanes
@@ -60,23 +99,54 @@
       });
     });
     // frog
+    var fy = g.frog.row * CELL + 2;
     if (g.dead) {
-      var k = g.dead % 10 < 5;
-      ctx.fillStyle = k ? '#ff3b3b' : '#ffe93b';
-      ctx.fillRect(g.frog.x - 2, g.frog.row * CELL + 2, g.frog.w + 4, 12);
+      var t = 50 - g.dead;   // frames since death
+      if (g.deathKind === 'splash') {
+        // sink: shrink away under expanding rings
+        if (t < 24) drawFrog(g.frog.x, fy + t * 0.3, '#5eff5e', 1 - t / 24);
+        ctx.strokeStyle = '#9fd4ff'; ctx.lineWidth = 1;
+        for (var rr = 0; rr < 2; rr++) {
+          var rad = (t + rr * 8) % 24;
+          ctx.globalAlpha = 1 - rad / 24;
+          ctx.strokeRect(Math.round(g.frog.x + 6 - rad * 0.6), Math.round(fy + 6 - rad * 0.3), Math.round(rad * 1.2), Math.round(rad * 0.6));
+        }
+        ctx.globalAlpha = 1;
+      } else {
+        // squashed flat with an X
+        ctx.fillStyle = g.dead % 10 < 5 ? '#ff3b3b' : '#ffe93b';
+        ctx.fillRect(g.frog.x - 2, fy + 5, g.frog.w + 4, 4);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(g.frog.x + 2, fy + 5, 1, 1); ctx.fillRect(g.frog.x + 4, fy + 6, 1, 1);
+        ctx.fillRect(g.frog.x + 7, fy + 5, 1, 1); ctx.fillRect(g.frog.x + 9, fy + 6, 1, 1);
+      }
     } else {
-      drawFrog(g.frog.x, g.frog.row * CELL + 2, '#5eff5e');
+      // little hop: lift and stretch for a few frames
+      var lift = g.hopT < 8 ? Math.round(Math.sin(g.hopT / 8 * Math.PI) * 3) : 0;
+      drawFrog(g.frog.x, fy - lift, '#5eff5e', 1);
     }
+    // particles
+    for (var pi = 0; pi < parts.length; pi++) {
+      var pp = parts[pi];
+      ctx.globalAlpha = Math.min(1, pp.life * 2.5);
+      ctx.fillStyle = pp.c; ctx.fillRect(Math.round(pp.x), Math.round(pp.y), pp.s, pp.s);
+    }
+    ctx.globalAlpha = 1;
     // hud
     ctx.fillStyle = '#05060c'; ctx.fillRect(0, 0, W, 12);
     Cabinet.text(ctx, 'SCORE ' + g.score, 4, 3, 1, '#7cf2ff');
     Cabinet.text(ctx, 'LV ' + g.level, W / 2, 3, 1, '#ffb300', 'center');
     ctx.fillStyle = '#5eff5e';
     for (var i = 0; i < g.lives; i++) ctx.fillRect(W - 8 - i * 8, 4, 5, 4);
-    if (message && performance.now() < message.until) Cabinet.text(ctx, message.text, W / 2, H / 2, 2, '#ffb300', 'center');
+    if (message && performance.now() < message.until) Cabinet.text(ctx, message.text, W / 2, H / 2, 2, message.color, 'center');
   }
 
-  function drawFrog(x, y, color) {
+  function drawFrog(x, y, color, k) {
+    if (k !== undefined && k < 1) {   // shrinking sink animation
+      var w = Math.max(2, Math.round(12 * k));
+      ctx.fillStyle = color; ctx.fillRect(Math.round(x + 6 - w / 2), Math.round(y + 6 - w / 2), w, w);
+      return;
+    }
     ctx.fillStyle = color;
     ctx.fillRect(x + 2, y, 8, 12);
     ctx.fillRect(x, y + 2, 2, 4); ctx.fillRect(x + 10, y + 2, 2, 4);
@@ -87,18 +157,22 @@
   /* Tap relative to the frog: above hops up, below hops down, beside sidesteps. */
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
-    if (!playing) return;
+    if (!playing || Cabinet.paused()) return;
     var p = Cabinet.pointer(canvas, e);
     var fx = game.frog.x + game.frog.w / 2, fy = game.frog.row * CELL + CELL / 2;
     var dx = p.x - fx, dy = p.y - fy, r;
+    if (!game.dead) {
+      var f0 = game.frog, bx0 = Math.min(4, Math.floor((f0.x + f0.w / 2) / (W / 5)));
+      lastBay = { x: bx0 * (W / 5) + W / 10, y: game.homeRow * CELL + 8 };
+    }
     if (Math.abs(dx) > Math.abs(dy) * 1.6) r = game.hop(dx > 0 ? 1 : -1, 0);
     else r = game.hop(0, dy < 0 ? 1 : -1);
-    if (r === 'hop') Cabinet.beep(520, 40, 'square', 0.06);
-    if (r === 'home') { Cabinet.beep(880, 80); setTimeout(function () { Cabinet.beep(1320, 120); }, 90); }
-    if (r === 'level') { say('LEVEL ' + game.level, 1400); Cabinet.beep(660, 100); setTimeout(function () { Cabinet.beep(990, 200); }, 120); }
+    react(r);
   });
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
+  Cabinet.addPauseButton(function () { return playing; });
+  Cabinet.autoPause(function () { return playing; });
   attract();
   Cabinet.loop(update, render);
   window.__frog = { game: function () { return game; }, start: start };

@@ -32,7 +32,7 @@ html, body {
 .board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 12px; min-height: 0; }
 canvas { touch-action: none; display: block; }
 
-.hint { text-align: center; color: var(--muted); font-size: 13px; padding: 4px 20px calc(env(safe-area-inset-bottom) + 18px); }
+.hint { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--muted); font-size: 13px; padding: 4px 20px calc(env(safe-area-inset-bottom) + 18px); }
 
 .pill { border: none; border-radius: 999px; padding: 11px 20px; background: var(--panel-2); color: var(--text); font-size: 15px; font-weight: 600; }
 .pill.primary { background: var(--accent); color: #24201a; }
@@ -45,3 +45,10 @@ canvas { touch-action: none; display: block; }
 .perfect { color: var(--accent); font-weight: 700; font-size: 14px; margin: -4px 0 14px; }
 .over-actions { display: flex; gap: 10px; justify-content: center; }
 @keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.pill.small { padding: 10px 18px; font-size: 14px; min-height: 44px; }
+.confetti { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px; animation: fall 1.8s ease-in forwards; }
+@keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: 0.9; } }
+.over-card .over-emoji { animation: bounce 0.8s ease-in-out infinite alternate; }
+@keyframes bounce { to { transform: translateY(-8px) scale(1.08); } }

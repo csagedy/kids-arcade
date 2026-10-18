@@ -43,9 +43,32 @@
   .game {
     display: block; text-decoration: none; color: inherit;
     background: var(--panel); border-radius: 18px; overflow: hidden;
+    transition: transform 0.12s, filter 0.12s;
+    animation: pop 0.35s cubic-bezier(.2,1.3,.5,1) both; animation-delay: calc(var(--i, 0) * 35ms);
+  }
+  .game:active { transform: scale(0.94); filter: brightness(1.12); }
+  @keyframes pop { from { transform: translateY(10px) scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .art .emoji { display: inline-block; transition: transform 0.12s; }
+  .game:active .emoji { transform: scale(1.15) rotate(-6deg); }
+  .new { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.12); } }
+
+  .resume {
+    display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit;
+    background: linear-gradient(135deg, #2b3350, #1e222b); border: 2px solid var(--accent);
+    border-radius: 18px; padding: 12px 16px; margin-bottom: 16px; min-height: 64px;
     transition: transform 0.12s;
   }
-  .game:active { transform: scale(0.96); }
+  .resume:active { transform: scale(0.97); }
+  .resume .r-emoji { font-size: 36px; }
+  .resume .r-text { flex: 1; min-width: 0; }
+  .resume .r-top { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent); }
+  .resume .r-name { font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .resume .r-go { font-size: 22px; color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) {
+    .game, .new, .sheet { animation: none !important; }
+    .game, .cab, .resume, .art .emoji { transition: none; }
+  }
   .art { height: 104px; display: flex; align-items: center; justify-content: center; font-size: 46px; position: relative; }
   .art .new {
     position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 800;
@@ -66,6 +89,8 @@
   .art.simon  { background: linear-gradient(135deg, #3fb950, #e5484d); }
   .art.tangram{ background: linear-gradient(135deg, #ff8a3d, #a06cf0); }
   .art.dots   { background: linear-gradient(135deg, #f06ca8, #26c6c6); }
+  .art.maze   { background: linear-gradient(135deg, #7bd88f, #2e9e6b); }
+  .art.c4     { background: linear-gradient(135deg, #5b8cff, #2f5fd0); }
 
   /* action section: little arcade cabinets */
   .section { margin-top: 30px; }
@@ -80,9 +105,9 @@
     display: block; text-decoration: none; color: inherit;
     background: linear-gradient(180deg, #262a36, #1a1c24); border-radius: 12px 12px 8px 8px;
     padding: 8px 8px 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
-    transition: transform 0.12s;
+    transition: transform 0.12s, filter 0.12s;
   }
-  .cab:active { transform: scale(0.96); }
+  .cab:active { transform: scale(0.94); filter: brightness(1.15); }
   .cab-screen {
     height: 78px; border-radius: 8px; background: #000; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: center; font-size: 34px;
@@ -146,6 +171,7 @@
   </div>
   <div class="sub">No ads. No timers. Just games.</div>
 
+  <div id="resume-slot"></div>
   <div class="games" id="games"></div>
 
   <div class="section" id="action">
@@ -191,7 +217,9 @@
     { id: 'flow',       name: 'Flow',            emoji: '🔗', art: 'flow',   href: 'games/flow/index.html', isNew: true },
     { id: 'simon',      name: 'Simon',           emoji: '🎵', art: 'simon',  href: 'games/simon/index.html', isNew: true },
     { id: 'shapes',     name: 'Shape Fit',       emoji: '🧩', art: 'tangram', href: 'games/shapes/index.html', isNew: true },
-    { id: 'dots',       name: 'Dot to Dot',      emoji: '🔵', art: 'dots',   href: 'games/dots/index.html', isNew: true }
+    { id: 'dots',       name: 'Dot to Dot',      emoji: '🔵', art: 'dots',   href: 'games/dots/index.html', isNew: true },
+    { id: 'maze',       name: 'Maze',            emoji: '🐭', art: 'maze',   href: 'games/maze/index.html', isNew: true },
+    { id: 'connect4',   name: 'Four in a Row',   emoji: '🔴', art: 'c4',     href: 'games/connect4/index.html', isNew: true }
   ];
 
   /* Action games live in their own "cabinet" section: timers, lives, high
@@ -202,35 +230,70 @@
     { id: 'missile',  name: 'Missile Command', emoji: '🚀', href: 'games/missile/index.html', isNew: true },
     { id: 'frogger',  name: 'Frogger',         emoji: '🐸', href: 'games/frogger/index.html', isNew: true },
     { id: 'invaders', name: 'Space Invaders',  emoji: '👾', href: 'games/invaders/index.html', isNew: true },
-    { id: 'pong',     name: 'Pong',            emoji: '🏓', href: 'games/pong/index.html', isNew: true }
+    { id: 'pong',     name: 'Pong',            emoji: '🏓', href: 'games/pong/index.html', isNew: true },
+    { id: 'asteroids',name: 'Asteroids',       emoji: '☄️', href: 'games/asteroids/index.html', isNew: true }
   ];
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  // Older Color by Number builds saved the stat JSON-encoded, quotes and all.
+  function statOf(id) { var s = get('arcade.stat.' + id); return s && s.charAt(0) === '"' ? s.slice(1, -1) : s; }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  /* Opening a tile records it as seen (hides its NEW badge) and as the last
+     game played (drives the "Keep playing" shortcut). */
+  function noteOpened(id) { set('arcade.seen.' + id, '1'); set('arcade.last', id); }
+  function bindOpen(a, id) {
+    a.addEventListener('click', function () { noteOpened(id); });
+  }
+  function isFresh(g, stat) { return !!g.isNew && !stat && !get('arcade.seen.' + g.id); }
+
+  function renderResume() {
+    var slot = document.getElementById('resume-slot');
+    slot.innerHTML = '';
+    var last = get('arcade.last'), g = null;
+    GAMES.concat(ACTION).forEach(function (x) { if (x.id === last) g = x; });
+    if (!g) return;
+    var a = document.createElement('a');
+    a.className = 'resume'; a.href = g.href;
+    a.setAttribute('aria-label', 'Keep playing ' + g.name);
+    a.innerHTML = '<span class="r-emoji" aria-hidden="true"></span><span class="r-text"><div class="r-top">KEEP PLAYING</div><div class="r-name"></div></span><span class="r-go" aria-hidden="true">&#9654;</span>';
+    a.querySelector('.r-emoji').textContent = g.emoji;
+    a.querySelector('.r-name').textContent = g.name;
+    bindOpen(a, g.id);
+    slot.appendChild(a);
+  }
 
   function renderTiles() {
     var root = document.getElementById('games');
     root.innerHTML = '';
     var cab = document.getElementById('cabinet');
     cab.innerHTML = '';
+    renderResume();
     ACTION.forEach(function (g) {
       var a = document.createElement('a');
       a.className = 'cab'; a.href = g.href; a.id = 'cab-' + g.id;
-      var stat = get('arcade.stat.' + g.id);
-      a.innerHTML = '<div class="cab-screen"><span class="cab-emoji"></span></div><div class="cab-name"></div><div class="cab-stat"></div>';
+      var stat = statOf(g.id);
+      a.innerHTML = '<div class="cab-screen"><span class="cab-emoji" aria-hidden="true"></span></div><div class="cab-name"></div><div class="cab-stat"></div>';
       a.querySelector('.cab-emoji').textContent = g.emoji;
       a.querySelector('.cab-name').textContent = g.name;
-      a.querySelector('.cab-stat').textContent = stat || (g.isNew ? 'NEW' : '');
+      a.querySelector('.cab-stat').textContent = stat || (isFresh(g, stat) ? 'NEW' : '');
+      a.setAttribute('aria-label', g.name + (stat ? ', ' + stat : ''));
+      bindOpen(a, g.id);
       cab.appendChild(a);
     });
-    GAMES.forEach(function (g) {
+    GAMES.forEach(function (g, i) {
       var a = document.createElement('a');
       a.className = 'game'; a.href = g.href;
-      var stat = get('arcade.stat.' + g.id);
+      a.style.setProperty('--i', i);
+      var stat = statOf(g.id);
       a.innerHTML =
-        '<div class="art ' + g.art + '">' + g.emoji + (g.isNew && !stat ? '<span class="new">NEW</span>' : '') + '</div>' +
+        '<div class="art ' + g.art + '"><span class="emoji" aria-hidden="true"></span>' + (isFresh(g, stat) ? '<span class="new">NEW</span>' : '') + '</div>' +
         '<div class="meta"><div class="name"></div><div class="stat' + (stat ? ' has' : '') + '"></div></div>';
+      a.querySelector('.emoji').textContent = g.emoji;
       a.querySelector('.name').textContent = g.name;
       a.querySelector('.stat').textContent = stat || 'Not played yet';
+      a.setAttribute('aria-label', g.name + ', ' + (stat || 'not played yet'));
+      bindOpen(a, g.id);
       root.appendChild(a);
     });
   }
@@ -257,6 +320,7 @@
     caches.match('./__precache').then(function (r) { return r ? r.text() : null; }).then(function (t) {
       if (!t) { setPill('', 'Preparing offline…'); return; }
       var p = t.split('/'), got = +p[0], total = +p[1];
+      if (!(total > 0)) { setPill('', 'Preparing offline…'); return; }
       if (got >= total) setPill('ok', 'Ready offline');
       else setPill('partial', 'Offline: ' + got + '/' + total + ' files');
     }).catch(function () { setPill('', 'Online only'); });
@@ -280,24 +344,29 @@
       // "Update now": ask the worker to check for a new version, then reload
       // once the new one takes over. Handy when a phone seems stuck.
       var updateBtn = document.getElementById('update-btn');
+      var reloaded = false, hadController = !!navigator.serviceWorker.controller;
+      // Only reload when an existing controller is swapped (not on first-install claim).
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (hadController && !reloaded && updateBtn.disabled) { reloaded = true; location.reload(); }
+        hadController = true;
+      });
       updateBtn.addEventListener('click', function () {
+        if (updateBtn.disabled) return;
+        updateBtn.disabled = true;
         updateBtn.textContent = 'Checking…';
-        var reloaded = false;
-        navigator.serviceWorker.addEventListener('controllerchange', function () {
-          if (!reloaded) { reloaded = true; location.reload(); }
-        });
         navigator.serviceWorker.getRegistration().then(function (reg) {
           if (!reg) { location.reload(); return; }
           return reg.update().then(function () {
             setTimeout(function () {
               if (reloaded) return;
               updateBtn.textContent = 'Up to date';
-              setTimeout(function () { updateBtn.textContent = 'Update now'; }, 2000);
+              setTimeout(function () { updateBtn.textContent = 'Update now'; updateBtn.disabled = false; }, 2000);
               checkOffline();
             }, 4000);
           });
         }).catch(function () { location.reload(); });
       });
+      window.addEventListener('online', checkOffline);
     });
   } else {
     setPill('', 'Online only');
@@ -332,11 +401,13 @@
 
   function decode(text) {
     text = (text || '').replace(/\s+/g, '');
+    if (text.length > 6000000) throw new Error('too big');
     var i = text.indexOf(PREFIX);
     if (i < 0) throw new Error('not a backup code');
     var json = decodeURIComponent(escape(atob(text.slice(i + PREFIX.length))));
     var obj = JSON.parse(json);
-    if (!obj || obj.v !== 1 || typeof obj.d !== 'object') throw new Error('bad version');
+    if (!obj || obj.v !== 1 || !obj.d || typeof obj.d !== 'object' || Array.isArray(obj.d)) throw new Error('bad version');
+    Object.keys(obj.d).forEach(function (k) { if (typeof obj.d[k] !== 'string') throw new Error('bad value'); });
     return obj;
   }
 
@@ -378,16 +449,25 @@
     try { obj = decode(code.value); } catch (e) { say("That doesn't look like a backup code.", 'bad'); return; }
     var n = Object.keys(obj.d).length;
     var when = obj.t ? new Date(obj.t).toLocaleDateString() : 'unknown date';
-    if (!confirm('Replace the progress on this phone with the backup from ' + when + ' (' + n + ' items)?')) return;
+    if (!n) { say('That backup is empty, so nothing was changed.', 'bad'); return; }
+    if (!confirm('Replace ALL progress on this phone with the backup from ' + when + ' (' + n + ' items)? This cannot be undone.')) return;
+    // Snapshot first so a failed write (storage full) rolls back instead of losing progress.
+    var before = allKeys();
     try {
       localStorage.clear();
       Object.keys(obj.d).forEach(function (k) { localStorage.setItem(k, obj.d[k]); });
-    } catch (e) { say('Could not write to storage on this phone.', 'bad'); return; }
+    } catch (e) {
+      try {
+        localStorage.clear();
+        Object.keys(before).forEach(function (k) { localStorage.setItem(k, before[k]); });
+      } catch (e2) {}
+      say('Could not write to storage, so nothing was changed.', 'bad'); return;
+    }
     say('Restored ' + n + ' items.', 'ok');
     renderTiles();
   });
 
-  window.__arcade = { GAMES: GAMES, encode: encode, decode: decode };
+  window.__arcade = { GAMES: GAMES, ACTION: ACTION, encode: encode, decode: decode };
 })();
 </script>
 </body>

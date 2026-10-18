@@ -21,7 +21,7 @@ function ShapesGame(level, saved) {
   this.grid = level.grid;
   this.inside = level.inside;
   this.pieces = level.pieces.map(function (p) {
-    return { cells: p.cells, color: p.color, rot: 0, pos: null };
+    return { cells: p.cells, color: p.color, at: p.at, rot: 0, pos: null };
   });
   if (saved && saved.level === level.number && saved.pieces && saved.pieces.length === this.pieces.length) {
     for (var i = 0; i < this.pieces.length; i++) {
@@ -100,6 +100,24 @@ ShapesGame.prototype.rotate = function (i) {
 ShapesGame.prototype.isSolved = function () {
   for (var i = 0; i < this.pieces.length; i++) if (!this.pieces[i].pos) return false;
   return true;   // every piece placed means the outline is exactly covered
+};
+
+/* Hint: put one piece where it was cut from, moving out of the way any
+   piece sitting on those cells. Prefers a piece still in the tray. Returns
+   the piece index or -1. */
+ShapesGame.prototype.hint = function () {
+  var pick = -1, i;
+  for (i = 0; i < this.pieces.length && pick < 0; i++) if (!this.pieces[i].pos) pick = i;
+  if (pick < 0) return -1;
+  var p = this.pieces[pick];
+  p.rot = 0;
+  var cells = rotateCells(p.cells, 0), hit = {};
+  for (i = 0; i < cells.length; i++) hit[(p.at[0] + cells[i][0]) * this.grid + p.at[1] + cells[i][1]] = 1;
+  var occ = this.occupancy();
+  for (var k in hit) if (occ[k] >= 0 && occ[k] !== pick) this.pieces[occ[k]].pos = null;
+  p.pos = [p.at[0], p.at[1]];
+  this.save();
+  return pick;
 };
 
 ShapesGame.prototype.reset = function () {

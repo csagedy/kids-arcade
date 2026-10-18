@@ -2,7 +2,7 @@
   var stage = $('#stage');
   var canvas = $('#canvas');
   var renderer = new Renderer(canvas, stage);
-  bindInput(stage, renderer, onPaintCell);
+  bindInput(stage, renderer, onPaintCell, onTapOther);
 
   var current = null;     // active puzzle
   var flags = null;       // painted flags for it
@@ -20,7 +20,16 @@
   function publishStat() {
     var list = allPuzzles(), finished = 0;
     list.forEach(function (p) { if (paintedCount(p, loadProgress(p)) === p.total) finished++; });
-    store.set('arcade.stat.color', finished === 1 ? '1 finished' : finished + ' finished');
+    // Raw string, not store.set: that JSON-encodes, and the menu would show the quotes.
+    try {
+      if (finished) localStorage.setItem('arcade.stat.color', finished === 1 ? '1 finished' : finished + ' finished');
+      else localStorage.removeItem('arcade.stat.color');
+    } catch (e) {}
+  }
+
+  function fade(hex) {
+    var rgb = hexToRgb(hex);
+    return 'rgb(' + [0, 1, 2].map(function (c) { return Math.round(rgb[c] * 0.35 + 255 * 0.65); }).join(',') + ')';
   }
 
   function thumb(puzzle, size) {
@@ -34,8 +43,9 @@
     for (var i = 0; i < puzzle.cells.length; i++) {
       var v = puzzle.cells[i];
       if (v === 0) continue;
-      // Show finished parts in colour and the rest as grey, like a preview.
-      ctx.fillStyle = f[i] ? puzzle.palette[v] : '#e4e4e4';
+      // Finished parts in full colour; the rest as a faint wash so you can
+      // still tell what the picture will be.
+      ctx.fillStyle = f[i] ? puzzle.palette[v] : fade(puzzle.palette[v]);
       ctx.fillRect(i % puzzle.w, Math.floor(i / puzzle.w), 1, 1);
     }
     return c;
@@ -150,8 +160,15 @@
     $('#progress-bar').style.width = (painted / current.total * 100) + '%';
   }
 
+  /* Tapping a numbered cell of another colour just picks that colour. */
+  function onTapOther(idx) {
+    var v = current.cells[idx];
+    if (!flags[idx] && v && v !== renderer.active) selectColor(v);
+  }
+
+  /* Returns true when the cell was actually painted. */
   function onPaintCell(idx) {
-    if (flags[idx] || current.cells[idx] !== renderer.active) return;
+    if (flags[idx] || current.cells[idx] !== renderer.active) return false;
     var n = renderer.active;
 
     renderer.markPainted(idx);
@@ -162,9 +179,19 @@
     queueSave();
 
     if (remaining[n] === 0) {
+      popSwatch(n);
       if (painted >= current.total) finish();
       else setTimeout(function () { selectColor(firstUnfinished()); }, 260);
     }
+    return true;
+  }
+
+  function popSwatch(n) {
+    var b = document.querySelector('.swatch[data-n="' + n + '"]');
+    if (!b) return;
+    b.classList.remove('pop');
+    void b.offsetWidth;
+    b.classList.add('pop');
   }
 
   function queueSave() {
@@ -190,7 +217,44 @@
       dc.clearRect(0, 0, 240, 240);
       dc.drawImage(t, 0, 0, 240, 240);
       $('#done').classList.remove('hidden');
+      confetti();
     }, 420);
+  }
+
+  /* A short burst of paper bits on a throwaway canvas; stops by itself. */
+  function confetti() {
+    var c = $('#confetti');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = window.innerWidth, H = window.innerHeight;
+    c.width = W * dpr; c.height = H * dpr;
+    var ctx = c.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var cols = current.palette.slice(1);
+    var bits = [];
+    for (var i = 0; i < 70; i++) {
+      bits.push({
+        x: W / 2 + (Math.random() - 0.5) * 60, y: H * 0.4,
+        vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 11 - 3,
+        r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+        s: 6 + Math.random() * 6, c: cols[i % cols.length]
+      });
+    }
+    var t0 = performance.now();
+    (function tick(now) {
+      var age = now - t0;
+      ctx.clearRect(0, 0, W, H);
+      if (age > 2600 || $('#done').classList.contains('hidden')) return;
+      bits.forEach(function (b) {
+        b.vy += 0.32; b.x += b.vx; b.y += b.vy; b.r += b.vr; b.vx *= 0.99;
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (2600 - age) / 500);
+        ctx.translate(b.x, b.y); ctx.rotate(b.r);
+        ctx.fillStyle = b.c;
+        ctx.fillRect(-b.s / 2, -b.s / 4, b.s, b.s / 2);
+        ctx.restore();
+      });
+      requestAnimationFrame(tick);
+    })(t0);
   }
 
   /* ---------------- photo import ---------------- */

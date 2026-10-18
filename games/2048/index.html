@@ -20,6 +20,7 @@
     <div class="score" id="score">0</div>
     <div class="best">Best <span id="best">0</span></div>
   </div>
+  <button id="undo-btn" class="icon-btn" aria-label="Undo" disabled>↶</button>
   <button id="restart-btn" class="icon-btn" aria-label="New game">⟳</button>
 </header>
 
@@ -30,12 +31,15 @@
   <div id="gain" class="gain"></div>
 </div>
 
-<div class="hint">Swipe to slide the tiles. Same numbers add up.</div>
+<div class="hint">Swipe to slide the tiles. Same numbers add up. Can you make 2048?</div>
+
+<div id="confetti" class="confetti"></div>
 
 <div id="won" class="over hidden">
   <div class="over-card">
     <div class="over-emoji">🏆</div>
     <h2>You made 2048!</h2>
+    <div class="over-sub">Amazing! Keep going to build even bigger tiles.</div>
     <div class="over-actions">
       <button id="won-new" class="pill">New game</button>
       <button id="won-go" class="pill primary">Keep going</button>
@@ -45,10 +49,26 @@
 
 <div id="over" class="over hidden">
   <div class="over-card">
+    <div class="over-emoji">🎈</div>
     <h2>No moves left</h2>
+    <div class="over-sub">Nice game! Your biggest tile was <b id="over-tile">2</b>.</div>
     <div class="over-score"><span id="over-score">0</span></div>
-    <div class="over-best">Best <span id="over-best">0</span></div>
-    <button id="over-again" class="pill primary">Play again</button>
+    <div class="over-best" id="over-best-line">Best <span id="over-best">0</span></div>
+    <div class="over-actions">
+      <button id="over-undo" class="pill">Undo last move</button>
+      <button id="over-again" class="pill primary">Play again</button>
+    </div>
+  </div>
+</div>
+
+<div id="ask" class="over hidden">
+  <div class="over-card">
+    <h2>Start a new game?</h2>
+    <div class="over-sub">Your current game will be lost.</div>
+    <div class="over-actions">
+      <button id="ask-no" class="pill">Keep playing</button>
+      <button id="ask-yes" class="pill primary">New game</button>
+    </div>
   </div>
 </div>
 

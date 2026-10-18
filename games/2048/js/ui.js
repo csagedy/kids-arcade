@@ -1,7 +1,7 @@
 (function () {
   var boardEl = document.getElementById('board');
   var tilesEl = document.getElementById('tiles');
-  var game, busy = false;
+  var game, busy = false, queued = -1;
 
   var LABEL = ['', '2', '4', '8', '16', '32', '64', '128', '256', '512', '1024', '2048', '4096', '8192'];
 
@@ -36,6 +36,7 @@
     }
     document.getElementById('score').textContent = game.score;
     document.getElementById('best').textContent = game.best;
+    document.getElementById('undo-btn').disabled = !game.prev;
   }
 
   function showGain(g) {
@@ -45,8 +46,13 @@
     el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   }
 
+  function overlayOpen() {
+    return !!document.querySelector('.over:not(.hidden)');
+  }
+
   function move(dir) {
-    if (busy) return;
+    if (overlayOpen()) return;
+    if (busy) { queued = dir; return; }   // a quick second swipe waits its turn
     var res = game.move(dir);
     if (!res) { nudge(dir); return; }
     busy = true;
@@ -61,9 +67,30 @@
       render([res.spawned], res.merges);
       showGain(res.gained);
       busy = false;
-      if (game.won && !game.keepGoing) { won(); return; }
-      if (!game.canMove()) setTimeout(over, 400);
+      if (res.merges.length) buzz(10);
+      if (game.won && !game.keepGoing) { queued = -1; won(); return; }
+      if (!game.canMove()) { queued = -1; setTimeout(over, 500); return; }
+      if (queued >= 0) { var q = queued; queued = -1; move(q); }
     }, 110);
+  }
+
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  function confetti() {
+    var box = document.getElementById('confetti');
+    var colors = ['#ffc53d', '#e5484d', '#3fb950', '#4fa3f7', '#a06cf0', '#f06ca8'];
+    box.innerHTML = '';
+    for (var k = 0; k < 40; k++) {
+      var p = document.createElement('i');
+      var a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 170;
+      p.style.background = colors[k % colors.length];
+      p.style.setProperty('--dx', Math.round(Math.cos(a) * d) + 'px');
+      p.style.setProperty('--dy', Math.round(Math.sin(a) * d + 120) + 'px');
+      p.style.setProperty('--rot', Math.round(Math.random() * 720 - 360) + 'deg');
+      p.style.animationDelay = (Math.random() * 0.25) + 's';
+      box.appendChild(p);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 2200);
   }
 
   function nudge(dir) {
@@ -75,12 +102,29 @@
 
   function won() {
     document.getElementById('won').classList.remove('hidden');
+    confetti();
+    buzz([30, 40, 30]);
   }
 
   function over() {
     document.getElementById('over-score').textContent = game.score;
     document.getElementById('over-best').textContent = game.best;
+    document.getElementById('over-tile').textContent = LABEL[game.maxTile()] || String(1 << game.maxTile());
+    var line = document.getElementById('over-best-line');
+    var isBest = game.score > 0 && game.score >= game.best;
+    line.classList.toggle('new', isBest);
+    line.textContent = isBest ? 'New best score!' : 'Best ' + game.best;
+    document.getElementById('over-undo').classList.toggle('hidden', !game.prev);
+    boardEl.classList.add('dim');
     document.getElementById('over').classList.remove('hidden');
+  }
+
+  function undo() {
+    if (busy || !game.undo()) return;
+    queued = -1;
+    document.getElementById('over').classList.add('hidden');
+    boardEl.classList.remove('dim');
+    render(null);
   }
 
   function newGame() {
@@ -89,7 +133,17 @@
     game.save();
     document.getElementById('over').classList.add('hidden');
     document.getElementById('won').classList.add('hidden');
+    document.getElementById('ask').classList.add('hidden');
+    boardEl.classList.remove('dim');
+    queued = -1;
     render(null);
+  }
+
+  /* A game in progress is worth a second thought before it's thrown away. */
+  function askNew() {
+    if (overlayOpen()) return;
+    if (game.score === 0) { newGame(); return; }
+    document.getElementById('ask').classList.remove('hidden');
   }
 
   function resumeOrNew() {
@@ -98,16 +152,17 @@
     game = new G2048(saved);
     if (!game.canMove()) { newGame(); return; }
     render(null);
+    if (game.won && !game.keepGoing) won();
   }
 
   /* ---- input: swipes anywhere on the page, plus arrow keys ---- */
   var start = null;
   document.addEventListener('pointerdown', function (e) {
-    if (e.target.closest('button, a')) return;
-    start = { x: e.clientX, y: e.clientY };
+    if (start || e.target.closest('button, a')) return;   // ignore a second finger
+    start = { id: e.pointerId, x: e.clientX, y: e.clientY };
   });
   document.addEventListener('pointerup', function (e) {
-    if (!start) return;
+    if (!start || e.pointerId !== start.id) return;
     var dx = e.clientX - start.x, dy = e.clientY - start.y;
     start = null;
     if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
@@ -120,16 +175,21 @@
     if (map[e.key] !== undefined) { e.preventDefault(); move(map[e.key]); }
   });
 
-  document.getElementById('restart-btn').addEventListener('click', newGame);
+  document.getElementById('restart-btn').addEventListener('click', askNew);
+  document.getElementById('undo-btn').addEventListener('click', undo);
+  document.getElementById('over-undo').addEventListener('click', undo);
+  document.getElementById('ask-no').addEventListener('click', function () { document.getElementById('ask').classList.add('hidden'); });
+  document.getElementById('ask-yes').addEventListener('click', newGame);
   document.getElementById('over-again').addEventListener('click', newGame);
   document.getElementById('won-go').addEventListener('click', function () {
     game.keepGoing = true; game.save();
     document.getElementById('won').classList.add('hidden');
+    if (!game.canMove()) over();
   });
   document.getElementById('won-new').addEventListener('click', newGame);
 
   build();
   resumeOrNew();
 
-  window.__g2048 = { game: function () { return game; }, move: move, newGame: newGame };
+  window.__g2048 = { game: function () { return game; }, move: move, newGame: newGame, undo: undo };
 })();

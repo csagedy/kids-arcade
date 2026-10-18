@@ -133,7 +133,12 @@ function makeShapesLevel(n) {
     return {
       number: n, grid: spec.grid,
       inside: Array.prototype.slice.call(inside),
-      pieces: pieces.map(function (p, k) { return { cells: normalizeCells(p, spec.grid), color: k % SHAPE_COLORS.length }; })
+      // `at` is where the piece was cut from (top-left, rotation 0): used by hints.
+      pieces: pieces.map(function (p, k) {
+        var minR = Infinity, minC = Infinity;
+        p.forEach(function (i) { minR = Math.min(minR, Math.floor(i / spec.grid)); minC = Math.min(minC, i % spec.grid); });
+        return { cells: normalizeCells(p, spec.grid), color: k % SHAPE_COLORS.length, at: [minR, minC] };
+      })
     };
   }
   return null;

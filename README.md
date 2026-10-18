@@ -14,6 +14,12 @@ no build step, no dependencies, no network calls, no tracking.
 - **Block Blast** — drag three dealt shapes onto an 8x8 board; full rows and
   columns clear. No falling pieces and no timer. Combo bonuses for multiple
   lines and consecutive clears; best score is kept.
+- **2048**, **Memory Match**, **Picture Puzzles** (nonograms), **Flow**,
+  **Simon**, **Shape Fit**, **Dot to Dot** — see the layout below.
+- **Maze** — drag the animal to its treat. Mazes are seeded, so level N is
+  always the same maze; they grow from 5x5 to 15x15.
+- **Four in a Row** — against the computer (Easy / Medium / Hard, Hard is a
+  5-ply alpha-beta search) or two players passing the phone.
 
 ### Action games (the cabinet)
 
@@ -36,7 +42,15 @@ games that do have timers, lives and high scores. They share `cabinet/`:
 - **Space Invaders** — slide to move; the ship fires itself. The block
   speeds up as it thins, shields erode (including from your own shots).
 - **Pong** — portrait, paddles top and bottom. Two kids share the phone,
-  each dragging their own half, or the top paddle plays itself. First to 7.
+  each dragging their own half, or the top paddle plays itself (Easy /
+  Medium / Hard). First to 7.
+- **Asteroids** — hold a finger down; the ship turns toward it, drifts after
+  it and fires by itself. Rocks split three times; a UFO turns up from wave 2.
+
+Every cabinet game pauses itself when the phone sleeps or the app is
+switched away (`Cabinet.autoPause`) and has a pause button
+(`Cabinet.addPauseButton`). `Cabinet.Fx` gives particles, score pops and
+screen shake.
 
 ## Running it
 
@@ -94,9 +108,15 @@ games/dots/                    Dot to Dot
   js/pictures-data.js          outlines as [x, y] points in a 0..100 square
   js/game.js                   next-dot state, per-picture save
   js/ui.js                     canvas, tap detection, library thumbnails
+games/maze/                    Maze
+  js/game.js                   seeded recursive-backtracker maze, path, save
+  js/ui.js                     canvas, finger tracing
+games/connect4/                Four in a Row
+  js/game.js                   board, win check, computer player
+  js/ui.js                     drop animation, setup and result cards
 cabinet/                       shared kit for the action games (see above)
 games/breakout/ games/snake/ games/missile/
-games/frogger/ games/invaders/ games/pong/
+games/frogger/ games/invaders/ games/pong/ games/asteroids/
                                action games: js/game.js rules, js/ui.js drawing + input
 diag.html                      device check page (see Troubleshooting)
 tools/update-sw.py             regenerate the service worker precache list

@@ -29,14 +29,19 @@
   <button class="size-btn" data-size="hard">Hard</button>
 </div>
 
+<div class="themes" id="themes"></div>
+
 <main class="board-wrap"><div id="board" class="board"></div></main>
+
+<div id="confetti" class="confetti"></div>
 
 <div id="win" class="over hidden">
   <div class="over-card">
     <div class="over-emoji">🎉</div>
     <h2>All matched!</h2>
     <div class="over-score"><span id="win-moves">0</span> <small>moves</small></div>
-    <div id="win-best" class="over-best hidden">New best!</div>
+    <div id="win-best" class="over-best"></div>
+    <div id="win-stars" class="stars"></div>
     <button id="win-again" class="pill primary">Play again</button>
   </div>
 </div>

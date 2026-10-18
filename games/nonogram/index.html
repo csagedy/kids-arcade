@@ -20,7 +20,7 @@
     <div class="ttl">Picture Puzzles</div>
     <div class="icon-spacer"></div>
   </header>
-  <p class="how">The numbers say how many squares in a row are filled, in order. Fill them all to reveal the picture.</p>
+  <p class="how">The numbers say how many squares in a row are filled, in order. Fill them all to reveal the picture. Start with the small ones!</p>
   <div id="lib-grid" class="lib-grid"></div>
 </section>
 
@@ -32,16 +32,22 @@
   </header>
 
   <div class="grid-wrap"><div id="grid" class="grid"></div></div>
+  <div id="tip" class="tip hidden">Tap a square to fill it, or drag along a row. Stuck? Tap Hint!</div>
 
   <div class="modes">
     <button id="mode-fill" class="mode on"><span class="sw fill"></span>Fill</button>
     <button id="mode-x" class="mode"><span class="sw x">✕</span>Mark</button>
+    <button id="undo-btn" class="mode act" disabled><span class="sw">↶</span>Undo</button>
+    <button id="hint-btn" class="mode act"><span class="sw">💡</span>Hint</button>
   </div>
+  <div id="toast" class="toast"></div>
 </section>
+
+<div id="confetti" class="confetti"></div>
 
 <div id="win" class="over hidden">
   <div class="over-card">
-    <div class="over-emoji">🖼️</div>
+    <div class="over-emoji">🎉</div>
     <h2><span id="win-name"></span>!</h2>
     <div class="over-actions">
       <button id="win-lib" class="pill">All pictures</button>

@@ -1,11 +1,12 @@
 /* One finger paints, two fingers pinch and pan. Dropping a second finger
    cancels the stroke in progress so a zoom never smears colour across the grid. */
 
-function bindInput(stage, renderer, onPaintCell) {
+function bindInput(stage, renderer, onPaintCell, onTapOther) {
   var pointers = {};
   var painting = false;
   var last = null;
   var pinch = null;
+  var tap = null;   // a one-finger press that hasn't painted or moved yet
 
   function pos(e) {
     var r = stage.getBoundingClientRect();
@@ -21,7 +22,7 @@ function bindInput(stage, renderer, onPaintCell) {
     var steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (renderer.view.s * 0.4)));
     for (var i = 1; i <= steps; i++) {
       var idx = renderer.cellAt(last.x + dx * i / steps, last.y + dy * i / steps);
-      if (idx >= 0) onPaintCell(idx);
+      if (idx >= 0 && onPaintCell(idx)) tap = null;
     }
     last = pt;
   }
@@ -34,10 +35,11 @@ function bindInput(stage, renderer, onPaintCell) {
       painting = true;
       last = pointers[e.pointerId];
       var idx = renderer.cellAt(last.x, last.y);
-      if (idx >= 0) onPaintCell(idx);
+      tap = idx >= 0 && !onPaintCell(idx) ? { idx: idx, x: last.x, y: last.y } : null;
     } else if (count() === 2) {
       painting = false;
       last = null;
+      tap = null;
       pinch = startPinch();
     }
     e.preventDefault();
@@ -47,6 +49,7 @@ function bindInput(stage, renderer, onPaintCell) {
     if (!(e.pointerId in pointers)) return;
     pointers[e.pointerId] = pos(e);
 
+    if (tap && Math.hypot(pointers[e.pointerId].x - tap.x, pointers[e.pointerId].y - tap.y) > 10) tap = null;
     if (painting && count() === 1) {
       strokeTo(pointers[e.pointerId]);
     } else if (count() === 2 && pinch) {
@@ -64,6 +67,9 @@ function bindInput(stage, renderer, onPaintCell) {
   });
 
   function release(e) {
+    // A plain tap on a number that isn't the chosen colour switches to that colour.
+    if (e.type === 'pointerup' && tap && count() === 1 && onTapOther) onTapOther(tap.idx);
+    tap = null;
     delete pointers[e.pointerId];
     if (count() < 2) pinch = null;
     if (count() === 0) { painting = false; last = null; }

@@ -74,6 +74,25 @@ BBGame.prototype.canPlace = function (piece, r0, c0) {
   return true;
 };
 
+/* Cells that would be wiped if `piece` landed at (r0, c0), without placing it.
+   Lets the drag preview show which lines are about to pop. */
+BBGame.prototype.wouldClear = function (piece, r0, c0) {
+  var self = this, out = [], i, j;
+  var extra = {};
+  piece.cells.forEach(function (p) { extra[(r0 + p[0]) * SIZE + c0 + p[1]] = 1; });
+  function full(idxs) {
+    for (var k = 0; k < idxs.length; k++) if (!self.board[idxs[k]] && !extra[idxs[k]]) return false;
+    return true;
+  }
+  for (i = 0; i < SIZE; i++) {
+    var row = [], col = [];
+    for (j = 0; j < SIZE; j++) { row.push(i * SIZE + j); col.push(j * SIZE + i); }
+    if (full(row)) out = out.concat(row);
+    if (full(col)) out = out.concat(col);
+  }
+  return out;
+};
+
 BBGame.prototype.fitsAnywhere = function (piece) {
   for (var r = 0; r <= SIZE - piece.rows; r++) {
     for (var c = 0; c <= SIZE - piece.cols; c++) {
@@ -134,6 +153,8 @@ BBGame.prototype.clearLines = function () {
   rows.forEach(function (rr) { for (var cc = 0; cc < SIZE; cc++) cleared.push(rr * SIZE + cc); });
   cols.forEach(function (cc) { for (var rr = 0; rr < SIZE; rr++) cleared.push(rr * SIZE + cc); });
 
+  // Remember what colour each cleared cell was, so the UI can scatter it.
+  var colors = cleared.map(function (i) { return this.board[i]; }, this);
   for (var k = 0; k < cleared.length; k++) this.board[cleared[k]] = 0;
 
   var lines = rows.length + cols.length;
@@ -147,7 +168,7 @@ BBGame.prototype.clearLines = function () {
     this.streak = 0;
   }
 
-  return { cells: cleared, rows: rows, cols: cols, lines: lines, gained: gained, streak: this.streak };
+  return { cells: cleared, colors: colors, rows: rows, cols: cols, lines: lines, gained: gained, streak: this.streak };
 };
 
 BBGame.prototype.isOver = function () {

@@ -1,12 +1,14 @@
 (function () {
   var boardEl = document.getElementById('board');
   var trayEl = document.getElementById('tray');
-  var game, level, cells = [], ghost = null, drag = null;
+  var game, level, cells = [], ghost = null, drag = null, spun = -1;
 
   function loadLevel() {
     try { return Math.max(1, parseInt(localStorage.getItem('shapes.level'), 10) || 1); } catch (e) { return 1; }
   }
+  /* Only ever moves the "reached" level forward. */
   function saveLevel(n) {
+    n = Math.max(n, loadLevel());
     try {
       localStorage.setItem('shapes.level', String(n));
       localStorage.setItem('arcade.stat.shapes', 'Level ' + n);
@@ -55,11 +57,11 @@
     game.pieces.forEach(function (piece, idx) {
       if (piece.pos) return;
       var el = document.createElement('div');
-      el.className = 'slot';
+      el.className = 'slot' + (idx === spun ? ' spin' : '');
       var shape = game.shape(idx);
       var rows = Math.max.apply(null, shape.map(function (c) { return c[0]; })) + 1;
       var cols = Math.max.apply(null, shape.map(function (c) { return c[1]; })) + 1;
-      var pip = 16;
+      var pip = 18;
       el.style.gridTemplateColumns = 'repeat(' + cols + ', ' + pip + 'px)';
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
@@ -111,7 +113,7 @@
 
     drag = {
       idx: idx, m: m, srcEl: srcEl, fromBoard: fromBoard,
-      startX: e.clientX, startY: e.clientY, moved: false,
+      pid: e.pointerId, startX: e.clientX, startY: e.clientY, moved: false,
       w: cols * m.step - (m.step - m.size), h: rows * m.step - (m.step - m.size)
     };
     window.addEventListener('pointermove', onMove, { passive: false });
@@ -133,7 +135,7 @@
   }
 
   function onMove(e) {
-    if (!drag) return;
+    if (!drag || e.pointerId !== drag.pid) return;
     e.preventDefault();
     if (!drag.moved) {
       if (Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) < 8) return;
@@ -161,8 +163,8 @@
     });
   }
 
-  function onUp() {
-    if (!drag) return;
+  function onUp(e) {
+    if (!drag || (e && e.pointerId !== drag.pid)) return;
     var d = drag;
     var t = d.moved ? target() : null;
     clearPreview();
@@ -174,8 +176,9 @@
 
     if (!d.moved) {
       // A tap.
-      if (d.fromBoard) game.lift(d.idx); else game.rotate(d.idx);
+      if (d.fromBoard) game.lift(d.idx); else { game.rotate(d.idx); spun = d.idx; }
       render();
+      spun = -1;
       return;
     }
     game.place(d.idx, t.r, t.c);   // falls back to the tray if it doesn't fit
@@ -194,8 +197,36 @@
   function win() {
     document.getElementById('win-n').textContent = game.level;
     document.getElementById('win').classList.remove('hidden');
+    confetti();
+    try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (e) {}
     saveLevel(game.level + 1);
   }
+
+  function confetti() {
+    var box = document.getElementById('confetti');
+    box.innerHTML = '';
+    for (var i = 0; i < 36; i++) {
+      var d = document.createElement('i');
+      d.style.left = Math.random() * 100 + '%';
+      d.style.background = SHAPE_COLORS[i % SHAPE_COLORS.length];
+      d.style.animationDelay = (Math.random() * 0.6) + 's';
+      d.style.animationDuration = (1.4 + Math.random() * 1.2) + 's';
+      box.appendChild(d);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 3500);
+  }
+
+  document.getElementById('hint-btn').addEventListener('click', function () {
+    if (drag) return;
+    var i = game.hint();
+    if (i < 0) return;
+    render();
+    var cellsOf = game.occupancy();
+    for (var k = 0; k < cellsOf.length; k++) {
+      if (cellsOf[k] === i) { cells[k].classList.add('flash'); }
+    }
+    if (game.isSolved()) setTimeout(win, 700);
+  });
 
   document.getElementById('restart-btn').addEventListener('click', function () { game.reset(); render(); });
   document.getElementById('win-next').addEventListener('click', function () { start(game.level + 1); });

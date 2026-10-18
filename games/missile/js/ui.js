@@ -3,26 +3,35 @@
   var fit = Cabinet.fit(canvas, W, 320, 460);
   var ctx = fit.ctx;
   H = fit.h; GROUND = H - 22;
-  var game = new MissileGame(), playing = false, shake = 0, message = null;
+  var game = new MissileGame(), playing = false, message = null;
+  var fx = new Cabinet.Fx();
 
   function attract() {
     playing = false;
     game = new MissileGame();
     Cabinet.showOverlay({ title: 'MISSILE COMMAND', lines: ['Tap to fire', 'Save the cities'], scores: 'missile', button: 'PRESS START', onButton: start });
   }
-  function start() { game = new MissileGame(); playing = true; message = { text: 'WAVE 1', until: performance.now() + 1200 }; }
+  function start() { game = new MissileGame(); playing = true; fx.clear(); message = { text: 'WAVE 1', until: performance.now() + 1200 }; }
 
   function update(dt) {
     if (!playing) return;
     var ev = game.update(dt);
+    fx.update(dt);
+    while (game.hits.length) {
+      var h = game.hits.shift();
+      if (h.city) fx.burst(h.x, h.y, 22, ['#4de8ff', '#ffffff', '#3a3a3a'], 80, 0.9);
+      else if (h.ground) fx.burst(h.x, h.y, 16, ['#ffe93b', '#ff9f1c', '#c9a227'], 85, 0.7);
+      else { fx.burst(h.x, h.y, 10, ['#ffffff', '#ffe93b', '#ff9f1c'], 55, 0.5); fx.pop('+25', h.x, h.y - 6, '#ffe93b'); }
+    }
     for (var i = 0; i < ev.length; i++) {
       switch (ev[i]) {
-        case 'boom': Cabinet.noise(180, 0.12); break;
-        case 'kill': Cabinet.beep(1200, 60, 'square', 0.08, 300); break;
-        case 'city': Cabinet.beep(90, 500, 'sawtooth', 0.18, 30); shake = 14; break;
+        case 'boom': Cabinet.noise(200, 0.1); fx.shake(1.5); break;
+        case 'split': Cabinet.beep(700, 90, 'triangle', 0.06, 350); break;
+        case 'kill': Cabinet.beep(1200 + Math.random() * 300, 70, 'square', 0.07, 300); break;
+        case 'city': Cabinet.beep(90, 500, 'sawtooth', 0.18, 30); fx.shake(5); Cabinet.noise(450, 0.18); break;
         case 'wave':
           Cabinet.beep(660, 80); setTimeout(function () { Cabinet.beep(990, 160); }, 100);
-          message = { text: 'WAVE ' + game.wave, until: performance.now() + 1400 };
+          message = { text: 'WAVE ' + game.wave, until: performance.now() + 1600, sub: (game.rebuilt ? 'CITY REBUILT! ' : '') + 'BONUS ' + game.bonus };
           break;
         case 'over':
           playing = false;
@@ -35,8 +44,7 @@
 
   function render() {
     var g = game;
-    ctx.save();
-    if (shake > 0) { ctx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4); shake--; }
+    fx.begin(ctx);
     ctx.fillStyle = '#05060c'; ctx.fillRect(0, 0, W, H);
 
     // stars
@@ -85,21 +93,31 @@
       var cols = ['#ffffff', '#ffe93b', '#ff9f1c', '#ff3b3b', '#c96bff'];
       ctx.fillStyle = cols[(Math.floor(performance.now() / 60) + i) % cols.length];
       ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffffff';   // bright core and rim so blasts read clearly
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.45, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke();
     });
 
-    if (message && performance.now() < message.until) Cabinet.text(ctx, message.text, W / 2, 110, 2, '#ffb300', 'center');
-    ctx.restore();
+    fx.draw(ctx);
+    if (message && performance.now() < message.until) {
+      Cabinet.text(ctx, message.text, W / 2, 110, 2, '#ffb300', 'center');
+      if (message.sub) Cabinet.text(ctx, message.sub, W / 2, 130, 1, '#7cf2ff', 'center');
+    }
+    fx.end(ctx);
   }
 
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
-    if (!playing) return;
+    if (!playing || Cabinet.paused()) return;
     var p = Cabinet.pointer(canvas, e);
     if (game.fire(p.x, p.y)) Cabinet.beep(500, 50, 'square', 0.06, 900);
     else Cabinet.beep(120, 60, 'square', 0.05);
   });
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
+  Cabinet.addPauseButton(function () { return playing; });
+  Cabinet.autoPause(function () { return playing; });
   attract();
   Cabinet.loop(update, render);
   window.__mc = { game: function () { return game; }, start: start };

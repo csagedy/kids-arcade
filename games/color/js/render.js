@@ -63,7 +63,7 @@ Renderer.prototype.rebuildOverlay = function () {
   var tint = null;
   if (p.palette[this.active]) {
     var rgb = hexToRgb(p.palette[this.active]);
-    tint = 'rgb(' + [0, 1, 2].map(function (c) { return Math.round(rgb[c] * 0.22 + 255 * 0.78); }).join(',') + ')';
+    tint = 'rgb(' + [0, 1, 2].map(function (c) { return Math.round(rgb[c] * 0.4 + 255 * 0.6); }).join(',') + ')';
   }
 
   for (var i = 0; i < p.cells.length; i++) {

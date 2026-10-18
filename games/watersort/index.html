@@ -17,12 +17,15 @@
 <header class="head">
   <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
   <div class="level">Level <span id="level-n">1</span></div>
+  <button id="hint-btn" class="icon-btn" aria-label="Hint">💡</button>
   <button id="undo-btn" class="icon-btn" aria-label="Undo">↺</button>
   <button id="restart-btn" class="icon-btn" aria-label="Restart">⟳</button>
 </header>
 
 <main id="board" class="board"></main>
-<div id="stuck" class="stuck hidden">No moves left — tap ↺ to undo</div>
+<div id="tip" class="tip hidden">Tap a tube, then tap another tube to pour. Fill each tube with one colour!</div>
+<div id="stuck" class="stuck hidden"><span id="stuck-text">No moves left</span> <button id="stuck-undo" class="pill small">↺ Undo</button></div>
+<canvas id="confetti" class="confetti"></canvas>
 
 <div id="win" class="win hidden">
   <div class="win-card">

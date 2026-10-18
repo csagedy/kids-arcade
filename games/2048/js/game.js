@@ -10,6 +10,7 @@ function G2048(saved) {
   this.best = G2048.loadBest();
   this.won = false;      // 2048 reached at least once; play continues
   this.keepGoing = false;
+  this.prev = null;      // one-step undo snapshot (not saved)
   if (saved && this.restore(saved)) return;
   this.spawn(); this.spawn();
 }
@@ -91,6 +92,7 @@ function slideLine(line) {
    { gained, spawned, merges:[index...], from:{ fromIndex: toIndex } }. */
 G2048.prototype.move = function (dir) {
   var self = this, changed = false, gained = 0, merges = [], from = {};
+  var snap = { grid: new Uint8Array(this.grid), score: this.score, won: this.won, keepGoing: this.keepGoing };
 
   for (var k = 0; k < N; k++) {
     // Collect the indices of this line in the sliding order.
@@ -111,12 +113,25 @@ G2048.prototype.move = function (dir) {
   }
   if (!changed) return null;
 
+  this.prev = snap;
   this.score += gained;
   if (this.score > this.best) { this.best = this.score; this.saveBest(); }
   var spawned = this.spawn();
   if (!this.won && this.maxTile() >= 11) this.won = true;
   this.save();
   return { gained: gained, spawned: spawned, merges: merges, from: from };
+};
+
+/* Take back the last move (only one step). Returns false if there is nothing to undo. */
+G2048.prototype.undo = function () {
+  if (!this.prev) return false;
+  this.grid = this.prev.grid;
+  this.score = this.prev.score;
+  this.won = this.prev.won;
+  this.keepGoing = this.prev.keepGoing;
+  this.prev = null;
+  this.save();
+  return true;
 };
 
 G2048.prototype.maxTile = function () {

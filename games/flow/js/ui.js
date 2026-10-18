@@ -2,23 +2,40 @@
   var canvas = document.getElementById('board');
   var ctx = canvas.getContext('2d');
   var game = null, level = null;
-  var drawing = -1;           // colour being drawn, or -1
+  var drawing = -1, activePointer = -1;           // colour being drawn, or -1
   var cellPx = 0, pad = 0, dpr = 1;
 
   function loadLevel() {
     try { return Math.max(1, parseInt(localStorage.getItem('flow.level'), 10) || 1); } catch (e) { return 1; }
   }
+  /* Only ever moves the "reached" level forward, so revisiting an older
+     level never loses progress. */
   function saveLevel(n) {
+    n = Math.max(n, loadLevel());
     try {
       localStorage.setItem('flow.level', String(n));
       localStorage.setItem('arcade.stat.flow', 'Level ' + n);
     } catch (e) {}
   }
 
+  function confetti() {
+    var box = document.getElementById('confetti');
+    box.innerHTML = '';
+    for (var i = 0; i < 36; i++) {
+      var d = document.createElement('i');
+      d.style.left = Math.random() * 100 + '%';
+      d.style.background = FLOW_COLORS[i % FLOW_COLORS.length];
+      d.style.animationDelay = (Math.random() * 0.6) + 's';
+      d.style.animationDuration = (1.4 + Math.random() * 1.2) + 's';
+      box.appendChild(d);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 3500);
+  }
+
   function start(n, saved) {
     level = makeFlowLevel(n);
     game = new FlowGame(level, saved);
-    drawing = -1;
+    drawing = -1; activePointer = -1;
     document.getElementById('level-n').textContent = n;
     document.getElementById('win').classList.add('hidden');
     saveLevel(n);
@@ -121,14 +138,19 @@
 
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
+    if (drawing >= 0) return;                    // ignore a second finger
     var cell = cellFromEvent(e);
     if (cell < 0) return;
     drawing = game.begin(cell);
-    if (drawing >= 0) { canvas.setPointerCapture(e.pointerId); render(); }
+    if (drawing >= 0) {
+      activePointer = e.pointerId;
+      try { canvas.setPointerCapture(e.pointerId); } catch (x) {}
+      render();
+    }
   });
 
   canvas.addEventListener('pointermove', function (e) {
-    if (drawing < 0) return;
+    if (drawing < 0 || e.pointerId !== activePointer) return;
     e.preventDefault();
     var cell = cellFromEvent(e);
     if (cell < 0) return;
@@ -153,9 +175,9 @@
     return from + (tr > fr ? s : -s);
   }
 
-  function endStroke() {
-    if (drawing < 0) return;
-    drawing = -1;
+  function endStroke(e) {
+    if (drawing < 0 || (e && e.pointerId !== activePointer)) return;
+    drawing = -1; activePointer = -1;
     game.moves++;
     game.save();
     render();
@@ -169,11 +191,20 @@
     document.getElementById('win-n').textContent = game.level;
     document.getElementById('win-perfect').classList.toggle('hidden', !perfect);
     document.getElementById('win').classList.remove('hidden');
+    confetti();
+    try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (e) {}
     saveLevel(game.level + 1);
   }
 
   document.getElementById('restart-btn').addEventListener('click', function () {
     game.reset(); game.save(); render();
+  });
+  document.getElementById('hint-btn').addEventListener('click', function () {
+    if (!level) return;
+    var c = game.hint(level.solution);
+    if (c < 0) return;
+    game.save(); render();
+    if (game.allConnected()) setTimeout(win, 300);
   });
   document.getElementById('win-next').addEventListener('click', function () { start(game.level + 1); });
   document.getElementById('win-replay').addEventListener('click', function () {

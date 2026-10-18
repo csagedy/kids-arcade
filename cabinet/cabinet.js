@@ -75,7 +75,21 @@ var Cabinet = (function () {
     if (AC) audio = new AC();
     return audio;
   }
-  C.unlockAudio = function () { var a = ensureAudio(); if (a && a.state === 'suspended') a.resume(); };
+  C.unlockAudio = function () {
+    var a = ensureAudio();
+    // iOS reports 'interrupted' after a call or Siri; resume() brings it back.
+    if (a && a.state !== 'running') { try { a.resume(); } catch (e) {} }
+  };
+  // iOS only lets audio start inside a real gesture, so unlock on the first touches.
+  (function () {
+    var evs = ['touchend', 'pointerdown', 'click'];
+    function unlock() {
+      C.unlockAudio();
+      if (audio && audio.state === 'running') evs.forEach(function (n) { document.removeEventListener(n, unlock, true); });
+    }
+    evs.forEach(function (n) { document.addEventListener(n, unlock, true); });
+  })();
+  C.vibrate = function (ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
   C.muted = function () { try { return localStorage.getItem('cab.mute') === '1'; } catch (e) { return false; } };
   C.setMuted = function (m) { try { localStorage.setItem('cab.mute', m ? '1' : '0'); } catch (e) {} };
 
@@ -88,10 +102,13 @@ var Cabinet = (function () {
       o.type = type || 'square';
       o.frequency.setValueAtTime(freq, t);
       if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + ms / 1000);
-      g.gain.setValueAtTime(vol || 0.12, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+      // 4 ms attack so the wave doesn't start with a click, then a smooth decay.
+      var v = vol || 0.12;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.01, ms / 1000));
       o.connect(g); g.connect(a.destination);
-      o.start(t); o.stop(t + ms / 1000 + 0.02);
+      o.start(t); o.stop(t + Math.max(0.01, ms / 1000) + 0.03);
     } catch (e) {}
   };
   C.noise = function (ms, vol) {
@@ -99,7 +116,8 @@ var Cabinet = (function () {
     var a = ensureAudio(); if (!a) return;
     try {
       var n = Math.floor(a.sampleRate * ms / 1000), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-      for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      var atk = Math.min(n, Math.floor(a.sampleRate * 0.004)) || 1;   // short fade-in, no click
+      for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) * (i < atk ? i / atk : 1);
       var src = a.createBufferSource(), g = a.createGain();
       src.buffer = buf; g.gain.value = vol || 0.2;
       src.connect(g); g.connect(a.destination); src.start();
@@ -107,14 +125,19 @@ var Cabinet = (function () {
   };
 
   /* ---------- loop ---------- */
-  /* Fixed 60 Hz steps so physics is the same on a slow phone; render once per frame. */
+  /* Fixed 60 Hz steps so physics is the same on a slow phone; render once per
+     frame. At most 6 steps are run per frame (acc is clamped), so a slow frame
+     or a tab waking from sleep can never snowball into a spiral of death. */
+  var paused = false, clockReset = false;
   C.loop = function (update, render) {
     var last = 0, acc = 0, STEP = 1000 / 60, lastTick = performance.now();
     function tick(t) {
-      if (!last) last = t;
-      acc += Math.min(100, t - last); last = t;
+      if (!last || clockReset) { last = t; clockReset = false; acc = 0; }
+      var dt = t - last; last = t;
+      acc += Math.max(0, Math.min(100, dt));
       lastTick = t;
-      while (acc >= STEP) { update(STEP / 1000); acc -= STEP; }
+      if (paused) acc = 0;
+      else { var n = 0; while (acc >= STEP && n++ < 6) { update(STEP / 1000); acc -= STEP; } if (acc > STEP) acc = 0; }
       render();
     }
     function frame(t) { tick(t); requestAnimationFrame(frame); }
@@ -127,6 +150,92 @@ var Cabinet = (function () {
       if (now - lastTick > 120) tick(now);
     }, 50);
     document.addEventListener('visibilitychange', function () { last = 0; acc = 0; });
+  };
+
+  /* ---------- pause ---------- */
+  /* Pausing only stops update(); render keeps running. The PAUSED card has a
+     big RESUME button. C.paused() lets a game check the state. */
+  C.paused = function () { return paused; };
+  C.pause = function () {
+    if (paused) return;
+    paused = true;
+    C.showOverlay({ title: 'PAUSED', lines: ['Take a break!'], button: 'RESUME', onButton: C.resume });
+  };
+  C.resume = function () {
+    if (!paused) return;
+    paused = false; clockReset = true;
+    C.closeOverlay();
+  };
+  /* Pause automatically when the page is hidden or the app is backgrounded.
+     isPlaying() says whether a round is in progress (so menus aren't paused). */
+  C.autoPause = function (isPlaying) {
+    function hide() { if (isPlaying()) C.pause(); }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) hide(); });
+    window.addEventListener('pagehide', hide);
+  };
+  /* Adds a pause button to the marquee (just before the mute button) so a
+     game needs no HTML change. isPlaying() gates it to rounds in progress. */
+  C.addPauseButton = function (isPlaying) {
+    var bar = document.querySelector('.cab-marquee');
+    if (!bar || bar.querySelector('.cab-pause')) return null;
+    var btn = el('button', 'cab-btn-icon cab-pause', '⏸');
+    btn.setAttribute('aria-label', 'Pause');
+    btn.addEventListener('click', function () { if (isPlaying()) C.pause(); });
+    var mute = bar.querySelector('#mute-btn');
+    bar.insertBefore(btn, mute || null);
+    return btn;
+  };
+
+  /* ---------- effects: particles, floating text, screen shake ---------- */
+  /* var fx = new Cabinet.Fx(); then fx.burst(x, y, 12, ['#fff', '#ff0']),
+     fx.pop('+25', x, y), fx.shake(4). Each frame: fx.update(dt) from the
+     game's update(), and in render: fx.begin(ctx) ... draw the world ...
+     fx.draw(ctx) ... fx.end(ctx). Everything is cheap fillRects. */
+  C.Fx = function () { this.parts = []; this.pops = []; this.amp = 0; };
+  C.Fx.prototype.burst = function (x, y, n, colors, speed, life) {
+    colors = colors || ['#fff']; speed = speed || 60; life = life || 0.5;
+    for (var i = 0; i < n && this.parts.length < 160; i++) {
+      var a = Math.random() * Math.PI * 2, v = speed * (0.35 + Math.random() * 0.65);
+      this.parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: life * (0.6 + Math.random() * 0.4), life: life,
+        c: colors[Math.floor(Math.random() * colors.length)], s: Math.random() < 0.3 ? 2 : 1 });
+    }
+  };
+  C.Fx.prototype.pop = function (text, x, y, color) {
+    if (this.pops.length < 12) this.pops.push({ text: text, x: x, y: y, t: 0.8, c: color || '#ffb300' });
+  };
+  C.Fx.prototype.shake = function (amp) { this.amp = Math.max(this.amp, amp); };
+  C.Fx.prototype.clear = function () { this.parts.length = 0; this.pops.length = 0; this.amp = 0; };
+  C.Fx.prototype.update = function (dt) {
+    for (var i = this.parts.length - 1; i >= 0; i--) {
+      var p = this.parts[i];
+      p.t -= dt;
+      if (p.t <= 0) { this.parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; p.vx *= 0.98;
+    }
+    for (var j = this.pops.length - 1; j >= 0; j--) {
+      var q = this.pops[j];
+      q.t -= dt; q.y -= 14 * dt;
+      if (q.t <= 0) this.pops.splice(j, 1);
+    }
+    this.amp = Math.max(0, this.amp - 14 * dt);
+  };
+  C.Fx.prototype.begin = function (ctx) {
+    ctx.save();
+    if (this.amp > 0.2) ctx.translate(Math.round((Math.random() - 0.5) * this.amp * 2), Math.round((Math.random() - 0.5) * this.amp * 2));
+  };
+  C.Fx.prototype.end = function (ctx) { ctx.restore(); };
+  C.Fx.prototype.draw = function (ctx) {
+    for (var i = 0; i < this.parts.length; i++) {
+      var p = this.parts[i];
+      ctx.globalAlpha = Math.min(1, p.t / (p.life * 0.5));
+      ctx.fillStyle = p.c;
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
+    }
+    ctx.globalAlpha = 1;
+    for (var j = 0; j < this.pops.length; j++) {
+      var q = this.pops[j];
+      C.text(ctx, q.text, Math.round(q.x), Math.round(q.y), 1, q.c, 'center');
+    }
   };
 
   /* ---------- high scores ---------- */
@@ -148,7 +257,9 @@ var Cabinet = (function () {
     } catch (e) {}
     return list;
   };
-  C.lastInitials = function () { try { return localStorage.getItem('cab.initials') || 'AAA'; } catch (e) { return 'AAA'; } };
+  C.lastInitials = function () {
+    try { var v = localStorage.getItem('cab.initials'); return /^[A-Z]{3}$/.test(v) ? v : 'AAA'; } catch (e) { return 'AAA'; }
+  };
 
   /* ---------- overlays ---------- */
   var overlay = null;
@@ -176,9 +287,15 @@ var Cabinet = (function () {
       }
     }
     var buttons = opts.buttons || [{ text: opts.button || 'PRESS START', onClick: opts.onButton }];
+    // opts.guard (ms): ignore taps this soon after the card appears, so a kid
+    // still tapping the game doesn't instantly dismiss the game-over card.
+    var shownAt = performance.now(), guard = opts.guard || 0;
     buttons.forEach(function (b) {
       var btn = el('button', 'cab-btn', b.text);
-      btn.addEventListener('click', function () { C.unlockAudio(); C.closeOverlay(); b.onClick && b.onClick(); });
+      btn.addEventListener('click', function () {
+        if (performance.now() - shownAt < guard) return;
+        C.unlockAudio(); C.closeOverlay(); b.onClick && b.onClick();
+      });
       card.appendChild(btn);
     });
     overlay.appendChild(card);
@@ -193,7 +310,7 @@ var Cabinet = (function () {
     var card = el('div', 'cab-card');
     card.appendChild(el('div', 'cab-title', 'HIGH SCORE!'));
     card.appendChild(el('div', 'cab-line', String(score)));
-    card.appendChild(el('div', 'cab-line small', 'Enter your initials'));
+    card.appendChild(el('div', 'cab-line small', 'Tap a letter to change it'));
     var row = el('div', 'cab-initials');
     var boxes = letters.map(function (ch, i) {
       var col = el('div', 'cab-letter');
@@ -202,17 +319,28 @@ var Cabinet = (function () {
         var code = letters[i].charCodeAt(0) + d;
         if (code < 65) code = 90; if (code > 90) code = 65;
         letters[i] = String.fromCharCode(code); box.textContent = letters[i];
-        C.beep(660, 40);
+        C.beep(660 + (code - 65) * 12, 40, 'triangle', 0.1);
       }
-      up.addEventListener('click', function () { bump(1); });
-      dn.addEventListener('click', function () { bump(-1); });
+      // Press to bump; hold to keep going. Pointer events only (no click), so no double bump.
+      function hold(btn, d) {
+        var t1 = null, t2 = null;
+        function stop() { clearTimeout(t1); clearInterval(t2); t1 = t2 = null; }
+        btn.addEventListener('pointerdown', function (e) {
+          e.preventDefault(); stop(); bump(d);
+          t1 = setTimeout(function () { t2 = setInterval(function () { bump(d); }, 90); }, 380);
+        });
+        ['pointerup', 'pointercancel', 'pointerleave', 'contextmenu'].forEach(function (n) { btn.addEventListener(n, stop); });
+      }
+      hold(up, 1); hold(dn, -1);
+      box.addEventListener('pointerdown', function (e) { e.preventDefault(); bump(1); });   // tapping the letter also advances it
       col.appendChild(up); col.appendChild(box); col.appendChild(dn);
       row.appendChild(col);
       return box;
     });
     card.appendChild(row);
-    var ok = el('button', 'cab-btn', 'OK');
+    var ok = el('button', 'cab-btn', 'OK'), shownAt = performance.now();
     ok.addEventListener('click', function () {
+      if (performance.now() - shownAt < 400) return;   // ignore stray game taps
       var ini = letters.join('');
       try { localStorage.setItem('cab.initials', ini); } catch (e) {}
       C.closeOverlay();
@@ -226,7 +354,7 @@ var Cabinet = (function () {
   /* Game over flow: records a high score (asking for initials) then shows the table. */
   C.gameOver = function (id, score, onRestart) {
     function table() {
-      C.showOverlay({ title: 'GAME OVER', lines: ['Score ' + score], scores: id, button: 'PLAY AGAIN', onButton: onRestart });
+      C.showOverlay({ title: 'GAME OVER', lines: ['Score ' + score], scores: id, button: 'PLAY AGAIN', onButton: onRestart, guard: 600 });
     }
     if (C.isHigh(id, score)) C.enterInitials(score, function (ini) { C.addScore(id, ini, score); table(); });
     else table();

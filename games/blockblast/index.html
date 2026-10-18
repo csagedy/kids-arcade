@@ -20,6 +20,7 @@
     <div class="score" id="score">0</div>
     <div class="best">Best <span id="best">0</span></div>
   </div>
+  <button id="mute-btn" class="icon-btn" aria-label="Sound on">🔊</button>
   <button id="restart-btn" class="icon-btn" aria-label="New game">⟳</button>
 </header>
 
@@ -32,8 +33,10 @@
 
 <div id="over" class="over hidden">
   <div class="over-card">
-    <h2>No room left</h2>
+    <h2>No more moves!</h2>
+    <div class="over-why">None of your pieces fit anywhere now.</div>
     <div class="over-score"><span id="over-score">0</span></div>
+    <div id="over-new" class="over-new hidden">New best score!</div>
     <div class="over-best">Best <span id="over-best">0</span></div>
     <button id="over-again" class="pill primary">Play again</button>
   </div>

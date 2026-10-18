@@ -5,31 +5,59 @@
   H = 16 + Math.floor((fit.h - 16) / CELL) * CELL;
   ROWS = (H - 16) / CELL;
   var ctx = Cabinet.fit(canvas, W, H).ctx;
-  var game = new SnakeGame(), playing = false, flash = 0;
+  var wrap = false;
+  try { wrap = localStorage.getItem('snake.wrap') === '1'; } catch (e) {}
+  var game = new SnakeGame(wrap), playing = false, flash = 0;
+  var fx = new Cabinet.Fx();
+  function scoreId() { return wrap ? 'snake-wrap' : 'snake'; }
 
   function attract() {
     playing = false;
-    game = new SnakeGame();
-    Cabinet.showOverlay({ title: 'SNAKE', lines: ['Swipe to turn', 'Eat the apples'], scores: 'snake', button: 'PRESS START', onButton: start });
+    game = new SnakeGame(wrap);
+    Cabinet.showOverlay({
+      title: 'SNAKE', lines: ['Swipe to turn', 'Eat the apples', wrap ? 'Walls: you wrap around' : 'Walls: ouch!'],
+      scores: scoreId(),
+      buttons: [
+        { text: 'PRESS START', onClick: start },
+        { text: wrap ? 'MODE: EASY' : 'MODE: CLASSIC', onClick: function () {
+          wrap = !wrap;
+          try { localStorage.setItem('snake.wrap', wrap ? '1' : '0'); } catch (e) {}
+          attract();
+        } }
+      ]
+    });
   }
-  function start() { game = new SnakeGame(); playing = true; }
+  function start() { game = new SnakeGame(wrap); playing = true; fx.clear(); }
 
   function update(dt) {
     if (!playing) return;
     var r = game.update(dt);
-    if (r === 'eat') { Cabinet.beep(880, 60); flash = 2; }
-    else if (r === 'die') {
+    fx.update(dt);
+    if (r === 'eat' || r === 'win') {
+      Cabinet.beep(880, 60, 'square', 0.1); setTimeout(function () { Cabinet.beep(1180, 70, 'square', 0.08); }, 55);
+      flash = 2;
+      var h = game.snake[0];
+      fx.burst(h[0] * CELL + 4, 16 + h[1] * CELL + 4, 8, ['#ff3b3b', '#ffe93b', '#ffffff'], 45, 0.4);
+      fx.pop('+' + (10 + Math.floor(game.apples / 5) * 5), h[0] * CELL + 4, 16 + h[1] * CELL - 6, '#ffe93b');
+    }
+    if (r === 'die' || r === 'win') {
       playing = false;
+      var hd = game.snake[0];
+      fx.shake(3);
+      fx.burst(Math.max(0, Math.min(W, hd[0] * CELL + 4)), Math.max(16, Math.min(H, 16 + hd[1] * CELL + 4)), 14, ['#5eff5e', '#c8ffc8'], 60, 0.6);
       Cabinet.beep(200, 500, 'sawtooth', 0.15, 50);
-      setTimeout(function () { Cabinet.gameOver('snake', game.score, start); }, 800);
+      var id = scoreId();
+      setTimeout(function () { Cabinet.gameOver(id, game.score, start); }, 800);
     }
   }
 
   function render() {
+    fx.begin(ctx);
     ctx.fillStyle = flash > 0 ? '#0f2a12' : '#06100a';
     if (flash > 0) flash--;
     ctx.fillRect(0, 0, W, H);
     Cabinet.text(ctx, 'SCORE ' + game.score, 4, 4, 1, '#5eff5e');
+    if (game.wrap) Cabinet.text(ctx, 'EASY', W / 2, 4, 1, '#ffb300', 'center');
     Cabinet.text(ctx, 'LEN ' + game.snake.length, W - 4, 4, 1, '#7d879b', 'right');
     ctx.fillStyle = '#153a1a'; ctx.fillRect(0, 15, W, 1);
 
@@ -48,27 +76,33 @@
       ctx.fillRect(s[0] * CELL + 1, 16 + s[1] * CELL + 1, CELL - 2, CELL - 2);
     });
     if (game.dead) { ctx.fillStyle = 'rgba(255,60,60,0.25)'; ctx.fillRect(0, 16, W, H - 16); }
+    fx.draw(ctx);
+    fx.end(ctx);
   }
 
   /* Swipe anywhere; a short flick is enough. */
   var start0 = null;
   canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); start0 = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
   canvas.addEventListener('pointermove', function (e) {
-    if (!start0 || !playing) return;
+    if (!start0 || !playing || Cabinet.paused()) return;
     var dx = e.clientX - start0.x, dy = e.clientY - start0.y;
-    if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
     if (Math.abs(dx) > Math.abs(dy)) game.turn(dx > 0 ? 1 : -1, 0); else game.turn(0, dy > 0 ? 1 : -1);
-    start0 = null;   // one turn per swipe; lift and swipe again
+    // Re-anchor at the current point so one continuous drag can zig-zag
+    // (right, then down) without lifting; buffered turns keep them in order.
+    start0 = { x: e.clientX, y: e.clientY };
   });
   function up() { start0 = null; }
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
   document.addEventListener('keydown', function (e) {
     var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (m && playing) { e.preventDefault(); game.turn(m[0], m[1]); }
+    if (m && playing && !Cabinet.paused()) { e.preventDefault(); game.turn(m[0], m[1]); }
   });
 
   Cabinet.wireMute(document.getElementById('mute-btn'));
+  Cabinet.addPauseButton(function () { return playing; });
+  Cabinet.autoPause(function () { return playing; });
   attract();
   Cabinet.loop(update, render);
   window.__snake = { game: function () { return game; }, start: start };

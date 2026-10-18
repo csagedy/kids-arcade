@@ -19,6 +19,7 @@ html, body {
   font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   -webkit-user-select: none; user-select: none;
   overscroll-behavior: none; touch-action: manipulation;
+  display: flex; flex-direction: column;
 }
 
 .hidden { display: none !important; }
@@ -29,15 +30,15 @@ html, body {
 }
 .level { flex: 1; font-weight: 700; font-size: 17px; }
 .icon-btn {
-  width: 38px; height: 38px; flex: none; border: none; border-radius: 50%;
-  background: var(--panel-2); color: var(--text); font-size: 19px; line-height: 38px;
+  width: 44px; height: 44px; flex: none; border: none; border-radius: 50%;
+  background: var(--panel-2); color: var(--text); font-size: 20px; line-height: 44px;
   text-align: center; text-decoration: none; display: block; padding: 0;
 }
 .icon-btn:active { opacity: 0.65; }
 .icon-btn:disabled { opacity: 0.3; }
 
 .board {
-  height: calc(100% - 70px);
+  flex: 1; min-height: 0;
   display: flex; flex-wrap: wrap; align-content: center; justify-content: center;
   gap: 18px 14px; padding: 10px 14px calc(env(safe-area-inset-bottom) + 20px);
 }
@@ -59,7 +60,32 @@ html, body {
   content: ''; position: absolute; inset: -6px; border-radius: 10px 10px 34px 34px;
   border: 2px solid var(--accent); opacity: 0.65;
 }
-.tube.full-done { opacity: 0.55; }
+.tube.full-done { border-color: rgba(255,197,61,0.7); box-shadow: 0 0 14px rgba(255,197,61,0.25); }
+.tube.pouring { z-index: 5; animation: tilt 0.62s ease-in-out; }
+@keyframes tilt {
+  0% { transform: none; }
+  30% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  72% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  100% { transform: none; }
+}
+.tube.hint-to { animation: nudge 0.7s ease-in-out infinite; }
+.tube.hint-to::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 10px 10px 34px 34px;
+  border: 2px dashed var(--accent); opacity: 0.9;
+}
+@keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.tube.cheer { animation: cheer 0.6s ease-in-out; }
+@keyframes cheer { 0%, 100% { transform: none; } 30% { transform: translateY(-14px) scale(1.06); } 60% { transform: translateY(0); } }
+.stream {
+  position: fixed; z-index: 6; width: 7px; margin-left: -3.5px; border-radius: 4px;
+  pointer-events: none; transform-origin: top; animation: stream 0.42s ease-in-out both;
+}
+@keyframes stream {
+  0% { transform: scaleY(0); opacity: 0; }
+  25% { transform: scaleY(1); opacity: 1; }
+  80% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
 
 .seg {
   height: var(--seg-h);
@@ -68,7 +94,7 @@ html, body {
 }
 /* the lowest segment follows the tube's rounded bottom */
 .seg:first-child { border-radius: 3px 3px calc(var(--tube-w) / 2 - 6px) calc(var(--tube-w) / 2 - 6px); }
-.seg.pour-in { animation: pourIn 0.22s ease-out; }
+.seg.pour-in { animation: pourIn 0.25s ease-out 0.2s backwards; }
 @keyframes pourIn {
   from { transform: translateY(-70%); opacity: 0.35; }
   to { transform: translateY(0); opacity: 1; }
@@ -78,8 +104,17 @@ html, body {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(env(safe-area-inset-bottom) + 22px);
   background: var(--panel-2); color: var(--text); font-size: 14px; font-weight: 600;
-  padding: 10px 18px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  padding: 6px 8px 6px 18px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  display: flex; align-items: center; gap: 10px; white-space: nowrap;
 }
+.pill.small { padding: 9px 14px; font-size: 14px; min-height: 44px; background: var(--accent); color: #24201a; }
+.tip {
+  position: fixed; left: 24px; right: 24px; text-align: center; color: var(--muted); font-size: 14px;
+  bottom: calc(env(safe-area-inset-bottom) + 26px); pointer-events: none;
+}
+.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
+#undo-btn.nudge { animation: nudgebtn 0.6s ease-in-out 3; background: var(--accent); color: #24201a; }
+@keyframes nudgebtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 
 .pill {
   border: none; border-radius: 999px; padding: 11px 20px;

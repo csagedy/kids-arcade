@@ -8,11 +8,20 @@ var MM_SIZES = [
   { id: 'hard',   name: 'Hard',   cols: 4, rows: 6 }    // 12 pairs
 ];
 
-var MM_EMOJI = [
-  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮',
-  '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦄', '🐝', '🦋', '🐢', '🐙', '🦀',
-  '🍎', '🍌', '🍇', '🍓', '🍒', '🍕', '🍩', '🍪', '⚽', '🚗', '🚀', '⭐'
+/* Card themes. Each has at least 12 pictures (the Hard board needs 12 pairs).
+   'mixed' draws from all of them. */
+var MM_THEMES = [
+  { id: 'animals', name: 'Animals', icon: '🐶', cards: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🦄'] },
+  { id: 'food',    name: 'Food',    icon: '🍎', cards: ['🍎', '🍌', '🍇', '🍓', '🍒', '🍕', '🍩', '🍪', '🍉', '🍔', '🍦', '🥕', '🍑', '🍍', '🧁', '🥨'] },
+  { id: 'vehicles', name: 'Vehicles', icon: '🚗', cards: ['🚗', '🚕', '🚌', '🚒', '🚑', '🚓', '🚜', '🚲', '✈️', '🚀', '🚂', '🚁', '⛵', '🛵', '🚤', '🛴'] },
+  { id: 'mixed',   name: 'Mixed',   icon: '⭐', cards: null }
 ];
+
+MM_THEMES[3].cards = MM_THEMES[0].cards.slice(0, 8).concat(MM_THEMES[1].cards.slice(0, 8), MM_THEMES[2].cards.slice(0, 8), ['⚽', '⭐', '🦋', '🐝', '🐢', '🐙', '🦀', '🐦']);
+
+MM_THEMES.byId = function (id) {
+  return MM_THEMES.filter(function (t) { return t.id === id; })[0] || MM_THEMES[0];
+};
 
 function shuffle(a) {
   for (var i = a.length - 1; i > 0; i--) {
@@ -22,15 +31,16 @@ function shuffle(a) {
   return a;
 }
 
-function MMGame(sizeId, saved) {
+function MMGame(sizeId, saved, themeId) {
   this.size = MM_SIZES.filter(function (s) { return s.id === sizeId; })[0] || MM_SIZES[0];
   if (saved && this.restore(saved)) return;
   var pairs = this.size.cols * this.size.rows / 2;
-  var pool = shuffle(MM_EMOJI.slice()).slice(0, pairs);
+  var pool = shuffle(MM_THEMES.byId(themeId).cards.slice()).slice(0, pairs);
   this.cards = shuffle(pool.concat(pool));   // emoji per position
   this.matched = this.cards.map(function () { return false; });
   this.moves = 0;
   this.open = [];   // indices currently face up (0..2)
+  this.prevBest = 0;   // best before this win, set by recordWin
 }
 
 MMGame.SAVE_KEY = 'mm.game';
@@ -88,6 +98,7 @@ MMGame.loadBest = function (sizeId) {
 /* Fewest moves for this size; also bumps the games-won tally on the menu. */
 MMGame.prototype.recordWin = function () {
   var best = MMGame.loadBest(this.size.id);
+  this.prevBest = best;
   var isBest = !best || this.moves < best;
   try {
     if (isBest) localStorage.setItem(MMGame.bestKey(this.size.id), String(this.moves));

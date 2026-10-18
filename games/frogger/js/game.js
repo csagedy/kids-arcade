@@ -22,7 +22,8 @@ function FroggerGame() {
 
 /* Lanes are described bottom-up. dir +1 moves right. */
 FroggerGame.prototype.buildLanes = function () {
-  var sp = 1 + (this.level - 1) * 0.18;
+  // gentle start, ramps 15% a level, capped so it stays fair for little hands
+  var sp = Math.min(2.0, 0.9 + (this.level - 1) * 0.15);
   var s = this.startRow;
   this.lanes = [
     { row: s - 1, kind: 'car', dir: -1, speed: 28 * sp, len: 16, gap: 64, color: '#ffe93b' },
@@ -48,6 +49,9 @@ FroggerGame.prototype.resetFrog = function () {
   this.frog = { x: W / 2 - 6, row: this.startRow, w: 12 };
   this.bestRow = this.startRow;
   this.dead = 0;   // frames of death animation remaining
+  this.deathKind = null;   // 'splat' (road), 'splash' (water)
+  this.hopT = 0;           // frames since the last hop, for the squash animation
+  this.face = 1;           // 1 up, -1 down, 2 right, -2 left
 };
 
 FroggerGame.prototype.laneAt = function (row) {
@@ -59,7 +63,9 @@ FroggerGame.prototype.laneAt = function (row) {
 FroggerGame.prototype.hop = function (dx, dy) {
   if (this.dead || this.over) return null;
   var f = this.frog;
-  if (dx) { f.x = Math.max(0, Math.min(W - f.w, f.x + dx * CELL)); return 'hop'; }
+  this.hopT = 0;
+  if (dx) { f.x = Math.max(0, Math.min(W - f.w, f.x + dx * CELL)); this.face = dx * 2; return 'hop'; }
+  this.face = dy;
   var row = f.row - dy;   // dy +1 means up
   if (row > this.startRow || row < this.homeRow) return 'blocked';
   f.row = row;
@@ -67,12 +73,16 @@ FroggerGame.prototype.hop = function (dx, dy) {
   if (row === this.homeRow) {
     var bay = Math.floor((f.x + f.w / 2) / (W / 5));
     var bayCenter = bay * (W / 5) + W / 10;
-    if (this.homes[bay] || Math.abs(f.x + f.w / 2 - bayCenter) > 12) { this.kill(); return 'hop'; }
+    // bays are 28px wide; anywhere inside one counts. Missing the gap, or an
+    // already-filled bay, is a splash.
+    if (bay > 4 || this.homes[bay] || Math.abs(f.x + f.w / 2 - bayCenter) > 14) { this.kill('splash'); return 'die'; }
+    f.x = bayCenter - f.w / 2;
     this.homes[bay] = true;
     this.score += 50;
     if (this.homes.every(function (h) { return h; })) {
       this.score += 500;
       this.level++;
+      if (this.lives < 5) this.lives++;   // a bonus frog for clearing the board
       this.homes = [false, false, false, false, false];
       this.buildLanes();
       this.resetFrog();
@@ -84,8 +94,9 @@ FroggerGame.prototype.hop = function (dx, dy) {
   return 'hop';
 };
 
-FroggerGame.prototype.kill = function () {
+FroggerGame.prototype.kill = function (kind) {
   this.dead = 50;
+  this.deathKind = kind;
 };
 
 /* Returns 'die', 'over' or null. */
@@ -111,16 +122,22 @@ FroggerGame.prototype.update = function (dt) {
   }
   var f = this.frog, lane = this.laneAt(f.row);
   if (!lane) return null;
-  var fx1 = f.x + 2, fx2 = f.x + f.w - 2, onThing = false;
+  this.hopT++;
+  // Forgiving hitboxes: on the road the frog is a small box (and cars a touch
+  // shorter) so near misses live; on the water the frog's middle just has to
+  // be over a log, with a little slack past each end.
+  var road = lane.kind === 'car', cx = f.x + f.w / 2, onThing = false;
+  var fx1 = f.x + 3, fx2 = f.x + f.w - 3;
   for (var k = 0; k < lane.items.length; k++) {
     var x1 = lane.items[k], x2 = x1 + lane.len;
-    if (fx2 > x1 && fx1 < x2) { onThing = true; break; }
+    if (road ? (fx2 > x1 + 1 && fx1 < x2 - 1) : (cx > x1 - 3 && cx < x2 + 3)) { onThing = true; break; }
   }
-  if (lane.kind === 'car' && onThing) { this.kill(); return 'die'; }
-  if (lane.kind !== 'car') {
-    if (!onThing) { this.kill(); return 'die'; }
-    f.x += lane.dir * lane.speed * dt;   // ride the log
-    if (f.x < -f.w || f.x > W) { this.kill(); return 'die'; }
+  if (road && onThing) { this.kill('splat'); return 'die'; }
+  if (!road) {
+    if (!onThing) { this.kill('splash'); return 'die'; }
+    // ride the log; the screen edge stops the frog, and once the log slides
+    // out from under it, it's a splash
+    f.x = Math.max(0, Math.min(W - f.w, f.x + lane.dir * lane.speed * dt));
   }
   return null;
 };

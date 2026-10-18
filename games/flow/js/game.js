@@ -15,11 +15,27 @@ function FlowGame(level, saved) {
   }
   this.paths = this.pairs.map(function () { return []; });
   this.moves = 0;
-  if (saved && saved.level === level.number && saved.paths && saved.paths.length === this.paths.length) {
+  if (saved && saved.level === level.number && saved.paths && saved.paths.length === this.paths.length &&
+      this.fits(saved.paths)) {
     this.paths = saved.paths;
     this.moves = saved.moves | 0;
   }
 }
+
+/* A save from an older version of a level may not match today's board:
+   every path must start on one of its own dots and step cell to cell. */
+FlowGame.prototype.fits = function (paths) {
+  for (var c = 0; c < paths.length; c++) {
+    var p = paths[c], pr = this.pairs[c];
+    if (!Array.isArray(p)) return false;
+    if (p.length && p[0] !== pr.a && p[0] !== pr.b) return false;
+    for (var i = 0; i < p.length; i++) {
+      if (!(p[i] >= 0 && p[i] < this.N)) return false;
+      if (i && !this.adjacent(p[i - 1], p[i])) return false;
+    }
+  }
+  return true;
+};
 
 FlowGame.SAVE_KEY = 'flow.game';
 
@@ -107,6 +123,31 @@ FlowGame.prototype.filledCount = function () {
   var n = 0;
   for (var c = 0; c < this.paths.length; c++) n += this.paths[c].length;
   return n;
+};
+
+/* Hint: lay down the solution path for one colour that is not yet joined.
+   Prefers a colour with nothing drawn so the kid's own work is kept.
+   Returns the colour hinted or -1. */
+FlowGame.prototype.hint = function (solution) {
+  var pick = -1, c;
+  for (c = 0; c < this.paths.length && pick < 0; c++) {
+    if (!this.isComplete(c) && !this.paths[c].length) pick = c;
+  }
+  for (c = 0; c < this.paths.length && pick < 0; c++) {
+    if (!this.isComplete(c)) pick = c;
+  }
+  if (pick < 0) return -1;
+  var sol = solution[pick].slice();
+  for (var o = 0; o < this.paths.length; o++) {
+    if (o === pick) continue;
+    var op = this.paths[o];
+    for (var k = 0; k < op.length; k++) {
+      if (sol.indexOf(op[k]) >= 0) { op.length = k; break; }   // cut where it collides
+    }
+  }
+  this.paths[pick] = sol;
+  this.moves++;
+  return pick;
 };
 
 FlowGame.prototype.reset = function () {

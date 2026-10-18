@@ -3,11 +3,13 @@
   var playEl = document.getElementById('play');
   var canvas = document.getElementById('board');
   var ctx = canvas.getContext('2d');
-  var game = null, dpr = 1, side = 0, hintUntil = 0, wrongAt = -1, wrongUntil = 0, raf = null;
+  var game = null, dpr = 1, side = 0, hintUntil = 0, idleTimer = 0, doneAt = 0, wrongAt = -1, wrongUntil = 0, raf = null;
 
   /* ---------- library ---------- */
   function showLibrary() {
     game = null;
+    clearTimeout(idleTimer);
+    document.getElementById('win').classList.add('hidden');
     playEl.classList.add('hidden');
     libEl.classList.remove('hidden');
     var done = DotsGame.doneSet();
@@ -49,7 +51,9 @@
     document.getElementById('title').textContent = def.name;
     document.getElementById('win').classList.add('hidden');
     layout();
+    doneAt = game.isDone() ? Date.now() - 1000 : 0;   // already finished: show it filled
     render();
+    armIdle();
   }
 
   function layout() {
@@ -65,18 +69,47 @@
     return { x: 10 + p[0] * (side - 20) / 100, y: 10 + p[1] * (side - 20) / 100 };
   }
 
+  /* Dot radius: as big as reads well, but never so big that neighbours in a
+     crowded picture overlap. */
+  var minGap = {};
+  function dotRadius() {
+    var g = minGap[game.id];
+    if (g === undefined) {
+      g = 1e9;
+      var P = game.points;
+      for (var a = 0; a < P.length; a++) for (var b = a + 1; b < P.length; b++) {
+        g = Math.min(g, Math.sqrt(Math.pow(P[a][0] - P[b][0], 2) + Math.pow(P[a][1] - P[b][1], 2)));
+      }
+      minGap[game.id] = g;
+    }
+    var fit = g * (side - 20) / 100 * 0.46;
+    return Math.max(10, Math.min(18, side / 20, fit));
+  }
+
+  /* A reminder pulse if the kid pauses for a few seconds. */
+  function armIdle() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      if (game && !game.isDone()) { hintUntil = Date.now() + 2500; render(); }
+    }, 6000);
+  }
+
   function render() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, side, side);
     var n = game.points.length, done = game.isDone();
     var now = Date.now();
 
-    // filled picture once complete
-    if (done) {
+    // Colour creeps in as the shape is joined, then floods in once complete.
+    var k, q;
+    if (game.next > 2 || done) {
+      ctx.globalAlpha = done ? Math.min(1, 0.3 + (now - doneAt) / 700 * 0.7) : 0.22;
       ctx.fillStyle = game.color;
       ctx.beginPath();
-      for (var k = 0; k < n; k++) { var q = pt(k); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
+      var fillTo = done ? n : game.next;
+      for (k = 0; k < fillTo; k++) { q = pt(k); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); }
       ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
     // joined segments so far
@@ -91,7 +124,7 @@
     }
 
     // dots and numbers
-    var r = Math.max(11, Math.min(16, side / 26));
+    var r = dotRadius();
     for (var j = 0; j < n; j++) {
       var d = pt(j);
       var isNext = !done && j === game.next;
@@ -104,18 +137,18 @@
       ctx.fill();
       if (isNext) { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.stroke(); }
       ctx.fillStyle = joined ? 'rgba(0,0,0,0.55)' : isNext ? '#24201a' : '#f2f4f8';
-      ctx.font = 'bold ' + Math.round(r * 1.05) + 'px -apple-system, system-ui, sans-serif';
+      ctx.font = 'bold ' + Math.round(r * 1.2) + 'px -apple-system, system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(j + 1), d.x, d.y + 0.5);
     }
 
     document.getElementById('progress').textContent = Math.min(game.next, n) + ' / ' + n;
-    if (now < hintUntil || now < wrongUntil) { if (!raf) raf = requestAnimationFrame(function () { raf = null; render(); }); }
+    if (now < hintUntil || now < wrongUntil || (done && now - doneAt < 700)) { if (!raf) raf = requestAnimationFrame(function () { raf = null; render(); }); }
   }
 
   function dotAt(x, y) {
     var best = -1, bestD = Infinity;
-    var r = Math.max(16, side / 18);
+    var r = Math.max(20, side / 16);
     for (var i = 0; i < game.points.length; i++) {
       var p = pt(i), dd = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
       if (dd < r * r && dd < bestD) { best = i; bestD = dd; }
@@ -124,7 +157,7 @@
   }
 
   canvas.addEventListener('pointerdown', function (e) {
-    if (!game) return;
+    if (!game || game.isDone()) return;
     e.preventDefault();
     var rect = canvas.getBoundingClientRect();
     var i = dotAt(e.clientX - rect.left, e.clientY - rect.top);
@@ -136,18 +169,42 @@
       if (game.misses >= 2) hintUntil = Date.now() + 1500;
     } else if (res === 'done') {
       game.markDone();
-      setTimeout(win, 500);
+      doneAt = Date.now();
+      clearTimeout(idleTimer);
+      confetti();
+      try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (e) {}
+      setTimeout(win, 900);
+    } else if (res === 'hit') {
+      hintUntil = 0;
+      try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) {}
     }
+    if (!game.isDone()) armIdle();
     render();
   });
 
+  function confetti() {
+    var box = document.getElementById('confetti');
+    box.innerHTML = '';
+    var cols = [game.color, '#ffd645', '#e5484d', '#4fa3f7', '#3fb950', '#f06ca8'];
+    for (var i = 0; i < 36; i++) {
+      var d = document.createElement('i');
+      d.style.left = Math.random() * 100 + '%';
+      d.style.background = cols[i % cols.length];
+      d.style.animationDelay = (Math.random() * 0.6) + 's';
+      d.style.animationDuration = (1.4 + Math.random() * 1.2) + 's';
+      box.appendChild(d);
+    }
+    setTimeout(function () { box.innerHTML = ''; }, 3500);
+  }
+
   function win() {
+    if (!game || !game.isDone()) return;
     document.getElementById('win-name').textContent = game.name;
     document.getElementById('win').classList.remove('hidden');
   }
 
   document.getElementById('back-btn').addEventListener('click', showLibrary);
-  document.getElementById('clear-btn').addEventListener('click', function () { if (game) { game.reset(); render(); } });
+  document.getElementById('clear-btn').addEventListener('click', function () { if (game) { game.reset(); hintUntil = 0; doneAt = 0; document.getElementById('win').classList.add('hidden'); render(); armIdle(); } });
   document.getElementById('win-lib').addEventListener('click', showLibrary);
   document.getElementById('win-next').addEventListener('click', function () {
     var idx = DOT_PICTURES.map(function (p) { return p.id; }).indexOf(game.id);
