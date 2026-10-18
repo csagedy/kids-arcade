@@ -71,6 +71,7 @@ games/color/                   Color by Number
   js/util.js                   RLE + bitset encoding, safe localStorage, color helpers
   js/quantize.js               median-cut color reduction for photo import
   js/puzzles-data.js           built-in pictures as 16x16 character art
+  js/pictures-*.js             bigger pictures: medium, hard (32x32), expert
   js/puzzle.js                 puzzle model, photo -> puzzle, save/load
   js/render.js                 cached layers + pan/zoom transform
   js/input.js                  pointer gestures
@@ -134,9 +135,14 @@ the tile shows.
 
 ## Adding a picture
 
-Append to `BUILTIN_PUZZLES` in `js/puzzles-data.js`: a `legend` mapping single
-characters to hex colors, and an `art` array of equal-length strings. `.` means
-blank (stays white, never needs painting). Legend order sets the swatch numbers.
+Color by Number has 43 built-in pictures in four sections, chosen by grid size:
+Quick (16x16, `js/puzzles-data.js`), Medium (24x24, `js/pictures-medium.js`),
+Detailed (32x32, `js/pictures-hard.js`) and Intricate (40-48 across,
+`js/pictures-expert.js`). Append to whichever file fits: a `legend` mapping
+single characters to hex colors (16 at most), and an `art` array of
+equal-length strings. `.` means blank (stays white, never needs painting).
+Legend order sets the swatch numbers. Any grid size works; the library sorts
+by size and the game pans and zooms.
 
 ## Adding a nonogram
 

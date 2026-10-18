@@ -54,6 +54,11 @@ a.icon-btn { text-decoration: none; line-height: 38px; text-align: center; }
   border: none; background: rgba(0,0,0,0.55); color: #fff; font-size: 15px; line-height: 1;
 }
 .card-wrap { position: relative; }
+.lib-section {
+  grid-column: 1 / -1; margin: 10px 2px -4px; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.lib-section:first-child { margin-top: 0; }
 .card-wrap .card { width: 100%; }
 
 .pill {

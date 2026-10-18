@@ -15,7 +15,9 @@
   /* ---------------- library ---------------- */
 
   function allPuzzles() {
-    return BUILTIN_PUZZLES.map(puzzleFromArt).concat(listCustomPuzzles());
+    var built = BUILTIN_PUZZLES.map(puzzleFromArt);
+    built.sort(function (a, b) { return Math.max(a.w, a.h) - Math.max(b.w, b.h); });   // stable: file order within a size
+    return built.concat(listCustomPuzzles());
   }
 
   /* One line for the arcade menu tile, e.g. "3 finished". */
@@ -53,12 +55,22 @@
     return c;
   }
 
+  function tierOf(p) {
+    if (p.id.indexOf('photo-') === 0) return 'My pictures';
+    var n = Math.max(p.w, p.h);
+    return n <= 16 ? 'Quick' : n <= 24 ? 'Medium' : n <= 32 ? 'Detailed' : 'Intricate';
+  }
+
   function renderLibrary() {
     var grid = $('#lib-grid');
     grid.innerHTML = '';
     publishStat();
 
+    // Group by how big the grid is, so there's an easy end and a long one.
+    var lastTier = null;
     allPuzzles().forEach(function (p) {
+      var tier = tierOf(p);
+      if (tier !== lastTier) { grid.appendChild(el('div', 'lib-section', tier)); lastTier = tier; }
       var wrap = el('div', 'card-wrap');
       var card = el('button', 'card');
       card.appendChild(thumb(p));
