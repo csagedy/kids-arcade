@@ -461,11 +461,11 @@ var Cabinet = (function () {
   /* The saved round's data, or null (none, too old, or not ours). */
   C.loadSave = function () {
     if (!keeper) return null;
-    var s = null;
-    try { s = JSON.parse(localStorage.getItem('cab.save.' + keeper.id)); } catch (e) { s = null; }
+    var s = null, raw = null;
+    try { raw = localStorage.getItem('cab.save.' + keeper.id); s = JSON.parse(raw); } catch (e) { s = null; }
     var ok = s && typeof s === 'object' && s.v === 1 && typeof s.at === 'number' &&
       Date.now() - s.at < SAVE_DAYS * 864e5 && s.d && typeof s.d === 'object';
-    if (!ok) { if (s !== null) C.dropSave(); return null; }
+    if (!ok) { if (raw !== null) C.dropSave(); return null; }
     return s.d;
   };
   /* Rebuild a round with keeper.restore; false (and the save is dropped)

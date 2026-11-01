@@ -49,6 +49,25 @@ Puzzles (no timers, no lives; everything saves as you go):
 - **Four in a Row** — against the computer (Easy / Medium / Hard, Hard is a
   5-ply alpha-beta search) or two players passing the phone. Take back a
   move; the score chips keep a running tally for the current mode.
+- **Jigsaw** — real jigsaw-shaped pieces (tabs and blanks) from Color by
+  Number's 81 pictures, shown crisp and grouped by theme, or from a photo from
+  the camera roll (kept on the device). Pick the size by picture: 4, 9, 16,
+  25, 36 or 49 pieces (36 at most on a phone). Drag pieces from the tray;
+  close enough clicks them in, and neighbours dropped side by side join up and
+  move together. Two kids can drag at once. A faint picture on the board (on
+  by default for 4 and 9 pieces), a peek button, a hint that lights up a
+  piece's spot (edges first), and a Tidy button. Finished pictures shimmer,
+  then "Up next" suggests another. Saves mid-puzzle; the library shows each
+  puzzle's progress.
+- **Mini Golf** — pull back anywhere on the course and let go to putt; a
+  dotted line shows where the ball goes and a ring shows how hard. 18 holes in
+  three courses (Candy Garden, Pirate Cove, Space Station), each hole bringing
+  in one new thing: bank walls, curves, bumpers, sand, water, a bridge, hills
+  and slopes, a sliding plank, spinners, a warp tunnel and a conveyor belt.
+  Each hole turns on its side on wide screens so it's always as big as it can
+  be. Par with stars (under par 3, par 2), a scorecard and best scores per
+  hole. No failing: water just puts the ball back, and after 8 shots it hops
+  in. One player, or two passing the iPad. Saves after every putt.
 
 ### Action games (the cabinet)
 
@@ -94,6 +113,14 @@ top of the kit:
   paddle). First to 7.
 - **Asteroids** — hold a finger down; the ship turns toward it, drifts after
   it and fires by itself. Rocks split three times; a UFO drops in now and then.
+- **Busy Bee** — our own game. Slide a finger anywhere and the bee flies with
+  it (or tap where it should go). Touch the glowing flowers to pick up pollen,
+  then fly it home to the hive in the middle to make honey; the more you carry
+  in one trip, the more each ball is worth. Fill the honey bar to reach the
+  next level. Wasps chase you when you get close and a spider drops in from
+  level 3; a bump costs a heart and spills your pollen (pick it back up
+  quickly!). The hive is safe: wasps can't come in. Gold flowers give three
+  pollen, heart flowers give a heart back.
 
 Every cabinet game pauses itself when the phone sleeps or the app is
 switched away, and has a pause button and the shared mute. A round in
@@ -105,7 +132,8 @@ forgets the save. Breakout puts the ball back on the paddle (same level,
 score, balls and bricks); Frogger starts the frog from the bottom strip (same
 level, score, frogs and homes); Pong serves again at the same score; Snake,
 Missile Command, Space Invaders and Asteroids carry on where they were (the
-Asteroids ship in its shield bubble). Turning the device mid-round rebuilds
+Asteroids ship in its shield bubble); Busy Bee waits at the hive door with its pollen,
+flowers and wasps where they were. Turning the device mid-round rebuilds
 the playfield for the new shape: bricks, aliens, cities and lanes are
 re-spread, the snake's board turns a quarter, and Frogger slides the frog's
 lane so it is never dropped in the water. The game then waits on a "Turned
@@ -233,8 +261,20 @@ games/maze/                    Maze
 games/connect4/                Four in a Row
   js/game.js                   board, win check, computer player
   js/ui.js                     SVG frame, hover-and-drop, take back, setup sheet
+games/jigsaw/                  Jigsaw (pictures come from games/color/js, read only)
+  js/pictures.js               picture list by theme, crisp pixel-art drawing, thumbnails
+  js/shapes.js                 seeded tab-and-blank cut, piece outlines
+  js/photos.js                 camera-roll photos in IndexedDB
+  js/game.js                   piece states (tray / table group / placed), save + checks
+  js/ui.js                     library, size picker, board + tray layout, cached piece bitmaps, multi-touch drag, hints, finish
+games/minigolf/                Mini Golf
+  js/sim.js                    deterministic physics (fixed step, capsule walls, own sine; also loads in Node)
+  js/holes.js                  three courses of six holes, in each hole's own space
+  js/draw.js                   fit/turn the hole to the screen, static layer + per-frame layer
+  js/ui.js                     pull-back putting, turns, banners, scorecard, saves
+  tools/check.js               solver + fuzz: every hole can be finished, no ball escapes or sticks
 games/breakout/ games/snake/ games/missile/
-games/frogger/ games/invaders/ games/pong/ games/asteroids/
+games/frogger/ games/invaders/ games/pong/ games/asteroids/ games/bee/
                                action games: js/game.js rules, js/ui.js drawing + input
 games/crazy8/                  Crazy Eights
   js/game.js                   deal, legal plays, party effects, computer player
@@ -400,6 +440,8 @@ Never rename a key kids already have scores in. Per game:
 | Dot to Dot | `dots.p.<id>`, `dots.done`, `dots.last` |
 | Maze | `maze.level`, `maze.max`, `maze.game` |
 | Four in a Row | `connect4.game`, `connect4.wins`, `connect4.tally` |
+| Mini Golf | `golf.game` (round in progress), `golf.best` (best strokes per hole), `golf.players` |
+| Jigsaw | `jig.p.<picture id>` (puzzle in progress), `jig.done` (picture id -> bit mask of sizes finished, bit k for k×k), `jig.level` (last size); photos live in IndexedDB `jigsaw`/`photos`, so Backup & restore does not carry them |
 | Snake / Pong | `snake.wrap`; `pong.diff`, `pong.wins` (high scores in `cab.hi.*`) |
 | Crazy Eights | `crazy8.game`, `crazy8.opts`, `crazy8.wins` |
 | Go Fish | `gofish.game`, `gofish.wins` |
@@ -553,7 +595,9 @@ Service workers are blocked in these runs, so edits always show.
 
 Other checks: `python3 tools/nono-check.py` (nonograms solvable without
 guessing) and `node games/klondike/tools/verify.js` (every Solitaire seed
-still solves and replays legally).
+still solves and replays legally), and `node games/minigolf/tools/check.js`
+(every Mini Golf hole can be finished; random putts never leave the green
+or get stuck).
 
 ## Developing
 

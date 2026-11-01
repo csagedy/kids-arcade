@@ -188,7 +188,61 @@ var MENU_ART = (function () {
       }
     });
     return svg('0 0 120 90', SH + out + '<circle cx="81.6" cy="9" r="5" fill="#ff5d73"/><path d="M81.6 15v3" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>');
+  };  /* Jigsaw: three pieces of a little sunny picture locked together, the
+     fourth lifted out over its slot. */
+  A.jigsaw = function () {
+    // one piece outline: s = size, t = [top, right, bottom, left] tabs (1 out, -1 in, 0 flat)
+    function piece(x, y, s, t) {
+      var b = s * 0.27, a = s * 0.36, c = s * 0.64;
+      function edge(x0, y0, dx, dy, nx, ny, k) {
+        if (!k) return 'L' + (x0 + dx * s) + ' ' + (y0 + dy * s);
+        var p = function (u, v) { return (x0 + dx * u + nx * v * k) + ' ' + (y0 + dy * u + ny * v * k); };
+        return 'L' + p(a, 0) + 'C' + p(a - s * 0.08, b) + ' ' + p(c + s * 0.08, b) + ' ' + p(c, 0) + 'L' + p(s, 0);
+      }
+      return 'M' + x + ' ' + y +
+        edge(x, y, 1, 0, 0, -1, t[0]) + edge(x + s, y, 0, 1, 1, 0, t[1]) +
+        edge(x + s, y + s, -1, 0, 0, 1, t[2]) + edge(x, y + s, 0, -1, -1, 0, t[3]) + 'z';
+    }
+    var s = 30, x0 = 28, y0 = 14;
+    var pic = '<rect x="' + x0 + '" y="' + y0 + '" width="60" height="60" fill="#7fd0ff"/>' +
+      '<rect x="' + x0 + '" y="' + (y0 + 40) + '" width="60" height="20" fill="#3ddc84"/>' +
+      '<circle cx="' + (x0 + 45) + '" cy="' + (y0 + 15) + '" r="9" fill="#ffd23f"/>' +
+      '<path d="M' + (x0 + 6) + ' ' + (y0 + 41) + 'l13-19 13 19z" fill="#ff5d73"/>' +
+      '<path d="M' + (x0 + 24) + ' ' + (y0 + 41) + 'l10-13 10 13z" fill="#a77bff"/>';
+    var tl = piece(x0, y0, s, [0, -1, -1, 0]), bl = piece(x0, y0 + s, s, [1, -1, 0, 0]), br = piece(x0 + s, y0 + s, s, [-1, 0, 0, 1]);
+    var tr = piece(x0 + s, y0, s, [0, 0, 1, 1]);
+    var lift = 'translate(14 -8) rotate(12 ' + (x0 + 45) + ' ' + (y0 + 15) + ')';
+    return svg('0 0 120 90', SH +
+      '<defs><clipPath id="jg-in"><path d="' + tl + bl + br + '"/></clipPath><clipPath id="jg-up"><path d="' + tr + '"/></clipPath></defs>' +
+      '<path d="' + tr + '" fill="#1b1d4a" opacity="0.5"/>' +                          // the empty slot
+      '<g clip-path="url(#jg-in)">' + pic + '</g>' +
+      '<path d="' + tl + bl + br + '" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>' +
+      '<g transform="' + lift + '">' +
+        '<path d="' + tr + '" fill="#000" opacity="0.2" transform="translate(2 5)"/>' +
+        '<g clip-path="url(#jg-up)">' + pic + '</g>' +
+        '<path d="' + tr + '" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>' +
+      '</g>');
+  };  A.minigolf = function () {
+    var dots = '';
+    [[38, 50], [46, 48.5], [54, 47.5], [62, 47], [70, 46.5]].forEach(function (p, i) {
+      dots += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (1.9 - i * 0.2) + '" fill="#fff" opacity="' + (0.95 - i * 0.14) + '"/>';
+    });
+    return svg('0 0 120 90', SH +
+      '<rect x="8" y="16" width="104" height="64" rx="24" fill="#c99358"/>' +
+      '<rect x="8" y="14" width="104" height="64" rx="24" fill="#ffe3b0"/>' +
+      '<rect x="14" y="20" width="92" height="52" rx="19" fill="#4cc46a" stroke="#ff7ac6" stroke-width="4"/>' +
+      '<rect x="14" y="20" width="92" height="52" rx="19" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="4 4"/>' +
+      '<path d="M40 22v48M64 22v48" stroke="#5fd47a" stroke-width="10" opacity="0.6"/>' +
+      '<circle cx="58" cy="32" r="6" fill="#6b45c9"/><circle cx="57.4" cy="31.4" r="4.6" fill="#a77bff"/><circle cx="56" cy="30" r="1.6" fill="#fff" opacity="0.7"/>' +
+      dots +
+      '<ellipse cx="86" cy="46" rx="6.5" ry="5.5" fill="#fff" opacity="0.85"/><ellipse cx="86" cy="46" rx="5" ry="4.2" fill="#10200f"/>' +
+      '<path d="M86 46V8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path d="M86 8q8 1.5 15 5.5q-7 3.5-15 5z" fill="#ff5d73"/>' +
+      '<ellipse cx="32" cy="54" rx="5.4" ry="2.6" fill="#000" opacity="0.25"/>' +
+      '<circle cx="30.5" cy="50.5" r="5.4" fill="#ffd23f"/><circle cx="28.8" cy="48.8" r="1.8" fill="#fff" opacity="0.85"/>');
   };
+
+
 
   /* ---------- action: glowing CRT screens ---------- */
   function crt(body) { return svg('0 0 100 75', body); }
@@ -228,6 +282,19 @@ var MENU_ART = (function () {
     return crt('<path d="M4 37.5h92" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>' +
       '<g fill="#fff"' + glow('#fff') + '><rect x="30" y="7" width="22" height="4"/><rect x="48" y="64" width="22" height="4"/><rect x="58" y="26" width="4.5" height="4.5"/></g>' +
       '<text x="20" y="30" font-size="12" fill="#fff" opacity="0.5" font-family="Courier New, monospace" font-weight="700">3</text><text x="20" y="54" font-size="12" fill="#fff" opacity="0.5" font-family="Courier New, monospace" font-weight="700">2</text>');
+  };
+  A.bee = function () {
+    var bands = '', ws = [32, 30, 27, 23, 17, 10];
+    ws.forEach(function (w, i) { bands += '<rect x="' + (26 - w / 2) + '" y="' + (63 - i * 5) + '" width="' + w + '" height="4.2" rx="2" fill="' + (i % 2 ? '#f2b640' : '#e0a02e') + '"/>'; });
+    return crt('<g' + glow('#ff9f43') + '>' + bands + '</g><path d="M22 67.2v-5a4 4 0 0 1 8 0v5z" fill="#1a0d02"/>' +
+      '<path d="M38 44Q48 20 58 30" fill="none" stroke="#ffd23f" stroke-width="1.3" stroke-dasharray="2 3" opacity="0.6"/>' +
+      '<path d="M84 50v17M84 60l5-3" stroke="#3ddc84" stroke-width="2" fill="none"/>' +
+      '<g' + glow('#ff7ac6') + '><circle cx="84" cy="38" r="5" fill="#ff7ac6"/><circle cx="91" cy="44" r="5" fill="#ff7ac6"/><circle cx="77" cy="44" r="5" fill="#ff7ac6"/><circle cx="80" cy="51" r="5" fill="#ff7ac6"/><circle cx="88" cy="51" r="5" fill="#ff7ac6"/><circle cx="84" cy="45.5" r="5" fill="#ffd23f"/></g>' +
+      '<g' + glow('#ffd23f') + '><ellipse cx="62" cy="20" rx="5" ry="4" fill="#d8f4ff"/><ellipse cx="69" cy="19" rx="5" ry="4" fill="#d8f4ff"/>' +
+      '<ellipse cx="66" cy="29" rx="11" ry="8" fill="#ffd23f"/></g>' +
+      '<path d="M60 21.6v14.8M65 21v16" stroke="#2a1a08" stroke-width="2.6"/><path d="M55 29l-3 0" stroke="#2a1a08" stroke-width="2"/>' +
+      '<circle cx="72" cy="27" r="2.3" fill="#fff"/><circle cx="72.8" cy="27.4" r="1.2" fill="#2a1a08"/><path d="M71 32.5q2 1.5 4-.5" stroke="#2a1a08" stroke-width="1" fill="none"/>' +
+      '<g fill="#ff9f43"><circle cx="63" cy="39" r="1.8"/><circle cx="67" cy="39.5" r="1.8"/></g>');
   };
   A.asteroids = function () {
     return crt('<g fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"' + glow('#7cf2ff') + '>' +

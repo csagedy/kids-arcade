@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Jigsaw</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- the picture library -->
+<section id="library" class="k-shell screen">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid"><div class="k-title">Jigsaw</div></div>
+    <div class="k-bar__end">
+      <button id="photo-btn" class="k-btn k-btn--primary photo-btn" aria-label="Make a puzzle from a photo"><span class="ico" data-ico="camera"></span><span class="lbl">Photo</span></button>
+    </div>
+  </header>
+  <nav id="lib-tabs" class="lib-tabs" aria-label="Sections"></nav>
+  <div id="lib-grid" class="lib-grid"></div>
+  <input type="file" id="photo-input" accept="image/*" hidden>
+</section>
+
+<!-- doing a puzzle -->
+<section id="game" class="k-shell screen k-hidden">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <button id="back-btn" class="k-btn k-btn--icon" data-k-icon="back" aria-label="Back to the pictures"></button>
+    </div>
+    <div class="k-bar__mid">
+      <div class="progress" id="progress" aria-label="Pieces placed">
+        <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+        <b id="progress-num">0/0</b>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="peek-btn" class="k-btn k-btn--icon" aria-label="Peek at the picture"><span class="ico" data-ico="eye"></span></button>
+      <button id="hint-btn" class="k-btn k-btn--icon" data-k-icon="hint" aria-label="Hint"></button>
+    </div>
+  </header>
+  <main id="play" class="play">
+    <div id="board" class="board">
+      <canvas id="mat" class="layer"></canvas>
+      <canvas id="placed" class="layer"></canvas>
+      <canvas id="peek" class="layer peek"></canvas>
+      <canvas id="glow" class="layer glow"></canvas>
+      <div class="shimmer"></div>
+    </div>
+    <div id="tray" class="tray">
+      <div class="tray-head">
+        <button id="lid" class="lid" aria-label="Peek at the picture"><canvas id="lid-canvas"></canvas></button>
+        <div class="tray-btns">
+          <button id="ghost-btn" class="k-btn k-btn--icon k-btn--sm" aria-label="Faint picture on the board" aria-pressed="false"><span class="ico" data-ico="ghost"></span></button>
+          <button id="tidy-btn" class="k-btn k-btn--icon k-btn--sm" data-k-icon="shuffle" aria-label="Tidy up the pieces"></button>
+          <button id="help-btn" class="k-btn k-btn--icon k-btn--sm" data-k-icon="help" aria-label="How to play"></button>
+          <button id="mute-btn" class="k-btn k-btn--icon k-btn--sm" aria-label="Sound"></button>
+        </div>
+      </div>
+    </div>
+    <div id="pieces" class="pieces"></div>
+  </main>
+</section>
+
+<script src="../../kit/kit.js"></script>
+<!-- the pictures are Color by Number's (read only, shared with it) -->
+<script src="../color/js/puzzles-data.js"></script>
+<script src="../color/js/pictures-medium.js"></script>
+<script src="../color/js/pictures-hard.js"></script>
+<script src="../color/js/pictures-expert.js"></script>
+<script src="js/pictures.js"></script>
+<script src="js/shapes.js"></script>
+<script src="js/photos.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>

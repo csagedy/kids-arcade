@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v27';
+var CACHE = 'arcade-v28';
 
 var FILES = [
   './',
@@ -23,6 +23,11 @@ var FILES = [
   './games/asteroids/manifest.webmanifest',
   './games/asteroids/js/game.js',
   './games/asteroids/js/ui.js',
+  './games/bee/icon.png',
+  './games/bee/index.html',
+  './games/bee/manifest.webmanifest',
+  './games/bee/js/game.js',
+  './games/bee/js/ui.js',
   './games/blockblast/icon.png',
   './games/blockblast/index.html',
   './games/blockblast/manifest.webmanifest',
@@ -98,6 +103,15 @@ var FILES = [
   './games/invaders/manifest.webmanifest',
   './games/invaders/js/game.js',
   './games/invaders/js/ui.js',
+  './games/jigsaw/icon.png',
+  './games/jigsaw/index.html',
+  './games/jigsaw/manifest.webmanifest',
+  './games/jigsaw/style.css',
+  './games/jigsaw/js/game.js',
+  './games/jigsaw/js/photos.js',
+  './games/jigsaw/js/pictures.js',
+  './games/jigsaw/js/shapes.js',
+  './games/jigsaw/js/ui.js',
   './games/klondike/icon.png',
   './games/klondike/index.html',
   './games/klondike/manifest.webmanifest',
@@ -117,6 +131,14 @@ var FILES = [
   './games/memory/style.css',
   './games/memory/js/game.js',
   './games/memory/js/ui.js',
+  './games/minigolf/icon.png',
+  './games/minigolf/index.html',
+  './games/minigolf/manifest.webmanifest',
+  './games/minigolf/style.css',
+  './games/minigolf/js/draw.js',
+  './games/minigolf/js/holes.js',
+  './games/minigolf/js/sim.js',
+  './games/minigolf/js/ui.js',
   './games/missile/icon.png',
   './games/missile/index.html',
   './games/missile/manifest.webmanifest',

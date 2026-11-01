@@ -1,0 +1,147 @@
+/* Mini Golf on the arcade kit. The kit draws the bar, chips, buttons and
+   overlays; the course is one canvas that fills the whole stage (the hole
+   turns on its side on wide screens, see js/draw.js). */
+
+.golf-stage { padding: var(--k-s1) var(--k-gutter) calc(var(--k-s2) + 2px); }
+.course {
+  position: relative; width: 100%; height: 100%;
+  border-radius: var(--k-r-lg); overflow: hidden;
+  background: var(--k-bg-deep);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 6px 0 #090a22, var(--k-shadow-2);
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+/* whose turn + stars still to win */
+.turn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; min-height: 44px;
+  border-radius: var(--k-r-round); background: var(--k-surface-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 4px 0 var(--k-edge);
+  font-weight: 900; font-size: var(--k-fs); white-space: nowrap; margin-bottom: 4px;
+}
+.turn__ball {
+  width: 26px; height: 26px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, var(--ball, #ff5d73) 45%, var(--ball-edge, #b51b3a) 100%);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.turn.bump .turn__ball { animation: k-bump 0.35s var(--k-ease-pop); }
+.turn__stars { display: inline-flex; gap: 1px; }
+.turn__stars svg { width: 18px; height: 18px; color: var(--k-accent); transition: color var(--k-med), opacity var(--k-med), transform var(--k-med); }
+.turn__stars .off svg { color: var(--k-faint); opacity: 0.45; transform: scale(0.82); }
+
+.golf-foot {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: var(--k-s3);
+  padding: 0 var(--k-gutter) calc(var(--k-s2) + 2px);
+}
+.golf-foot .k-btn { margin-bottom: var(--k-depth); }
+.golf-foot .turn { margin-right: auto; }
+
+@media (min-width: 700px) and (min-height: 600px) {
+  .turn { min-height: 54px; padding: 8px 18px 8px 10px; font-size: var(--k-fs-lg); gap: 10px; }
+  .turn__ball { width: 32px; height: 32px; }
+  .turn__stars svg { width: 22px; height: 22px; }
+}
+@media (max-width: 430px) {
+  #par-chip .k-stat__label { letter-spacing: 0.04em; }
+  .banner { padding: 14px 18px 16px; }
+  .banner__kicker { font-size: 11px; letter-spacing: 0.06em; }
+}
+/* landscape: the turn pill joins the chips in the bar */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-bar__mid { gap: var(--k-s3); }
+  .golf-stage { padding-bottom: calc(var(--k-s3) + 2px); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .golf .k-bar { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--k-s2); }
+  .golf .k-bar__mid { gap: var(--k-s2); }
+  .solo .k-bar .turn__name { display: none; }
+  .turn { min-height: 40px; padding: 4px 10px 4px 6px; }
+  .turn__ball { width: 22px; height: 22px; }
+  .turn__stars svg { width: 15px; height: 15px; }
+  .k-bar { padding-top: var(--k-s2); }
+}
+
+/* the banner over the course: hole intro and results */
+.banner {
+  position: absolute; left: 50%; top: 50%; z-index: 3;
+  transform: translate(-50%, -50%);
+  min-width: min(78%, 420px); max-width: 92%;
+  padding: 16px 26px 18px; border-radius: var(--k-r-xl);
+  background: rgba(22, 24, 67, 0.88);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  box-shadow: 0 8px 0 rgba(9, 10, 34, 0.8), var(--k-shadow-3);
+  text-align: center; pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.2s, visibility 0s 0.2s;
+}
+.banner.show { opacity: 1; visibility: visible; transition: opacity 0.15s; animation: banner-in 0.45s var(--k-ease-pop) both; }
+.banner.gone { transition: none !important; animation: none !important; }
+.banner.big { background: linear-gradient(160deg, #ffd23f, #ff9f43); color: #3b2a00; box-shadow: 0 8px 0 #c96a12, var(--k-shadow-3); }
+.banner.big .banner__sub { color: #6a4700; }
+.banner__kicker { white-space: nowrap; font-size: var(--k-fs-sm); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--k-muted); }
+.banner.big .banner__kicker { color: #8a5a00; }
+.banner__title { font-size: clamp(26px, 6.5vmin, 54px); font-weight: 900; line-height: 1.1; letter-spacing: -0.01em; margin: 2px 0 4px; }
+.banner__sub { font-size: clamp(15px, 2.6vmin, 22px); font-weight: 700; color: var(--k-muted); line-height: 1.35; }
+.banner__stars { display: flex; justify-content: center; gap: 6px; margin: 6px 0 2px; }
+.banner__stars span { width: clamp(30px, 6vmin, 48px); height: clamp(30px, 6vmin, 48px); color: rgba(255, 255, 255, 0.25); }
+.banner.big .banner__stars span { color: rgba(120, 70, 0, 0.25); }
+.banner__stars span.on { color: #fff; filter: drop-shadow(0 3px 0 rgba(150, 80, 0, 0.5)); animation: star-pop 0.5s var(--k-ease-pop) both; }
+.banner:not(.big) .banner__stars span.on { color: var(--k-accent); filter: drop-shadow(0 3px 0 var(--k-accent-edge)); }
+.banner__stars span:nth-child(2) { animation-delay: 0.15s; }
+.banner__stars span:nth-child(3) { animation-delay: 0.3s; }
+.banner__stars svg { width: 100%; height: 100%; }
+.banner__par { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 14px; border-radius: var(--k-r-round); background: rgba(255, 255, 255, 0.1); font-weight: 800; }
+@keyframes banner-in { from { transform: translate(-50%, -50%) scale(0.6); } }
+@keyframes star-pop { 0% { transform: scale(0) rotate(-40deg); } 70% { transform: scale(1.25) rotate(8deg); } 100% { transform: scale(1); } }
+
+/* course picker sheet */
+.pick { display: flex; flex-direction: column; gap: var(--k-s4); }
+.pick .k-seg { align-self: center; }
+.pick .k-seg button { white-space: nowrap; }
+.courses { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--k-s3); }
+.cc {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px;
+  min-height: 150px; padding: 12px 8px 12px; border: 0; border-radius: var(--k-r-lg); cursor: pointer;
+  font: inherit; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  background: linear-gradient(150deg, var(--c1), var(--c2));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 var(--k-depth) 0 rgba(0, 0, 0, 0.35);
+  transition: transform var(--k-fast);
+}
+.cc:active { transform: translateY(3px); }
+.cc__art { font-size: 54px; line-height: 1; flex: 1; display: flex; align-items: center; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.2)); }
+.cc__name { font-weight: 900; font-size: var(--k-fs-lg); line-height: 1.1; text-align: center; }
+.cc__stars { display: inline-flex; align-items: center; gap: 3px; font-weight: 900; font-size: var(--k-fs-sm); padding: 2px 9px; border-radius: 99px; background: rgba(0, 0, 0, 0.22); }
+.cc__stars svg { width: 15px; height: 15px; color: #ffd23f; }
+.cc__note { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 900; padding: 3px 10px; border-radius: 99px; background: #fff; color: #2a2f7a; text-shadow: none; box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+@media (max-width: 520px) {
+  .courses { grid-template-columns: 1fr; }
+  .cc { flex-direction: row; min-height: 74px; justify-content: flex-start; gap: 12px; padding: 10px 14px; text-align: left; }
+  .cc__art { flex: none; font-size: 40px; }
+  .cc__name { flex: 1; text-align: left; }
+  .cc__note { top: auto; bottom: auto; left: auto; right: 10px; transform: translateY(-140%); }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .cc { min-height: 110px; }
+  .cc__art { font-size: 40px; }
+}
+
+/* scorecard */
+.scard-wrap { overflow-x: auto; margin: 4px -4px 6px; padding: 0 4px 4px; }
+.scard { width: 100%; border-collapse: separate; border-spacing: 3px; font-variant-numeric: tabular-nums; }
+.scard th, .scard td { text-align: center; padding: 7px 4px; border-radius: 9px; font-weight: 800; font-size: var(--k-fs); min-width: 30px; }
+.scard thead th { color: var(--k-muted); font-size: var(--k-fs-sm); background: none; padding: 2px; }
+.scard tbody th { text-align: left; padding-left: 10px; white-space: nowrap; background: var(--k-surface-2); }
+.scard td { background: var(--k-surface-2); }
+.scard .par td, .scard .par th { background: none; color: var(--k-muted); }
+.scard .tot { background: var(--k-surface-3); font-weight: 900; }
+.scard td.under { background: #ffd23f; color: #3b2a00; }
+.scard td.even { background: #3ddc84; color: #06301a; }
+.scard td.now { box-shadow: inset 0 0 0 2px #fff; }
+.scard .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-right: 6px; background: var(--ball); box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25); }
+.scard-key { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; color: var(--k-muted); font-size: var(--k-fs-sm); font-weight: 700; }
+.scard-key i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -1px; margin-right: 5px; }
+.k-result .scard th, .k-result .scard td { padding: 5px 3px; font-size: var(--k-fs-sm); min-width: 24px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .banner.show, .banner__stars span.on, .turn.bump .turn__ball { animation: none; }
+}

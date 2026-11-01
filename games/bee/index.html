@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Busy Bee</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="../../cabinet/cabinet.css">
+</head>
+<body class="k-noswipe">
+
+<div class="k-shell cab-shell">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html#action" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid"><div class="k-stats" id="cab-stats"></div></div>
+    <div class="k-bar__end">
+      <button id="pause-btn" class="k-btn k-btn--icon" data-k-icon="pause" aria-label="Pause"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </header>
+
+  <main class="k-stage">
+    <div class="cab-bezel"><div class="cab-crt"><canvas id="screen" aria-label="Busy Bee game screen"></canvas></div></div>
+  </main>
+
+  <aside class="cab-side">
+    <div class="cab-marquee">Busy Bee</div>
+    <div class="cab-hi" id="cab-hi"></div>
+    <div class="cab-side-btns"><button class="k-btn cab-help-btn" type="button"><span data-k-icon="help"></span><span>How to play</span></button></div>
+    <p class="cab-hint">Slide anywhere to fly the bee. Bring pollen home to the hive.</p>
+  </aside>
+</div>
+
+<script src="../../kit/kit.js"></script>
+<script src="../../cabinet/cabinet.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>
