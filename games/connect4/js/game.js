@@ -144,12 +144,13 @@ C4.clearSave = function () { try { localStorage.removeItem(C4.SAVE_KEY); } catch
 C4.loadSaved = function () {
   try {
     var s = JSON.parse(localStorage.getItem(C4.SAVE_KEY));
-    if (s && s.board && s.board.length === 42 && (s.turn === 1 || s.turn === 2)) return s;
+    if (s && Array.isArray(s.board) && s.board.length === 42 && (s.turn === 1 || s.turn === 2) &&
+        s.board.every(function (v) { return v === 0 || v === 1 || v === 2; })) return s;
   } catch (e) {}
   return null;
 };
 C4.loadWins = function () {
-  try { return parseInt(localStorage.getItem(C4.WINS_KEY), 10) || 0; } catch (e) { return 0; }
+  try { return Math.max(0, parseInt(localStorage.getItem(C4.WINS_KEY), 10) || 0); } catch (e) { return 0; }
 };
 C4.addWin = function () {
   var n = C4.loadWins() + 1;

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,78 +8,53 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
+<meta name="theme-color" content="#161843">
 <title>2048</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="k-noswipe">
 
-<header class="head">
-  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
-  <div class="scores">
-    <div class="score" id="score">0</div>
-    <div class="best">Best <span id="best">0</span></div>
-  </div>
-  <button id="undo-btn" class="icon-btn" aria-label="Undo" disabled>↶</button>
-  <button id="restart-btn" class="icon-btn" aria-label="New game">⟳</button>
-</header>
-
-<div class="board-wrap">
-  <div id="board" class="board">
-    <div id="tiles" class="tiles"></div>
-  </div>
-  <div id="gain" class="gain"></div>
-</div>
-
-<div class="hint">Swipe to slide the tiles. Same numbers add up. Can you make 2048?</div>
-
-<div id="confetti" class="confetti"></div>
-
-<div id="won" class="over hidden">
-  <div class="over-card">
-    <div class="over-emoji">🏆</div>
-    <h2>You made 2048!</h2>
-    <div class="over-sub">Amazing! Keep going to build even bigger tiles.</div>
-    <div class="over-actions">
-      <button id="won-new" class="pill">New game</button>
-      <button id="won-go" class="pill primary">Keep going</button>
+<div class="k-shell k-shell--side">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
     </div>
-  </div>
-</div>
-
-<div id="over" class="over hidden">
-  <div class="over-card">
-    <div class="over-emoji">🎈</div>
-    <h2>No moves left</h2>
-    <div class="over-sub">Nice game! Your biggest tile was <b id="over-tile">2</b>.</div>
-    <div class="over-score"><span id="over-score">0</span></div>
-    <div class="over-best" id="over-best-line">Best <span id="over-best">0</span></div>
-    <div class="over-actions">
-      <button id="over-undo" class="pill">Undo last move</button>
-      <button id="over-again" class="pill primary">Play again</button>
+    <div class="k-bar__mid">
+      <div class="k-stats">
+        <div class="k-stat k-stat--accent" id="score-chip"><span class="k-stat__label">Score</span><b class="k-stat__val" id="score">0</b></div>
+        <div class="k-stat" id="best-chip"><span class="k-stat__label">Best</span><b class="k-stat__val" id="best">0</b></div>
+      </div>
     </div>
-  </div>
-</div>
-
-<div id="ask" class="over hidden">
-  <div class="over-card">
-    <h2>Start a new game?</h2>
-    <div class="over-sub">Your current game will be lost.</div>
-    <div class="over-actions">
-      <button id="ask-no" class="pill">Keep playing</button>
-      <button id="ask-yes" class="pill primary">New game</button>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="restart-btn" class="k-btn k-btn--icon" data-k-icon="restart" aria-label="New game"></button>
     </div>
-  </div>
+  </header>
+
+  <main class="k-stage">
+    <div id="board" class="board k-fit" style="--k-aspect: 1">
+      <div id="cells" class="cells"></div>
+      <div id="tiles" class="tiles"></div>
+    </div>
+  </main>
+
+  <aside class="k-side">
+    <div class="goal" id="goal">
+      <span class="goal-label">Next goal</span>
+      <span class="goal-tiles"><span class="mini" id="goal-have"></span><span class="goal-arrow" data-k-icon="next"></span><span class="mini" id="goal-next"></span></span>
+    </div>
+    <div class="side-btns">
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+    <div class="hint k-only-landscape">Swipe to slide every tile. Two of the same add up!</div>
+  </aside>
 </div>
 
+<script src="../../kit/kit.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

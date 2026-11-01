@@ -25,13 +25,17 @@ function FlowGame(level, saved) {
 /* A save from an older version of a level may not match today's board:
    every path must start on one of its own dots and step cell to cell. */
 FlowGame.prototype.fits = function (paths) {
+  var used = {};
   for (var c = 0; c < paths.length; c++) {
     var p = paths[c], pr = this.pairs[c];
     if (!Array.isArray(p)) return false;
     if (p.length && p[0] !== pr.a && p[0] !== pr.b) return false;
     for (var i = 0; i < p.length; i++) {
-      if (!(p[i] >= 0 && p[i] < this.N)) return false;
+      if (typeof p[i] !== 'number' || !(p[i] >= 0 && p[i] < this.N) || p[i] % 1) return false;
       if (i && !this.adjacent(p[i - 1], p[i])) return false;
+      // no cell in two pipes, and no pipe through another colour's dot
+      if (used[p[i]] || (this.dot[p[i]] >= 0 && this.dot[p[i]] !== c)) return false;
+      used[p[i]] = true;
     }
   }
   return true;

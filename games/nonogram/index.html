@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,65 +8,70 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
-<title>Nonogram</title>
+<meta name="theme-color" content="#161843">
+<title>Picture Puzzles</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<section id="lib" class="screen">
-  <header class="head">
-    <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
-    <div class="ttl">Picture Puzzles</div>
-    <div class="icon-spacer"></div>
-  </header>
-  <p class="how">The numbers say how many squares in a row are filled, in order. Fill them all to reveal the picture. Start with the small ones!</p>
-  <div id="lib-grid" class="lib-grid"></div>
-</section>
-
-<section id="play" class="screen hidden">
-  <header class="head">
-    <button id="back-btn" class="icon-btn" aria-label="Back">‹</button>
-    <div class="ttl" id="title"></div>
-    <button id="clear-btn" class="icon-btn" aria-label="Clear">⟳</button>
-  </header>
-
-  <div class="grid-wrap"><div id="grid" class="grid"></div></div>
-  <div id="tip" class="tip hidden">Tap a square to fill it, or drag along a row. Stuck? Tap Hint!</div>
-
-  <div id="tut" class="tut hidden"><div class="tut-txt"></div><button id="tut-next" class="pill primary">Next</button></div>
-
-  <div class="modes">
-    <button id="mode-fill" class="mode on"><span class="sw fill"></span>Fill</button>
-    <button id="mode-x" class="mode"><span class="sw x">✕</span>Mark</button>
-    <button id="undo-btn" class="mode act" disabled><span class="sw">↶</span>Undo</button>
-    <button id="hint-btn" class="mode act"><span class="sw">💡</span>Hint</button>
-  </div>
-  <div id="toast" class="toast"></div>
-</section>
-
-<div id="confetti" class="confetti"></div>
-
-<div id="win" class="over hidden">
-  <div class="over-card">
-    <div class="over-emoji">🎉</div>
-    <h2><span id="win-name"></span>!</h2>
-    <div class="over-actions">
-      <button id="win-lib" class="pill">All pictures</button>
-      <button id="win-next" class="pill primary">Next</button>
+<!-- picture library -->
+<div id="lib" class="k-shell">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
     </div>
-  </div>
+    <div class="k-bar__mid">
+      <div class="k-title lib-title">Picture Puzzles</div>
+      <div class="k-stat k-stat--accent"><span class="k-stat__label">Solved</span><b class="k-stat__val" id="lib-done">0</b></div>
+    </div>
+    <div class="k-bar__end">
+      <button id="lib-help" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="lib-mute" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </header>
+  <div class="lib-scroll"><div id="lib-grid"></div></div>
 </div>
 
+<!-- one puzzle -->
+<div id="play" class="k-shell k-shell--side" hidden>
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <button id="back-btn" class="k-btn k-btn--icon" data-k-icon="menu" aria-label="All pictures"></button>
+    </div>
+    <div class="k-bar__mid">
+      <div class="k-stat"><span class="k-stat__label">Picture</span><b class="k-stat__val" id="title">5×5</b></div>
+      <div class="k-stat k-stat--accent" id="lines-chip"><span class="k-stat__label">Lines</span><b class="k-stat__val" id="lines">0/0</b></div>
+    </div>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="clear-btn" class="k-btn k-btn--icon" data-k-icon="restart" aria-label="Clear"></button>
+    </div>
+  </header>
+
+  <main class="k-stage">
+    <div id="grid" class="nono k-fit"></div>
+  </main>
+
+  <aside class="k-side">
+    <div id="tut" class="tut k-panel" hidden><div class="tut-txt"></div><button id="tut-next" class="k-btn k-btn--primary k-btn--sm">Next</button></div>
+    <div class="k-seg modes" role="group" aria-label="What a tap does">
+      <button id="mode-fill" class="k-on"><span class="sw fill"></span>Fill</button>
+      <button id="mode-x"><span class="sw x"></span>Mark</button>
+    </div>
+    <div class="side-btns">
+      <button id="hint-btn" class="k-btn hint-btn"><span data-k-icon="hint"></span><span>Hint</span></button>
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+    <div class="hint k-only-landscape">The numbers say how many squares in a row are filled, in order. Drag along a row to fill fast!</div>
+  </aside>
+</div>
+
+<script src="../../kit/kit.js"></script>
 <script src="js/puzzles-data.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

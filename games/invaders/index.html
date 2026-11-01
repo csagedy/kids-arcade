@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,37 +8,41 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#0b0c10">
+<meta name="theme-color" content="#161843">
 <title>Space Invaders</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="../../cabinet/cabinet.css">
 </head>
-<body>
+<body class="k-noswipe">
 
-<header class="cab-marquee">
-  <a class="cab-btn-icon" href="../../index.html#action" aria-label="Back">‹</a>
-  <div class="ttl">Space Invaders</div>
-  <button id="mute-btn" class="cab-btn-icon" aria-label="Sound">🔊</button>
-</header>
+<div class="k-shell cab-shell">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html#action" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid"><div class="k-stats" id="cab-stats"></div></div>
+    <div class="k-bar__end">
+      <button id="pause-btn" class="k-btn k-btn--icon" data-k-icon="pause" aria-label="Pause"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </header>
 
-<div class="cab-screen-wrap">
-  <div class="cab-bezel"><div class="cab-crt"><canvas id="screen"></canvas></div></div>
+  <main class="k-stage">
+    <div class="cab-bezel"><div class="cab-crt"><canvas id="screen" aria-label="Space Invaders game screen"></canvas></div></div>
+  </main>
+
+  <aside class="cab-side">
+    <div class="cab-marquee">Space Invaders</div>
+    <div class="cab-hi" id="cab-hi"></div>
+    <div class="cab-side-btns"><button class="k-btn cab-help-btn" type="button"><span data-k-icon="help"></span><span>How to play</span></button></div>
+    <p class="cab-hint">Slide anywhere to move. Your ship fires by itself.</p>
+  </aside>
 </div>
 
-<div class="cab-deck">
-  <div class="cab-stick"></div>
-  <div class="cab-hint">Slide to move · Auto fire</div>
-  <div class="cab-buttons"><i></i><i></i></div>
-</div>
-
+<script src="../../kit/kit.js"></script>
 <script src="../../cabinet/cabinet.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

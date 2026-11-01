@@ -1,157 +1,267 @@
 (function () {
   var canvas = document.getElementById('screen');
-  var fit = Cabinet.fit(canvas, W, 320, 460);
-  var ctx = fit.ctx;
-  H = fit.h;
-  var game = new InvadersGame(), playing = false, flash = 0, message = null;
-  var parts = [], pops = [], shake = 0;
+  var SCREEN = { minAspect: 0.5, maxAspect: 1.35 };
+  var ctx, game, playing = false, message = null, bg = null, booms = [];
+  var fx = new Cabinet.Fx(), COL = Cabinet.COL;
 
-  // 12x8 alien sprites, two frames each, as rows of bits
+  function layout() {
+    var s = Cabinet.screen(canvas, SCREEN);
+    ctx = s.ctx; W = s.w; H = s.h;
+    bg = null;
+  }
+
+  Cabinet.hud([
+    { id: 'score', label: 'Score', accent: true },
+    { id: 'lives', label: 'Ships', hearts: true },
+    { id: 'wave', label: 'Wave', more: true }
+  ]);
+  function hud() {
+    Cabinet.setHud('score', game.score);
+    Cabinet.setHud('lives', game.lives);
+    Cabinet.setHud('wave', game.level);
+  }
+
+  // Two frames each: squid (top row), crab, octopus. 'w' are the eyes.
   var SPRITES = [
-    [['001100', '011110', '111111', '110011', '111111', '010010', '100001', '010010'],
-     ['001100', '011110', '111111', '110011', '111111', '010010', '010010', '101101']],
-    [['100001', '010010', '111111', '101101', '111111', '111111', '100001', '010010'],
-     ['100001', '010010', '111111', '101101', '111111', '011110', '010010', '100001']],
-    [['000110', '001111', '011111', '110110', '111111', '010100', '101010', '010100'],
-     ['000110', '001111', '011111', '110110', '111111', '001000', '010100', '101010']]
+    [['...XXXX.....', '..XXXXXXXX..', '.XXXXXXXXXX.', 'XXXwwXXwwXXX', 'XXXXXXXXXXXX', '...XX..XX...', '..XX.XX.XX..', 'XX........XX'],
+     ['...XXXX.....', '..XXXXXXXX..', '.XXXXXXXXXX.', 'XXXwwXXwwXXX', 'XXXXXXXXXXXX', '..XXX..XXX..', '.XX..XX..XX.', '..XX....XX..']],
+    [['..X.....X..', '...X...X...', '..XXXXXXX..', '.XXwXXXwXX.', 'XXXXXXXXXXX', 'X.XXXXXXX.X', 'X.X.....X.X', '...XX.XX...'],
+     ['..X.....X..', 'X..X...X..X', 'X.XXXXXXX.X', 'XXXwXXXwXXX', 'XXXXXXXXXXX', '.XXXXXXXXX.', '..X.....X..', '.X.......X.']],
+    [['...XX...', '..XXXX..', '.XXXXXX.', 'XXwXXwXX', 'XXXXXXXX', '..X..X..', '.X.XX.X.', 'X.X..X.X'],
+     ['...XX...', '..XXXX..', '.XXXXXX.', 'XXwXXwXX', 'XXXXXXXX', '.X.XX.X.', 'X......X', '.X....X.']]
   ];
-  var COLORS = ['#5eff5e', '#4de8ff', '#ff6bd6'];
+  // kind 0 bottom rows (octopus art index 0), 1 middle (crab), 2 top (squid)
+  var ART_FOR_KIND = [0, 1, 2];
+  var COLORS = [COL.green, COL.cyan, COL.pink];
+  var SHIP = ['......X......', '.....XXX.....', '.....XcX.....', '.XXXXXXXXXXX.', 'XXXXXXXXXXXXX', 'XXXXXXXXXXXXX', 'XXXXXXXXXXXXX', 'XX.........XX'];
+  var UFO = ['.....XXXXXX.....', '...XXXXXXXXXX...', '..XXXXXXXXXXXX..', '.XXwXXwXXwXXwXX.', 'XXXXXXXXXXXXXXXX', '..XXX..XX..XXX..', '...X........X...'];
+  var BOOM = ['X...X..X...X', '.X...XX...X.', '..X......X..', 'XX........XX', '..X......X..', '.X...XX...X.', 'X...X..X...X'];
 
+  var pending = null;   // a saved round, waiting behind the attract card
   function attract() {
     playing = false;
-    game = new InvadersGame();
-    Cabinet.showOverlay({ title: 'INVADERS', lines: ['Slide to move', 'The ship fires itself', 'Shoot the red mystery ship!'], scores: 'invaders', button: 'PRESS START', onButton: start });
+    layout();
+    pending = Cabinet.loadSave();
+    if (!pending || !Cabinet.tryRestore(pending, false)) { pending = null; game = new InvadersGame(); }
+    hud();
+    Cabinet.attract({ title: 'Space Invaders', lines: ['Slide your ship to stop the invaders. It fires all by itself!'], scores: 'invaders',
+      resume: pending && ('wave ' + game.level + ', ' + game.score + ' points') })
+      .then(function (v) {
+        pending = null;
+        if (v === 'continue') { playing = true; Cabinet.countdown(); }
+        else Cabinet.firstHelp().then(start);
+      });
   }
-  function start() { game = new InvadersGame(); playing = true; }
-  function say(t, ms) { message = { text: t, until: performance.now() + ms }; }
 
-  function burst(x, y, n, colors, speed) {
-    for (var i = 0; i < n; i++) {
-      var a = Math.random() * Math.PI * 2, v = speed * (0.3 + Math.random() * 0.7);
-      parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.35 + Math.random() * 0.4,
-        c: colors[Math.floor(Math.random() * colors.length)], s: Math.random() < 0.3 ? 2 : 1 });
-    }
+  /* ---------- keeping the round (reload, iOS dropping the tab, a turn of the screen) ----------
+     Kept: score, ships, wave, which aliens are left (as grid cells), how far
+     the block has marched across and down (as shares of the room it has, so
+     it is just as close to landing on any shape of screen), every shield's
+     bitten pixels and the ship's place. Bombs, bullets and the mystery ship
+     in flight are dropped. */
+  function blockOf(g) {
+    var cols = g.cols, minC = 99, maxC = -1, maxR = -1;
+    g.aliens.forEach(function (a, i) { if (!a.alive) return; var c = i % cols, r = Math.floor(i / cols); minC = Math.min(minC, c); maxC = Math.max(maxC, c); maxR = Math.max(maxR, r); });
+    var top = 26 + Math.min(g.level - 1, 3) * 8;
+    return { minC: minC, maxC: maxC, maxR: maxR, top: top,
+      // the room the live columns have to march in, and the drop left before they land
+      xRoom: Math.max(1, (W - 12) - 12 - (maxC - minC) * 22), yRoom: Math.max(1, (g.shipY - 12) - (top + maxR * 16)) };
   }
+  function save() {
+    var g = game, b = blockOf(g), a0 = g.aliens[0];
+    return {
+      score: g.score, lives: g.lives, level: g.level, cols: g.cols, rows: g.aliens.length / g.cols,
+      alive: g.aliens.map(function (a) { return a.alive ? 1 : 0; }).join(''),
+      fx: (a0.x + b.minC * 22 - 12) / b.xRoom, fy: (a0.y - b.top) / b.yRoom, dir: g.dir,
+      stepTimer: g.stepTimer, frame: g.frame, steps: g.steps,
+      shields: g.shields.map(function (sh) { return Array.prototype.join.call(sh.px, ''); }),
+      ship: g.ship.x / W, respawn: g.respawn, pause: g.pause, bombTimer: g.bombTimer, ufoTimer: g.ufoTimer
+    };
+  }
+  function restore(d) {
+    var C = Cabinet;
+    layout();
+    var g = new InvadersGame();
+    g.level = C.int(d.level, 1, 9999);
+    g.score = C.int(d.score, 0, 1e9);
+    g.lives = C.int(d.lives, 1, 3);
+    var cols = C.int(d.cols, 7, 11), rows = C.int(d.rows, 4, 5);
+    C.check(typeof d.alive === 'string' && /^[01]+$/.test(d.alive) && d.alive.length === cols * rows && d.alive.indexOf('1') >= 0);
+    g.cols = cols;
+    g.aliens = [];
+    for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++)
+      g.aliens.push({ x: c * 22, y: r * 16, kind: r < 1 ? 2 : r < 3 ? 1 : 0, alive: d.alive[r * cols + c] === '1' });
+    g.total = g.aliens.length;
+    var b = blockOf(g);
+    var ox = 12 + C.num(d.fx, -0.2, 1.2) * b.xRoom - b.minC * 22, oy = b.top + Math.round(C.num(d.fy, -0.5, 1.2) * b.yRoom);
+    g.aliens.forEach(function (a) { a.x += Math.round(ox); a.y += oy; });
+    g.dir = d.dir === -1 ? -1 : (C.check(d.dir === 1), 1);
+    g.stepTimer = C.num(d.stepTimer, 0, 2);
+    g.frame = C.int(d.frame, 0, 1);
+    g.steps = C.int(d.steps, 0, 1e9);
+    var n = C.int(C.list(d.shields, 4).length, 3, 4);
+    g.buildShields(n);
+    d.shields.forEach(function (str, i) {
+      C.check(typeof str === 'string' && str.length === SHIELD_W * SHIELD_H && /^[01]+$/.test(str));
+      for (var k = 0; k < str.length; k++) g.shields[i].px[k] = str.charCodeAt(k) - 48;
+    });
+    g.moveShip(C.num(d.ship, 0, 1) * W);
+    g.respawn = C.num(d.respawn, -1, 1.4);
+    g.pause = C.num(d.pause, -1, 1.2);
+    g.bombTimer = C.num(d.bombTimer, -10, 10);
+    g.ufoTimer = C.num(d.ufoTimer, -10, 30);
+    g.fireTimer = 0.4;
+    game = g;
+    fx.clear(); booms = []; message = null; bg = null;
+    hud();
+  }
+  Cabinet.keep({ id: 'invaders', save: save, restore: restore });
 
+  function start() {
+    Cabinet.stopCount();
+    layout();
+    game = new InvadersGame(); playing = true; fx.clear(); booms = []; hud();
+    say('WAVE 1', 1200);
+    Cabinet.sfx.start();
+  }
+  function say(t, ms, c) { message = { text: t, until: performance.now() + ms, color: c || COL.yellow }; }
+
+  var MARCH = [98, 92, 87, 82];
   function update(dt) {
-    for (var pi = parts.length - 1; pi >= 0; pi--) {
-      var q = parts[pi];
-      q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt;
-      if (q.life <= 0) parts.splice(pi, 1);
-    }
-    for (var po = pops.length - 1; po >= 0; po--) { pops[po].life -= dt; pops[po].y -= 12 * dt; if (pops[po].life <= 0) pops.splice(po, 1); }
-    if (shake > 0) shake = Math.max(0, shake - dt * 30);
+    fx.update(dt);
+    for (var i = booms.length - 1; i >= 0; i--) { booms[i].t -= dt; if (booms[i].t <= 0) booms.splice(i, 1); }
     if (!playing) return;
     var ev = game.update(dt);
-    // turn this step's kills and shield chips into particles
     game.kills.forEach(function (k) {
-      if (k.kind === 3) { burst(k.x, k.y, 30, ['#ff3b3b', '#ffe93b', '#fff'], 90); pops.push({ x: k.x, y: k.y + 8, text: String(k.pts), life: 1.2 }); }
-      else if (k.kind === 4) burst(k.x, k.y, 6, ['#ff3b3b', '#fff'], 40);
-      else burst(k.x, k.y, 12, [COLORS[k.kind], '#fff'], 60);
+      if (k.kind === 3) {
+        fx.burst(k.x, k.y, 30, [COL.red, COL.yellow, '#fff'], 90, 0.8); fx.ring(k.x, k.y, COL.red, 22, 0.4);
+        fx.pop(String(k.pts), k.x, k.y + 6, COL.yellow, Cabinet.fs(2));
+      } else if (k.kind === 4) fx.burst(k.x, k.y, 6, [COL.red, '#fff'], 40, 0.3, { gravity: 0 });
+      else {
+        booms.push({ x: k.x, y: k.y, t: 0.18, c: COLORS[k.kind] });
+        fx.burst(k.x, k.y, 10, [COLORS[k.kind], '#fff'], 60, 0.45, { gravity: 40 });
+        fx.pop('+' + k.pts, k.x, k.y - 10, COLORS[k.kind]);
+      }
     });
     game.kills.length = 0;
-    game.chips.forEach(function (c) { burst(c.x, c.y, 3, ['#3fb950', '#8aff9a'], 30); });
+    game.chips.forEach(function (c) { fx.burst(c.x, c.y, 3, [COL.green, COL.lime], 30, 0.3, { gravity: 30 }); });
     game.chips.length = 0;
-    for (var i = 0; i < ev.length; i++) {
-      switch (ev[i]) {
-        case 'shoot': Cabinet.beep(900, 40, 'square', 0.05, 300); break;
-        case 'hit': Cabinet.noise(90, 0.12); flash = 1; break;
-        case 'ufo': Cabinet.beep(700, 120, 'sine', 0.05, 1000); break;
-        case 'ufohit': Cabinet.beep(500, 250, 'square', 0.1, 1500); setTimeout(function () { Cabinet.beep(1500, 200, 'square', 0.08); }, 130); shake = 4; break;
-        case 'die': Cabinet.beep(150, 500, 'sawtooth', 0.16, 40); say('OUCH', 900); shake = 6;
-          burst(game.ship.x, game.shipY, 28, ['#5eff5e', '#ffe93b', '#fff'], 90);
-          if (navigator.vibrate) { try { navigator.vibrate(80); } catch (e) {} } break;
-        case 'wave': Cabinet.beep(660, 80); setTimeout(function () { Cabinet.beep(990, 160); }, 100); say('WAVE ' + game.level, 1400); break;
+    for (var e = 0; e < ev.length; e++) {
+      switch (ev[e]) {
+        case 'shoot': Cabinet.beep(1400, 50, 'square', 0.035, 500); break;
+        case 'step': Cabinet.beep(MARCH[game.steps % 4], 90, 'square', 0.1); break;
+        case 'hit': Cabinet.noise(110, 0.12, 2400); Cabinet.beep(330, 70, 'square', 0.05, 120); fx.shake(1); break;
+        case 'ufo': Cabinet.beep(700, 160, 'sine', 0.05, 1000); break;
+        case 'ufohit': Cabinet.sfx.coin(); fx.shake(4); fx.flash('#fff', 0.25); break;
+        case 'landed':
+          Cabinet.sfx.lose(); fx.shake(6); fx.flash(COL.red, 0.4); Cabinet.vibrate(80);
+          say('THEY LANDED! PUSH THEM BACK!', 1500, COL.orange);
+          break;
+        case 'die':
+          Cabinet.sfx.lose(); say('OUCH!', 900, COL.orange); fx.shake(6); fx.flash(COL.red, 0.35);
+          fx.burst(game.ship.x, game.shipY, 30, [COL.green, COL.yellow, '#fff'], 90, 0.7);
+          Cabinet.vibrate(80); break;
+        case 'wave':
+          Cabinet.sfx.levelUp(); fx.flash('#fff', 0.3);
+          say('WAVE ' + game.level, 1500); break;
         case 'over':
-          playing = false; shake = 8;
-          burst(game.ship.x, game.shipY, 40, ['#5eff5e', '#ffe93b', '#ff3b3b'], 110);
-          Cabinet.beep(80, 800, 'sawtooth', 0.2, 30);
-          setTimeout(function () { Cabinet.gameOver('invaders', game.score, start); }, 1000);
+          playing = false; fx.shake(8); fx.flash(COL.red, 0.5);
+          fx.burst(game.ship.x, game.shipY, 40, [COL.green, COL.yellow, COL.red], 110, 0.9);
+          Cabinet.sfx.over();
+          setTimeout(function () { Cabinet.gameOver('invaders', game.score, start, { stats: [{ label: 'Wave', value: game.level }] }); }, 1100);
           break;
       }
     }
+    hud();
   }
 
-  function drawUfo(u) {
-    var x = Math.round(u.x), y = 16;
-    ctx.fillStyle = '#ff3b3b';
-    ctx.fillRect(x - 8, y + 2, 16, 3); ctx.fillRect(x - 5, y, 10, 2); ctx.fillRect(x - 3, y - 2, 6, 2);
-    ctx.fillStyle = '#ffe93b';
-    var f = Math.floor(game.anim * 8) % 3;
-    for (var i = 0; i < 3; i++) if (i === f) ctx.fillRect(x - 6 + i * 5, y + 2, 2, 1);
+  function backdrop() {
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    g.fillStyle = '#05060f'; g.fillRect(0, 0, W, H);
+    for (var s = 0; s < W * H / 450; s++) {
+      g.fillStyle = s % 6 ? '#1f2550' : '#6a70a8';
+      g.fillRect(Math.floor(Cabinet.hash(s) * W), Math.floor(Cabinet.hash(s + 77) * H), 1, 1);
+    }
+    // planet surface along the bottom
+    g.fillStyle = '#1f9a57'; g.fillRect(0, H - 10, W, 1);
+    g.fillStyle = '#0e3a22'; g.fillRect(0, H - 9, W, 9);
+    g.fillStyle = '#16502e';
+    for (var x = 0; x < W; x += 7) g.fillRect(x + Math.floor(Cabinet.hash(x) * 4), H - 6 + Math.floor(Cabinet.hash(x + 3) * 4), 2, 1);
+    return c;
   }
 
-  function sprite(kind, frame, x, y, color) {
-    var rows = SPRITES[kind][frame];
-    ctx.fillStyle = color;
-    for (var r = 0; r < rows.length; r++) {
-      for (var c = 0; c < 6; c++) {
-        if (rows[r][c] === '1') { ctx.fillRect(x - 6 + c * 2, y - 4 + r, 2, 1); }
+  var shieldCanvas = {};
+  function drawShield(sh, i) {
+    var c = shieldCanvas[i];
+    if (!c || sh.dirty || c._for !== sh) {
+      c = shieldCanvas[i] = shieldCanvas[i] || document.createElement('canvas');
+      c.width = SHIELD_W; c.height = SHIELD_H; c._for = sh;
+      var g = c.getContext('2d');
+      g.clearRect(0, 0, SHIELD_W, SHIELD_H);
+      for (var y = 0; y < SHIELD_H; y++) for (var x = 0; x < SHIELD_W; x++) {
+        if (!sh.px[y * SHIELD_W + x]) continue;
+        // lighter on top edges, darker underneath: a chunky green bunker
+        var above = y > 0 && sh.px[(y - 1) * SHIELD_W + x];
+        g.fillStyle = !above ? '#b6ff6a' : (y > 10 ? '#1f9a57' : '#3ddc84');
+        g.fillRect(x, y, 1, 1);
       }
+      sh.dirty = false;
     }
-    // mirror the right half so 6 bits make a 12-wide symmetric alien
-    for (var r2 = 0; r2 < rows.length; r2++) {
-      for (var c2 = 0; c2 < 6; c2++) {
-        if (rows[r2][5 - c2] === '1') { ctx.fillRect(x + c2 * 2 - 6 + 6, y - 4 + r2, 2, 1); }
-      }
-    }
+    ctx.drawImage(c, Math.round(sh.x), Math.round(sh.y));
   }
 
   function render() {
-    var g = game;
-    ctx.setTransform(1, 0, 0, 1, shake > 0 ? Math.round((Math.random() - 0.5) * shake) : 0, shake > 0 ? Math.round((Math.random() - 0.5) * shake) : 0);
-    ctx.fillStyle = flash > 0 ? '#111a2a' : '#05060c';
-    if (flash > 0) flash--;
-    ctx.fillRect(-8, -8, W + 16, H + 16);
-    Cabinet.text(ctx, 'SCORE ' + g.score, 4, 3, 1, '#7cf2ff');
-    Cabinet.text(ctx, 'WAVE ' + g.level, W / 2, 3, 1, '#ffb300', 'center');
-    ctx.fillStyle = '#5eff5e';
-    for (var i = 0; i < g.lives; i++) ctx.fillRect(W - 8 - i * 8, 4, 5, 3);
+    var g = game, t = Cabinet.time;
+    if (!bg) bg = backdrop();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    fx.begin(ctx);
+    ctx.drawImage(bg, 0, 0);
 
-    var frame = Math.floor(g.anim * 2) % 2;
-    g.aliens.forEach(function (a) { if (a.alive) sprite(a.kind, frame, Math.round(a.x), Math.round(a.y), COLORS[a.kind]); });
-
-    // shields crumble: solid, cracked (a notch out), then a couple of crumbs
-    var SH = ['#1d5a28', '#2f9a40', '#3fb950'];
-    g.shields.forEach(function (s) {
-      ctx.fillStyle = SH[s.hp - 1] || SH[0];
-      if (s.hp >= 3) ctx.fillRect(s.x, s.y, 4, 4);
-      else if (s.hp === 2) { ctx.fillRect(s.x, s.y, 4, 4); ctx.fillStyle = '#05060c'; ctx.fillRect(s.x + 2, s.y + 1, 1, 2); }
-      else { ctx.fillRect(s.x, s.y + 2, 2, 2); ctx.fillRect(s.x + 3, s.y, 1, 1); ctx.fillRect(s.x + 2, s.y + 2, 1, 1); }
+    g.aliens.forEach(function (a) {
+      if (!a.alive) return;
+      var art = SPRITES[ART_FOR_KIND[a.kind]][g.frame], w = art[0].length;
+      Cabinet.sprite(ctx, art, a.x - Math.floor(w / 2), a.y - 4, { X: COLORS[a.kind], w: '#ffffff' });
     });
-    if (g.ufo) drawUfo(g.ufo);
-    // particles and score pops
-    for (var pi = 0; pi < parts.length; pi++) {
-      var pp = parts[pi]; ctx.globalAlpha = Math.min(1, pp.life * 3);
-      ctx.fillStyle = pp.c; ctx.fillRect(Math.round(pp.x), Math.round(pp.y), pp.s, pp.s);
+    booms.forEach(function (b) { Cabinet.sprite(ctx, BOOM, b.x - 6, b.y - 3, { X: Math.floor(b.t * 40) % 2 ? '#fff' : b.c }); });
+    g.shields.forEach(drawShield);
+    if (g.ufo) {
+      var blink = Math.floor(t * 8) % 4;
+      Cabinet.sprite(ctx, UFO, g.ufo.x - 8, 6, { X: COL.red, w: blink === 0 ? COL.yellow : '#ffd0d8' });
     }
-    ctx.globalAlpha = 1;
-    pops.forEach(function (p) { Cabinet.text(ctx, p.text, Math.round(p.x), Math.round(p.y), 1, '#ffe93b', 'center'); });
 
-    ctx.fillStyle = '#ffffff';
-    g.shots.forEach(function (s) { ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 5); });
-    ctx.fillStyle = '#ff3b3b';
-    g.bombs.forEach(function (b) { ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y), 2, 5); });
+    // shots: a bright white bolt; bombs: a red zig-zag
+    g.shots.forEach(function (s) { ctx.fillStyle = '#fff'; ctx.fillRect(s.x, Math.round(s.y), 1, 5); ctx.fillStyle = COL.cyan; ctx.fillRect(s.x, Math.round(s.y) + 5, 1, 2); });
+    g.bombs.forEach(function (b) {
+      var y = Math.round(b.y), z = Math.floor(b.t * 12) % 2;
+      ctx.fillStyle = COL.red;
+      for (var k = 0; k < 6; k++) ctx.fillRect(b.x + ((k + z) % 2 ? 1 : -1), y + k, 1, 1);
+      ctx.fillStyle = COL.yellow; ctx.fillRect(b.x, y + 5, 1, 1);
+    });
 
     // ship (blinks while respawning)
-    if (!(g.respawn > 0 && Math.floor(g.respawn * 10) % 2)) {
-      ctx.fillStyle = '#5eff5e';
-      var sx = Math.round(g.ship.x), sy = g.shipY;
-      ctx.fillRect(sx - 7, sy, 14, 5);
-      ctx.fillRect(sx - 5, sy - 3, 10, 3);
-      ctx.fillRect(sx - 1, sy - 6, 2, 3);
+    if (!g.over && !(g.respawn > 0 && Math.floor(g.respawn * 10) % 2)) {
+      Cabinet.sprite(ctx, SHIP, Math.round(g.ship.x) - 6, g.shipY - 4, { X: COL.green, c: COL.cyan });
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillRect(Math.round(g.ship.x) - 5, g.shipY, 11, 1);
     }
-    ctx.fillStyle = '#3fb950'; ctx.fillRect(0, H - 10, W, 1);
-    if (message && performance.now() < message.until) Cabinet.text(ctx, message.text, W / 2, H / 2, 2, '#ffb300', 'center');
+    fx.draw(ctx);
+    if (message && performance.now() < message.until) {
+      var s = Cabinet.fs(message.text.length > 14 ? 1 : 2);
+      Cabinet.text(ctx, message.text, W / 2, Math.round(H * 0.55), s, message.color, 'center', '#000');
+    }
+    if (playing && g.level === 1 && g.score === 0 && g.pause <= 0 && Math.floor(performance.now() / 450) % 2)
+      Cabinet.text(ctx, 'SLIDE TO MOVE', W / 2, g.shipY - 58, Cabinet.fs(1), COL.ink, 'center', '#000');
+    fx.end(ctx, W, H);
   }
 
   /* Relative slide, tracked by pointerId so a second finger or a stray
-     pointerup can't leave the ship stuck. Deltas are incremental, so a finger
-     that runs past the screen edge responds the moment it turns around. */
-  var down = null;
+     pointerup can't leave the ship stuck. Deltas are incremental (in logical
+     px, so the feel is the same at every screen size), and a finger that runs
+     past the screen edge responds the moment it turns around. */
+  var GAIN = 1.4, down = null;
   canvas.addEventListener('pointerdown', function (e) {
     e.preventDefault();
-    if (!playing || Cabinet.paused()) return;
+    if (!playing || Cabinet.paused() || down) return;
     var p = Cabinet.pointer(canvas, e);
     down = { id: e.pointerId, x: p.x };
     try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
@@ -159,16 +269,36 @@
   canvas.addEventListener('pointermove', function (e) {
     if (!down || down.id !== e.pointerId || !playing) return;
     var p = Cabinet.pointer(canvas, e);
-    if (!Cabinet.paused()) game.moveShip(game.ship.x + (p.x - down.x) * 1.4);
+    if (!Cabinet.paused()) game.moveShip(game.ship.x + (p.x - down.x) * GAIN);
     down.x = p.x;
   });
   function up(e) { if (down && down.id === e.pointerId) down = null; }
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('lostpointercapture', up);
+  var keys = {};
+  document.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { keys[e.key] = true; e.preventDefault(); } });
+  document.addEventListener('keyup', function (e) { keys[e.key] = false; });
+  setInterval(function () {
+    if (!playing || Cabinet.paused() || Cabinet.overlayOpen()) return;
+    if (keys.ArrowLeft) game.moveShip(game.ship.x - 2.5);
+    if (keys.ArrowRight) game.moveShip(game.ship.x + 2.5);
+  }, 16);
 
-  Cabinet.wireMute(document.getElementById('mute-btn'));
-  Cabinet.addPauseButton(function () { return playing; });
-  Cabinet.autoPause(function () { return playing; });
+  Cabinet.setup({
+    id: 'invaders', isPlaying: function () { return playing; },
+    help: [
+      { icon: 'next', text: 'Slide your finger anywhere to move your ship. It fires by itself!' },
+      { icon: 'heart', text: 'Dodge the red zig-zag bombs. Hide behind the green bunkers.' },
+      { icon: 'star', text: 'Hit the red flying saucer for a big bonus.' }
+    ]
+  });
+  Cabinet.onRestart(start);
+  Cabinet.onLayout(function () {
+    if (playing || game.over) Cabinet.refit();
+    else if (!pending || !Cabinet.tryRestore(pending, false)) { pending = null; layout(); game = new InvadersGame(); }
+  });
+
   attract();
   Cabinet.loop(update, render);
   window.__inv = { game: function () { return game; }, start: start };

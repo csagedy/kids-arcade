@@ -33,6 +33,7 @@ function shuffle(a) {
 
 function MMGame(sizeId, saved, themeId) {
   this.size = MM_SIZES.filter(function (s) { return s.id === sizeId; })[0] || MM_SIZES[0];
+  this.theme = MM_THEMES.byId(themeId).id;
   if (saved && this.restore(saved)) return;
   var pairs = this.size.cols * this.size.rows / 2;
   var pool = shuffle(MM_THEMES.byId(themeId).cards.slice()).slice(0, pairs);
@@ -46,15 +47,23 @@ function MMGame(sizeId, saved, themeId) {
 MMGame.SAVE_KEY = 'mm.game';
 
 MMGame.prototype.restore = function (s) {
-  if (!s || !s.cards || s.cards.length !== this.size.cols * this.size.rows) return false;
-  this.cards = s.cards; this.matched = s.matched; this.moves = s.moves | 0; this.open = [];
+  // A save from an older build or a damaged one must never stop the game:
+  // anything that isn't a full deck of pictures with a matching flag list is
+  // thrown away and a fresh board dealt instead.
+  var n = this.size.cols * this.size.rows;
+  if (!s || !Array.isArray(s.cards) || s.cards.length !== n) return false;
+  if (!s.cards.every(function (c) { return typeof c === 'string' && c; })) return false;
+  var matched = Array.isArray(s.matched) && s.matched.length === n ? s.matched.map(function (m) { return m === true; }) : null;
+  if (!matched) return false;
+  this.cards = s.cards; this.matched = matched; this.moves = Math.max(0, s.moves | 0); this.open = [];
+  if (s.theme) this.theme = MM_THEMES.byId(s.theme).id;
   return true;
 };
 
 MMGame.prototype.save = function () {
   try {
     localStorage.setItem(MMGame.SAVE_KEY, JSON.stringify({
-      size: this.size.id, cards: this.cards, matched: this.matched, moves: this.moves
+      size: this.size.id, theme: this.theme, cards: this.cards, matched: this.matched, moves: this.moves
     }));
   } catch (e) {}
 };
@@ -84,6 +93,10 @@ MMGame.prototype.flip = function (i) {
 };
 
 MMGame.prototype.hideOpen = function () { this.open = []; };
+
+MMGame.prototype.pairsFound = function () {
+  return this.matched.filter(function (m) { return m; }).length / 2;
+};
 
 MMGame.prototype.isWon = function () {
   return this.matched.every(function (m) { return m; });

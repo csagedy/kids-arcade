@@ -1,185 +1,217 @@
+/* Simon screen, on the arcade kit. The hub in the middle is the play
+   button, then shows the round number; its yellow ring fills as the kid
+   repeats the sequence. Tones go through Kit.sfx so the arcade-wide mute
+   switch and iOS audio unlock are shared. */
 (function () {
   var pads = Array.prototype.slice.call(document.querySelectorAll('.pad'));
+  var boardEl = document.getElementById('board');
+  var hub = document.getElementById('hub');
+  var statusEl = document.getElementById('status');
   var game = new SimonGame();
   var state = 'idle';      // idle | showing | input | over
-  var audio = null;
+  var timers = [];
+  var bestAtStart = 0;
   var TONES = [329.63, 261.63, 220.0, 164.81];   // E4 C4 A3 E3, the classic-ish set
+  var NAMES = ['green', 'red', 'yellow', 'blue'];
 
-  /* Tones are synthesised so there are no audio files to cache. The context
-     has to be created inside a tap handler or iOS keeps it muted. */
-  function ensureAudio() {
-    if (audio) { if (audio.state !== 'running') unlock(); return; }
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) audio = new AC();
-    unlock();
-  }
-  /* iOS starts the context suspended: resume it and play a silent blip
-     while still inside the tap, so later (timer-driven) tones are audible. */
-  function unlock() {
-    if (!audio) return;
-    try {
-      if (audio.state !== 'running') audio.resume();
-      var b = audio.createBuffer(1, 1, 22050), s = audio.createBufferSource();
-      s.buffer = b; s.connect(audio.destination); s.start(0);
-    } catch (e) {}
-  }
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function clearTimers() { while (timers.length) clearTimeout(timers.pop()); }
+
   function tone(i, ms) {
-    if (!audio || muted()) return;
-    try {
-      if (audio.state === 'suspended') audio.resume();
-      var o = audio.createOscillator(), g = audio.createGain();
-      o.type = 'triangle'; o.frequency.value = TONES[i];
-      g.gain.setValueAtTime(0.0001, audio.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.35, audio.currentTime + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + ms / 1000);
-      o.connect(g); g.connect(audio.destination);
-      o.start(); o.stop(audio.currentTime + ms / 1000 + 0.02);
-    } catch (e) {}
+    var f = TONES[i], d = ms / 1000;
+    Kit.sfx.tone(f, d, 'triangle', { vol: 0.26, attack: 0.012 });
+    Kit.sfx.tone(f * 2, d * 0.8, 'sine', { vol: 0.04 });
   }
-  /* A soft, falling "boop-boop" rather than a harsh buzz. */
-  function buzz() {
-    if (!audio || muted()) return;
-    try {
-      var t = audio.currentTime;
-      [[300, 0], [220, 0.16]].forEach(function (n) {
-        var o = audio.createOscillator(), g = audio.createGain();
-        o.type = 'sine'; o.frequency.value = n[0];
-        g.gain.setValueAtTime(0.0001, t + n[1]);
-        g.gain.exponentialRampToValueAtTime(0.3, t + n[1] + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.3);
-        o.connect(g); g.connect(audio.destination);
-        o.start(t + n[1]); o.stop(t + n[1] + 0.32);
-      });
-    } catch (e) {}
-  }
-  /* Little rising arpeggio when a round is cleared. */
-  function chime() {
-    if (!audio || muted()) return;
-    try {
-      var t = audio.currentTime;
-      [523.25, 659.25, 783.99].forEach(function (f, k) {
-        var o = audio.createOscillator(), g = audio.createGain();
-        o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t + k * 0.08);
-        g.gain.exponentialRampToValueAtTime(0.18, t + k * 0.08 + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + k * 0.08 + 0.2);
-        o.connect(g); g.connect(audio.destination);
-        o.start(t + k * 0.08); o.stop(t + k * 0.08 + 0.22);
-      });
-    } catch (e) {}
-  }
-
-  function muted() { try { return localStorage.getItem('simon.mute') === '1'; } catch (e) { return false; } }
-  function setMuted(m) {
-    try { localStorage.setItem('simon.mute', m ? '1' : '0'); } catch (e) {}
-    document.getElementById('mute-btn').textContent = m ? '🔇' : '🔊';
-  }
-
-  /* iPhones mute Web Audio when the side switch is on silent, and there is no
-     way to detect that. Say so once, the first time sound is meant to play. */
-  function soundHint() {
-    try { if (localStorage.getItem('simon.hint') === '1') return; localStorage.setItem('simon.hint', '1'); } catch (e) {}
-    var el = document.getElementById('sound-hint');
-    el.classList.remove('hidden');
-    setTimeout(function () { el.classList.add('hidden'); }, 6000);
-  }
-
   function light(i, ms) {
-    pads[i].classList.add('lit');
+    var p = pads[i];
+    p.classList.add('lit');
     tone(i, ms);
-    setTimeout(function () { pads[i].classList.remove('lit'); }, ms);
+    clearTimeout(p._off);
+    p._off = setTimeout(function () { p.classList.remove('lit'); }, ms);
   }
 
-  function setStatus(text) { document.getElementById('status').textContent = text; }
-  function renderLives() {
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+  function setState(s) {
+    state = s;
+    boardEl.classList.toggle('input', s === 'input');
+    hub.classList.toggle('idle', s === 'idle' || s === 'over');
+    hub.classList.toggle('input', s === 'input');
+    document.getElementById('hub-label').textContent = s === 'input' ? 'Your turn' : 'Watch';
+  }
+  function setProgress() {
+    var n = game.round();
+    hub.style.setProperty('--prog', state === 'input' && n ? game.pos / n : 0);
+  }
+  function renderLives(lostOne) {
     var h = '';
-    for (var i = 0; i < SimonGame.LIVES; i++) h += '<span' + (i >= game.lives ? ' class="gone"' : '') + '>❤️</span>';
+    for (var i = 0; i < SimonGame.LIVES; i++) {
+      var cls = i >= game.lives ? 'gone' : '';
+      if (lostOne && i === game.lives) cls += ' lost';
+      h += '<span class="' + cls + '">' + Kit.icon('heart') + '</span>';
+    }
     document.getElementById('lives').innerHTML = h;
   }
   function renderScore() {
-    renderLives();
     document.getElementById('round').textContent = game.round();
     document.getElementById('best').textContent = game.best;
+    document.getElementById('hub-n').textContent = game.round();
   }
 
   /* Playback speeds up a little as the sequence grows, like the original. */
   function showSequence() {
-    state = 'showing';
-    document.body.classList.add('showing');
+    setState('showing');
+    setProgress();
     setStatus('Watch…');
     var n = game.round();
-    var on = Math.max(200, 560 - n * 20), gap = Math.max(100, 280 - n * 9);
+    var on = Math.max(220, 560 - n * 20), gap = Math.max(110, 280 - n * 9);
     game.seq.forEach(function (pad, k) {
-      setTimeout(function () { light(pad, on); }, 400 + k * (on + gap));
+      later(function () { light(pad, on); }, 500 + k * (on + gap));
     });
-    setTimeout(function () {
-      state = 'input';
-      document.body.classList.remove('showing');
-      setStatus('Your turn');
-    }, 400 + n * (on + gap));
+    later(function () {
+      setState('input');
+      setProgress();
+      setStatus('Your turn!', 'go-time');
+    }, 500 + n * (on + gap) - gap + 60);
   }
 
   function nextRound() {
     game.next();
     renderScore();
+    Kit.anim(hub, 'pop');
+    if (game.round() > 1) Kit.anim(document.getElementById('round-chip'), 'k-bump');
     showSequence();
   }
 
   function startGame() {
-    ensureAudio();
-    if (!muted()) soundHint();
+    clearTimers();
+    Kit.closeAll();
     game = new SimonGame();
-    document.getElementById('over').classList.add('hidden');
-    document.getElementById('start').classList.add('hidden');
+    bestAtStart = game.best;
+    renderLives();
+    soundHint();
     nextRound();
   }
 
+  /* iPhones silence Web Audio when the side switch is on silent, and there
+     is no way to detect that. Say so once. */
+  function soundHint() {
+    if (Kit.muted() || Kit.raw('simon.hint') === '1') return;
+    Kit.setRaw('simon.hint', '1');
+    Kit.toast('No sound? Check the silent switch', { icon: 'sound', ms: 4000, top: true });
+  }
+
   function press(i) {
-    if (state !== 'input') return;
-    ensureAudio();
+    if (state !== 'input' || Kit.overlayOpen()) return;
     var r = game.press(i);
     if (r === 'wrong') {
       var want = game.expected();
       var again = game.oops();
-      state = again ? 'showing' : 'over';
-      buzz();
-      renderLives();
+      setState(again ? 'showing' : 'over');
+      setProgress();
+      Kit.sfx.tone(300, 0.28, 'sine', { vol: 0.2 });
+      Kit.sfx.tone(220, 0.3, 'sine', { vol: 0.2, when: 0.16 });
+      Kit.buzz([20, 40, 20]);
+      renderLives(true);
       pads[i].classList.add('wrong');
-      setStatus(again ? 'Oops! Watch again…' : '');
-      setTimeout(function () { pads[i].classList.remove('wrong'); light(want, 500); }, 350);
+      setStatus(again ? 'Oops! Watch again…' : 'Oh no, out of hearts!', 'oops');
+      later(function () { pads[i].classList.remove('wrong'); light(want, 600); pads[want].classList.add('hintme'); }, 380);
+      later(function () { pads[want].classList.remove('hintme'); }, 1400);
       // Same sequence again: nobody loses their place over one slip.
-      if (again) setTimeout(showSequence, 1500); else setTimeout(gameOver, 1100);
+      later(again ? showSequence : gameOver, again ? 1900 : 1500);
       return;
     }
-    light(i, 240);
+    light(i, 260);
+    Kit.buzz(6);
+    setProgress();
     if (r === 'round') {
-      state = 'showing';
-      setStatus('Yes! ⭐');
-      chime();
-      setTimeout(nextRound, 700);
+      setState('showing');
+      hub.style.setProperty('--prog', 1);
+      var n = game.round();
+      setStatus(['Yes!', 'Great!', 'Super!', 'You got it!', 'Wow!'][n % 5], 'yay');
+      later(function () {
+        Kit.sfx.good();
+        Kit.floatText('+1', document.getElementById('round-chip'));
+        Kit.anim(boardEl, 'happy');
+        if (bestAtStart > 0 && n > bestAtStart) {
+          bestAtStart = 0;
+          Kit.toast('New best!', { icon: 'star', top: true });
+          Kit.anim(document.getElementById('best-chip'), 'k-bump');
+          Kit.sfx.star(2);
+        }
+        if (n % 5 === 0) Kit.confetti({ count: 40 });
+      }, 280);
+      later(nextRound, 1100);
     }
   }
 
   function gameOver() {
+    setState('over');
     var rounds = game.round() - 1;
-    document.getElementById('over-n').textContent = rounds;
-    document.getElementById('over-best').textContent = game.best;
-    document.getElementById('over').classList.remove('hidden');
-    setStatus('');
+    document.getElementById('round').textContent = rounds;   // the round that was lost doesn't count
+    var isBest = rounds > 0 && rounds >= game.best && rounds > bestAtStart;
+    setStatus('Play again?');
+    Kit.result({
+      emoji: rounds >= 10 ? '🏆' : rounds >= 5 ? '🌟' : '🎵',
+      title: rounds >= 10 ? 'Super memory!' : rounds >= 5 ? 'Great memory!' : 'Good try!',
+      text: rounds ? 'You remembered <b>' + rounds + '</b> in a row.' : 'Watch closely and copy the lights. You can do it!',
+      stars: rounds >= 10 ? 3 : rounds >= 6 ? 2 : rounds >= 3 ? 1 : 0,
+      badge: isBest ? 'New best!' : '',
+      stats: [{ label: 'Rounds', value: rounds, hi: true }, { label: 'Best', value: game.best }],
+      confetti: isBest, sound: isBest ? 'win' : 'good',
+      buttons: [{ label: 'Play again', value: 'again', primary: true }]
+    }).then(function (v) { if (v === 'again') startGame(); });
   }
 
   pads.forEach(function (p, i) {
     p.addEventListener('pointerdown', function (e) { e.preventDefault(); press(i); });
   });
-  document.getElementById('start-btn').addEventListener('click', startGame);
-  document.getElementById('over-again').addEventListener('click', startGame);
-  document.getElementById('mute-btn').addEventListener('click', function () {
-    ensureAudio();
-    setMuted(!muted());
-    if (!muted()) { tone(0, 200); soundHint(); }
+  // keyboard: Q W / A S, or 1-4, match the pad layout
+  document.addEventListener('keydown', function (e) {
+    var k = { q: 0, w: 1, a: 2, s: 3, '1': 0, '2': 1, '3': 2, '4': 3 }[e.key.toLowerCase()];
+    if (k !== undefined) { press(k); e.preventDefault(); }
+    else if ((e.key === ' ' || e.key === 'Enter') && (state === 'idle' || state === 'over') && !Kit.overlayOpen()) { startGame(); e.preventDefault(); }
   });
+  document.getElementById('start-btn').addEventListener('click', function () { Kit.sfx.tap(); startGame(); });
 
-  setMuted(muted());
+  var HOWTO = [
+    { emoji: '👀', text: 'Watch the pads light up and listen to their notes.' },
+    { emoji: '👆', text: 'Tap the same pads in the <b>same order</b>.' },
+    { emoji: '➕', text: 'Every round adds one more. How far can you go?' },
+    { icon: 'heart', text: 'A slip costs a heart, then you see it again. Three hearts.' }
+  ];
+  /* Help, or the iPad going to sleep, in the middle of a round would let the
+     lights play out unseen. Stop, and show the same sequence again after. */
+  function pauseRound() {
+    if (state !== 'showing' && state !== 'input') return false;
+    clearTimers();
+    pads.forEach(function (p) { p.classList.remove('lit', 'wrong', 'hintme'); });
+    setState('showing');
+    setStatus('Paused');
+    return true;
+  }
+  function resumeRound() {
+    if (state !== 'showing' || !game.round()) return;
+    if (game.pos >= game.round()) { nextRound(); return; }   // paused right after a finished round
+    game.pos = 0;
+    showSequence();
+  }
+  document.getElementById('help-btn').addEventListener('click', function () {
+    var paused = pauseRound();
+    Kit.howTo('simon', HOWTO, { force: true }).then(function () { if (paused) resumeRound(); });
+  });
+  var hiddenMidRound = false;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { if (pauseRound()) hiddenMidRound = true; }
+    else if (hiddenMidRound) { hiddenMidRound = false; if (!Kit.overlayOpen()) resumeRound(); }
+  });
+  Kit.bindMute(document.getElementById('mute-btn'));
+
+  setState('idle');
   renderScore();
+  renderLives();
+  Kit.howTo('simon', HOWTO);
   window.__simon = { game: function () { return game; }, press: press, start: startGame, state: function () { return state; } };
 })();

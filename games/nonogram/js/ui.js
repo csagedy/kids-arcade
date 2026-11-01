@@ -1,122 +1,165 @@
+/* Picture Puzzles (nonograms), on the arcade kit.
+
+   Library: pictures in sections by size; each card shows the solved picture,
+   the squares filled so far, or a "?". Play: one .k-fit box with the clues
+   and the grid, sized from the grid plus the room its clues need. Tap or
+   drag along a row/column to fill (or mark with an X in Mark mode); the
+   row and column under your finger light up their clues. A line whose
+   fills are right gets its spare squares crossed out and its clue dimmed. */
 (function () {
   var libEl = document.getElementById('lib');
   var playEl = document.getElementById('play');
   var gridEl = document.getElementById('grid');
-  var game = null, cellEls = [], mode = 1;   // 1 fill, 2 cross
-  var drag = null, undoStack = [], toastTimer = 0;
+  var game = null, cellEls = [], rowEls = [], colEls = [], mode = 1;   // 1 fill, 2 cross
+  var drag = null, undoStack = [], hot = -1, linesDone = 0;
+
+  function sizeName(w) {
+    return w <= 3 ? 'Tiny' : w <= 4 ? 'Little' : w <= 5 ? 'Small' : w <= 6 ? 'Medium' : w <= 7 ? 'Bigger' : w <= 8 ? 'Big' : 'Huge';
+  }
+  function saved(def) { return Kit.raw('nono.p.' + def.id) || ''; }
 
   /* ---------- library ---------- */
-  function sizeName(w) {
-    return w <= 4 ? 'Tiny' : w <= 5 ? 'Small' : w <= 7 ? 'Medium' : w <= 8 ? 'Big' : 'Huge';
-  }
-
-  function inProgress(def) {
-    try {
-      var s = localStorage.getItem('nono.p.' + def.id);
-      return !!s && s.indexOf('1') >= 0;
-    } catch (e) { return false; }
-  }
-
   function showLibrary() {
     game = null;
+    drag = null;
     tutEnd();
-    playEl.classList.add('hidden');
-    libEl.classList.remove('hidden');
-    document.getElementById('win').classList.add('hidden');
+    Kit.closeAll();
+    playEl.hidden = true;
+    libEl.hidden = false;
     var solved = NonoGame.solvedSet();
     var list = document.getElementById('lib-grid');
     list.innerHTML = '';
-    var lastW = 0;
+    var lastW = 0, g = null, nDone = 0;
     NONO_PUZZLES.forEach(function (def, i) {
-      var w = def.art[0].length;
+      var w = def.art[0].length, h = def.art.length;
       if (w !== lastW) {
         lastW = w;
         var hd = document.createElement('div');
-        hd.className = 'lib-head';
-        hd.textContent = sizeName(w) + ' · ' + w + '×' + def.art.length;
+        hd.className = 'sec';
+        hd.innerHTML = '<h2>' + sizeName(w) + '</h2><span>' + w + ' × ' + h + '</span>';
         list.appendChild(hd);
+        g = document.createElement('div');
+        g.className = 'grid';
+        list.appendChild(g);
       }
-      var done = !!solved[def.id];
+      var done = !!solved[def.id], s = done ? '' : saved(def);
+      var going = s.indexOf('1') >= 0;
+      if (done) nDone++;
       var b = document.createElement('button');
-      b.className = 'lvl' + (done ? ' done' : (inProgress(def) ? ' going' : ''));
-      b.innerHTML = '<div class="lvl-n"></div><div class="lvl-size"></div>';
-      b.querySelector('.lvl-n').textContent = done ? def.name : String(i + 1);
-      b.querySelector('.lvl-size').textContent = done ? '✓' : w + '×' + def.art.length;
-      if (done) b.style.background = def.color;
-      b.addEventListener('click', function () { open(def); });
-      list.appendChild(b);
+      b.className = 'pz' + (done ? ' done' : going ? ' going' : '');
+      b.style.setProperty('--i', i);
+      b.style.setProperty('--c', def.color);
+      var art = '<div class="pz-art" style="grid-template-columns: repeat(' + w + ', 1fr)">';
+      for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+        var on = done ? def.art[y][x] === '#' : s[y * w + x] === '1';
+        art += '<i' + (on ? ' class="on"' : '') + '></i>';
+      }
+      art += '</div>';
+      b.innerHTML = art + (done || going ? '' : '<span class="pz-q">?</span>') + '<div class="pz-label"></div>' +
+        (done ? '<span class="tick">' + Kit.icon('check') + '</span>' : going ? '<span class="part">…</span>' : '');
+      b.querySelector('.pz-label').textContent = done ? def.name : 'Puzzle ' + (i + 1);
+      b.addEventListener('click', function () { Kit.sfx.tap(); open(def); });
+      g.appendChild(b);
     });
+    document.getElementById('lib-done').textContent = nDone + '/' + NONO_PUZZLES.length;
   }
 
   /* ---------- play ---------- */
   function open(def) {
-    try { localStorage.setItem('nono.last', def.id); } catch (e) {}
+    Kit.closeAll();
+    Kit.setRaw('nono.last', def.id);
     game = new NonoGame(def);
-    libEl.classList.add('hidden');
-    playEl.classList.remove('hidden');
-    document.getElementById('title').textContent = def.art[0].length + '×' + def.art.length;
-    document.getElementById('win').classList.add('hidden');
+    libEl.hidden = true;
+    playEl.hidden = false;
+    document.getElementById('title').textContent = game.w + '×' + game.h;
     undoStack = [];
-    var tip = document.getElementById('tip');
-    tip.classList.toggle('hidden', Object.keys(NonoGame.solvedSet()).length > 0);
     build();
-    if (tutStart()) tip.classList.add('hidden');
+    if (!tutStart() && !Object.keys(NonoGame.solvedSet()).length) {
+      Kit.toast('Tap a square to fill it, or drag along a row', { ms: 3500, top: true });
+    }
   }
+
+  function shade(hex, k) {
+    var c = hex.replace('#', '');
+    var v = [0, 2, 4].map(function (i) { return Math.round(parseInt(c.substr(i, 2), 16) * (1 + k)); });
+    return 'rgb(' + v.join(',') + ')';
+  }
+
+  /* Room the clues need, in cells. */
+  function clueWidth(clue) {
+    var u = 0.5;
+    clue.forEach(function (n, k) { u += String(n).length * 0.3 + (k ? 0.2 : 0); });
+    return u;
+  }
+  function clueHeight(clue) { return 0.55 + clue.length * 0.46 + (clue.length - 1) * 0.1; }
 
   function build() {
     var w = game.w, h = game.h;
-    var maxRow = Math.max.apply(null, game.rowClues.map(function (c) { return c.length; }));
-    var maxCol = Math.max.apply(null, game.colClues.map(function (c) { return c.length; }));
-    gridEl.innerHTML = '';
+    var rcw = Math.max.apply(null, game.rowClues.map(clueWidth));
+    var cch = Math.max.apply(null, game.colClues.map(clueHeight));
+    var wu = w + rcw + 0.12, hu = h + cch + 0.12;
+    gridEl.style.setProperty('--wu', wu);
     gridEl.style.setProperty('--w', w);
     gridEl.style.setProperty('--h', h);
-    gridEl.style.setProperty('--rc', maxRow);
-    gridEl.style.setProperty('--cc', maxCol);
+    gridEl.style.setProperty('--rcw', 'calc(var(--cell) * ' + rcw + ')');
+    gridEl.style.setProperty('--cch', 'calc(var(--cell) * ' + cch + ')');
+    gridEl.style.setProperty('--k-aspect', wu / hu);
+    gridEl.style.setProperty('--k-fit-max', Math.round(wu * 118) + 'px');   // tiny puzzles: big, not giant
+    gridEl.style.setProperty('--c', game.color);
+    gridEl.style.setProperty('--e', shade(game.color, -0.3));
+    gridEl.classList.remove('solved');
+    gridEl.innerHTML = '';
 
-    // corner
-    gridEl.appendChild(document.createElement('div')).className = 'corner';
-    // column clues
-    for (var c = 0; c < w; c++) {
-      var cc = document.createElement('div');
-      cc.className = 'clue col' + (c % 5 === 4 && c < w - 1 ? ' b5' : '');
-      cc.id = 'cc' + c;
-      game.colClues[c].forEach(function (n) {
-        var s = document.createElement('span'); s.textContent = n; cc.appendChild(s);
-      });
-      gridEl.appendChild(cc);
+    var cr = document.createElement('div'); cr.className = 'clues-r';
+    var cc = document.createElement('div'); cc.className = 'clues-c';
+    var cells = document.createElement('div'); cells.className = 'cells';
+    rowEls = []; colEls = []; cellEls = [];
+    game.colClues.forEach(function (clue) {
+      var el = document.createElement('div'); el.className = 'clue';
+      el.innerHTML = clue.map(function (n) { return '<span>' + n + '</span>'; }).join('');
+      cc.appendChild(el); colEls.push(el);
+    });
+    game.rowClues.forEach(function (clue) {
+      var el = document.createElement('div'); el.className = 'clue';
+      el.innerHTML = clue.map(function (n) { return '<span>' + n + '</span>'; }).join('');
+      cr.appendChild(el); rowEls.push(el);
+    });
+    for (var i = 0; i < w * h; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell';
+      c.dataset.i = i;
+      cells.appendChild(c); cellEls.push(c);
     }
-    cellEls = [];
-    for (var r = 0; r < h; r++) {
-      var rc = document.createElement('div');
-      rc.className = 'clue row' + (r % 5 === 4 && r < h - 1 ? ' b5' : '');
-      rc.id = 'rc' + r;
-      game.rowClues[r].forEach(function (n) {
-        var s = document.createElement('span'); s.textContent = n; rc.appendChild(s);
-      });
-      gridEl.appendChild(rc);
-      for (var c2 = 0; c2 < w; c2++) {
-        var cell = document.createElement('div');
-        cell.className = 'cell';
-        if (c2 % 5 === 4 && c2 < w - 1) cell.className += ' b5r';
-        if (r % 5 === 4 && r < h - 1) cell.className += ' b5b';
-        cell.dataset.i = r * w + c2;
-        gridEl.appendChild(cell);
-        cellEls.push(cell);
-      }
-    }
+    gridEl.appendChild(cc); gridEl.appendChild(cr); gridEl.appendChild(cells);
+    // a guide line every five squares
+    for (var k = 5; k < w; k += 5) addGuide('left: calc(var(--rcw) + ' + k + ' * var(--cell) + var(--gap) * 0.2); top: var(--cch); width: calc(var(--gap) * 0.6); height: calc(var(--h) * var(--cell) + var(--gap));');
+    for (k = 5; k < h; k += 5) addGuide('top: calc(var(--cch) + ' + k + ' * var(--cell) + var(--gap) * 0.2); left: var(--rcw); height: calc(var(--gap) * 0.6); width: calc(var(--w) * var(--cell) + var(--gap));');
+    linesDone = -1;
     render();
   }
+  function addGuide(css) {
+    var g = document.createElement('div');
+    g.className = 'guide'; g.style.cssText = css;
+    gridEl.appendChild(g);
+  }
 
-  function render() {
+  function render(popAt) {
     for (var i = 0; i < cellEls.length; i++) {
       var v = game.cells[i];
-      cellEls[i].className = cellEls[i].className.replace(/ (on|x)\b/g, '') + (v === 1 ? ' on' : v === 2 ? ' x' : '');
-      if (v === 1) cellEls[i].style.background = game.color; else cellEls[i].style.background = '';
+      var cls = 'cell' + (v === 1 ? ' on' : v === 2 ? ' x' : '');
+      if (hot >= 0 && v !== 1 && (Math.floor(i / game.w) === Math.floor(hot / game.w) || i % game.w === hot % game.w)) cls += ' hot';
+      if (i === popAt && v === 1) cls += ' pop';
+      if (cellEls[i].classList.contains('tuthl')) cls += ' tuthl';
+      if (cellEls[i].className !== cls) cellEls[i].className = cls;
     }
-    for (var r = 0; r < game.h; r++) document.getElementById('rc' + r).classList.toggle('done', game.rowDone(r));
-    for (var c = 0; c < game.w; c++) document.getElementById('cc' + c).classList.toggle('done', game.colDone(c));
-    document.getElementById('mode-fill').classList.toggle('on', mode === 1);
-    document.getElementById('mode-x').classList.toggle('on', mode === 2);
+    var n = 0, r, c;
+    for (r = 0; r < game.h; r++) { var dr = game.rowDone(r); rowEls[r].classList.toggle('done', dr); if (dr) n++; rowEls[r].classList.toggle('hot', hot >= 0 && Math.floor(hot / game.w) === r); }
+    for (c = 0; c < game.w; c++) { var dc = game.colDone(c); colEls[c].classList.toggle('done', dc); if (dc) n++; colEls[c].classList.toggle('hot', hot >= 0 && hot % game.w === c); }
+    document.getElementById('lines').textContent = n + '/' + (game.w + game.h);
+    if (linesDone >= 0 && n > linesDone) Kit.anim(document.getElementById('lines-chip'), 'k-bump');
+    linesDone = n;
+    document.getElementById('mode-fill').classList.toggle('k-on', mode === 1);
+    document.getElementById('mode-x').classList.toggle('k-on', mode === 2);
     document.getElementById('undo-btn').disabled = !undoStack.length;
     tutCheck();
   }
@@ -133,30 +176,28 @@
     els.forEach(function (el) { if (el) { el.classList.add('tuthl'); tutHl.push(el); } });
   }
   function tutStart() {
-    var seen = false;
-    try { seen = !!localStorage.getItem('nono.tut'); } catch (e) {}
     tutStep = -1;
-    tutEl.classList.add('hidden');
-    if (seen || game.w !== 3 || game.cells.some(function (v) { return v; }) ||
+    tutEl.hidden = true;
+    if (Kit.raw('nono.tut') || game.w !== 3 || game.cells.some(function (v) { return v; }) ||
         Object.keys(NonoGame.solvedSet()).length) return false;
-    try { localStorage.setItem('nono.tut', '1'); } catch (e) {}
+    Kit.setRaw('nono.tut', '1');
+    Kit.setRaw('arcade.howto.nonogram', '1');   // the tutorial covers it
     tutLine = -1;   // a row whose clue fills the whole line
     for (var r = 0; r < game.h; r++) if (game.rowClues[r][0] === game.w) { tutLine = r; break; }
     tutShow(0);
     return true;
   }
   function tutShow(n) {
-    tutStep = n;
     var txt, btn = 'Next', hl = [];
     if (n === 0) {
       txt = 'The number says how many squares to fill in that row.';
-      if (tutLine >= 0) hl = [document.getElementById('rc' + tutLine)];
+      if (tutLine >= 0) hl = [rowEls[tutLine]];
     } else if (n === 1 && tutLine >= 0) {
       txt = 'A ' + game.w + ' fills the whole row. Tap the squares, or drag across them!';
       for (var c = 0; c < game.w; c++) hl.push(cellEls[tutLine * game.w + c]);
       btn = 'Skip';
     } else if (n === 2) {
-      txt = 'Nice! A finished row fades its number, and any spare squares get crossed out.';
+      txt = 'Nice! A finished row dims its number, and spare squares get an X.';
     } else {
       txt = 'Now the columns: their numbers go down. Stuck? Tap Hint!';
       btn = 'Got it';
@@ -165,29 +206,19 @@
     tutStep = n;
     tutEl.querySelector('.tut-txt').textContent = txt;
     document.getElementById('tut-next').textContent = btn;
-    tutEl.classList.remove('hidden');
+    tutEl.hidden = false;
     tutHighlight(hl);
+    Kit.sfx.open();
   }
   function tutNext() {
     if (tutStep < 0) return;
+    Kit.sfx.tap();
     if (tutStep >= 3) { tutEnd(); return; }
     tutShow(tutStep === 0 && tutLine < 0 ? 2 : tutStep + 1);
   }
-  function tutEnd() {
-    tutStep = -1; tutClear(); tutEl.classList.add('hidden');
-  }
-  function tutCheck() {
-    if (tutStep === 1 && game && game.rowDone(tutLine)) tutShow(2);
-  }
+  function tutEnd() { tutStep = -1; tutClear(); tutEl.hidden = true; }
+  function tutCheck() { if (tutStep === 1 && game && game.rowDone(tutLine)) tutShow(2); }
   document.getElementById('tut-next').addEventListener('click', tutNext);
-
-  function toast(msg) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
-  }
 
   /* One undo step per stroke (or per hint / clear). */
   function pushUndo() {
@@ -195,24 +226,26 @@
     if (undoStack.length > 60) undoStack.shift();
   }
 
-  /* Paint by dragging: the first cell decides whether this stroke sets or
-     clears, and the stroke is locked to a row or column so a wobbly finger
-     doesn't scribble. */
+  /* ---------- painting ----------
+     The first cell decides whether this stroke sets or clears, and the
+     stroke is locked to a row or column so a wobbly finger doesn't scribble. */
   function cellAt(x, y) {
     var el = document.elementFromPoint(x, y);
-    if (!el || !el.classList.contains('cell')) return -1;
+    if (!el || !el.classList.contains('cell') || !gridEl.contains(el)) return -1;
     return +el.dataset.i;
   }
 
   gridEl.addEventListener('pointerdown', function (e) {
-    if (drag || !game) return;   // second finger: ignore
+    if (drag || !game || Kit.overlayOpen() || gridEl.classList.contains('solved')) return;   // second finger: ignore
     var i = cellAt(e.clientX, e.clientY);
     if (i < 0) return;
     e.preventDefault();
     var cur = game.cells[i];
     var value = cur === mode ? 0 : mode;   // tap again to clear
-    drag = { id: e.pointerId, value: value, r: Math.floor(i / game.w), c: i % game.w, axis: null, last: i, start: i, pushed: false };
+    drag = { id: e.pointerId, value: value, r: Math.floor(i / game.w), c: i % game.w, axis: null, last: i, start: i, pushed: false, n: 0 };
+    hot = i;
     paint(i);
+    render();
   });
 
   function paint(i) {
@@ -226,8 +259,13 @@
     if (cur === drag.value) return;
     if (!drag.pushed) { pushUndo(); drag.pushed = true; }
     game.set(i, drag.value);
-    if (drag.value === 1) autoCross(i);
-    game.save(); render();
+    drag.n++;
+    if (drag.value === 1) {
+      Kit.sfx.tone(440 * Math.pow(1.059, Math.min(drag.n, 14) * 2), 0.07, 'sine', { vol: 0.08 });
+      autoCross(i);
+    } else if (drag.value === 2) Kit.sfx.tone(300, 0.05, 'triangle', { vol: 0.06 });
+    else Kit.sfx.tone(240, 0.05, 'sine', { vol: 0.05 });
+    game.save(); render(i);
   }
 
   /* When a fill makes its row or column match the clue exactly, cross out the
@@ -241,8 +279,14 @@
     var rowOk = game.rowDone(r), colOk = game.colDone(c);
     for (k = 0; k < game.w; k++) if (!right(r * game.w + k)) rowOk = false;
     for (k = 0; k < game.h; k++) if (!right(k * game.w + c)) colOk = false;
-    if (rowOk) for (k = 0; k < game.w; k++) if (!game.cells[r * game.w + k]) game.cells[r * game.w + k] = 2;
-    if (colOk) for (k = 0; k < game.h; k++) if (!game.cells[k * game.w + c]) game.cells[k * game.w + c] = 2;
+    if (rowOk) { for (k = 0; k < game.w; k++) if (!game.cells[r * game.w + k]) game.cells[r * game.w + k] = 2; lineDone(rowEls[r]); }
+    if (colOk) { for (k = 0; k < game.h; k++) if (!game.cells[k * game.w + c]) game.cells[k * game.w + c] = 2; lineDone(colEls[c]); }
+  }
+  function lineDone(el) {
+    if (el.classList.contains('done')) return;
+    Kit.anim(el, 'flash');
+    Kit.sfx.tone(784, 0.1, 'sine', { vol: 0.07, when: 0.05 });
+    Kit.sfx.tone(1047, 0.14, 'sine', { vol: 0.06, when: 0.12 });
   }
 
   window.addEventListener('pointermove', function (e) {
@@ -257,29 +301,34 @@
     }
     if (drag.axis === 'row' && r !== drag.r) return;
     if (drag.axis === 'col' && c !== drag.c) return;
+    hot = i;
     // Fast swipes skip cells; fill in everything between the last one and this.
     var step = drag.axis === 'row' ? 1 : game.w;
     var dir = i > drag.last ? step : -step;
     for (var j = drag.last + dir; j !== i + dir; j += dir) { drag.last = j; paint(j); }
+    render();
   }, { passive: false });
 
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
     drag = null;
+    hot = -1;
+    if (game) render();
     checkSolved();
   }
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
 
   function checkSolved() {
-    if (game && game.isSolved()) setTimeout(win, 250);
+    if (game && game.isSolved() && !gridEl.classList.contains('solved')) setTimeout(win, 200);
   }
 
   /* ---------- undo and hints ---------- */
   function undo() {
-    if (!game || !undoStack.length) return;
+    if (!game || !undoStack.length || drag || Kit.overlayOpen()) return;
     game.cells = undoStack.pop();
     game.save(); render();
+    Kit.sfx.tone(600, 0.1, 'sine', { vol: 0.07, to: 380 });
   }
 
   /* Which cells of a line are forced? `cur` holds 0 unknown, 1 filled, 2 empty.
@@ -305,12 +354,12 @@
         for (t = s; t < s + clue[k]; t++) if (cur[t] === 2) { ok = false; break; }
         if (ok && s + clue[k] < n && cur[s + clue[k]] === 1) ok = false;
         if (!ok) continue;
-        var saved = line.slice();
+        var keep = line.slice();
         for (t = pos; t < s; t++) line[t] = 0;
         for (t = s; t < s + clue[k]; t++) line[t] = 1;
         if (s + clue[k] < n) line[s + clue[k]] = 0;
         place(k + 1, Math.min(n, s + clue[k] + 1));
-        line = saved;
+        line = keep;
       }
     }
     if (clue.length === 1 && clue[0] === 0) clue = [];
@@ -331,7 +380,7 @@
   /* Hints are gentle: first they quietly fix any wrong squares, otherwise
      they fill in one square that can be worked out from the numbers. */
   function hint() {
-    if (!game || drag) return;
+    if (!game || drag || Kit.overlayOpen() || gridEl.classList.contains('solved')) return;
     var i, wrong = [];
     for (i = 0; i < game.cells.length; i++) {
       if ((game.cells[i] === 1 && !game.solution[i]) || (game.cells[i] === 2 && game.solution[i])) wrong.push(i);
@@ -340,8 +389,9 @@
     if (wrong.length) {
       wrong.forEach(function (w) { game.cells[w] = 0; });
       game.save(); render();
-      wrong.forEach(function (w) { flash(w, 'oops'); });
-      toast(wrong.length === 1 ? 'Oops, one was wrong. Fixed it!' : 'Oops, ' + wrong.length + ' were wrong. Fixed them!');
+      setTimeout(function () { wrong.forEach(function (w) { flash(w, 'oops'); }); }, 0);
+      Kit.sfx.bad();
+      Kit.toast(wrong.length === 1 ? 'Oops, one was wrong. Fixed it!' : 'Oops, ' + wrong.length + ' were wrong. Fixed them!', { icon: 'hint', top: true });
       return;
     }
     var pick = -1, val = 0, r, c;
@@ -360,50 +410,52 @@
     if (pick < 0) {   // shouldn't happen for line-solvable pictures; reveal any missing square
       for (i = 0; i < game.cells.length; i++) if (game.solution[i] && game.cells[i] !== 1) { pick = i; val = 1; break; }
     }
-    if (pick < 0) { undoStack.pop(); toast('Looks finished!'); return; }
+    if (pick < 0) { undoStack.pop(); Kit.toast('Looks finished!', { top: true }); return; }
     game.cells[pick] = val;
+    if (val === 1) autoCross(pick);
     game.save(); render();
-    flash(pick, 'hint');
-    toast(val === 1 ? 'This square is filled' : 'This square stays empty');
+    setTimeout(function () { flash(pick, 'hint'); }, 0);
+    Kit.sfx.open();
+    Kit.toast(val === 1 ? 'This square is filled' : 'This square stays empty', { icon: 'hint', top: true });
     checkSolved();
   }
 
-  function confetti() {
-    var box = document.getElementById('confetti');
-    var colors = ['#ffc53d', '#e5484d', '#3fb950', '#4fa3f7', '#a06cf0', '#f06ca8'];
-    box.innerHTML = '';
-    for (var k = 0; k < 40; k++) {
-      var p = document.createElement('i');
-      var a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 170;
-      p.style.background = colors[k % colors.length];
-      p.style.setProperty('--dx', Math.round(Math.cos(a) * d) + 'px');
-      p.style.setProperty('--dy', Math.round(Math.sin(a) * d + 120) + 'px');
-      p.style.setProperty('--rot', Math.round(Math.random() * 720 - 360) + 'deg');
-      p.style.animationDelay = (Math.random() * 0.25) + 's';
-      box.appendChild(p);
-    }
-    setTimeout(function () { box.innerHTML = ''; }, 2200);
-  }
-
+  /* ---------- winning ---------- */
   function win() {
-    if (!game) return;
+    if (!game || gridEl.classList.contains('solved')) return;
+    var first = !NonoGame.solvedSet()[game.id];
     game.markSolved();
-    // Show the picture clean: crosses vanish.
+    tutEnd();
+    // Show the picture clean: crosses vanish, clues fade away.
     for (var i = 0; i < game.cells.length; i++) if (game.cells[i] === 2) game.cells[i] = 0;
     game.save();
     render();
+    gridEl.classList.add('solved');
     // A diagonal wave of pops across the revealed picture.
     for (i = 0; i < cellEls.length; i++) {
       if (game.cells[i] !== 1) continue;
       cellEls[i].style.setProperty('--d', (((i % game.w) + Math.floor(i / game.w)) * 0.04) + 's');
       cellEls[i].classList.add('reveal');
     }
-    confetti();
-    try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (e) {}
-    document.getElementById('win-name').textContent = game.name;
-    var nextEl = document.getElementById('win-next');
-    nextEl.textContent = nextUnsolved() ? 'Next picture' : 'All pictures';
-    document.getElementById('win').classList.remove('hidden');
+    Kit.sfx.good();
+    Kit.buzz([30, 40, 30]);
+    var next = nextUnsolved(), id = game.id;
+    var mini = '<span class="mini-pic" style="grid-template-columns: repeat(' + game.w + ', 1fr)">';
+    for (i = 0; i < game.cells.length; i++) mini += '<i style="background:' + (game.solution[i] ? game.color : 'transparent') + '"></i>';
+    mini += '</span>';
+    var n = Object.keys(NonoGame.solvedSet()).length;
+    setTimeout(function () {
+      if (!game || game.id !== id) return;
+      Kit.result({
+        title: game.name + '!', confetti: true,
+        text: mini + (n >= NONO_PUZZLES.length ? 'Every picture solved. Amazing!' : n + ' of ' + NONO_PUZZLES.length + ' pictures solved.'),
+        badge: first && n % 10 === 0 ? n + ' solved!' : '',
+        buttons: [{ label: 'All pictures', value: 'lib' }, next ? { label: 'Next', value: 'next', primary: true, icon: 'next' } : { label: 'Done', value: 'lib', primary: true }]
+      }).then(function (v) {
+        if (v === 'next' && next) open(next);
+        else if (v === 'lib') showLibrary();
+      });
+    }, 900 + (game.w + game.h) * 40);
   }
 
   /* The next picture after this one that isn't solved yet, wrapping round. */
@@ -417,28 +469,37 @@
     return null;
   }
 
-  document.getElementById('mode-fill').addEventListener('click', function () { mode = 1; render(); });
-  document.getElementById('mode-x').addEventListener('click', function () { mode = 2; render(); });
+  /* ---------- buttons ---------- */
+  function setMode(m) { if (mode !== m) { mode = m; Kit.sfx.click(); if (game) render(); } }
+  document.getElementById('mode-fill').addEventListener('click', function () { setMode(1); });
+  document.getElementById('mode-x').addEventListener('click', function () { setMode(2); });
   document.getElementById('clear-btn').addEventListener('click', function () {
-    if (!game || !game.cells.some(function (v) { return v; })) return;
+    if (!game || Kit.overlayOpen() || !game.cells.some(function (v) { return v; })) return;
     pushUndo();
-    game.clear(); render();
-    toast('Cleared. Tap Undo to bring it back');
+    game.clear(); gridEl.classList.remove('solved'); render();
+    Kit.sfx.slide();
+    Kit.toast('Cleared. Undo brings it back', { icon: 'undo', top: true });
   });
   document.getElementById('undo-btn').addEventListener('click', undo);
   document.getElementById('hint-btn').addEventListener('click', hint);
-  document.getElementById('back-btn').addEventListener('click', showLibrary);
-  document.getElementById('win-lib').addEventListener('click', showLibrary);
-  document.getElementById('win-next').addEventListener('click', function () {
-    var next = nextUnsolved();
-    if (next) open(next); else showLibrary();
-  });
+  document.getElementById('back-btn').addEventListener('click', function () { Kit.sfx.tap(); showLibrary(); });
+
+  var HOWTO = [
+    { emoji: '🔢', text: 'Each number says how many squares <b>in a row</b> are filled, in order.' },
+    { emoji: '👆', text: 'Tap a square to fill it, or drag along a row or column.' },
+    { emoji: '❌', text: 'Switch to <b>Mark</b> to put an X where nothing goes.' },
+    { icon: 'hint', text: 'Stuck? Hint fixes mistakes, then shows one square.' }
+  ];
+  Kit.bindHelp(document.getElementById('help-btn'), 'nonogram', HOWTO);
+  Kit.bindHelp(document.getElementById('lib-help'), 'nonogram', HOWTO);
+  Kit.bindMute(document.getElementById('mute-btn'));
+  Kit.bindMute(document.getElementById('lib-mute'));
 
   // Reopen the last picture the kid was on, if unsolved.
-  var last = null;
-  try { last = localStorage.getItem('nono.last'); } catch (e) {}
+  var last = Kit.raw('nono.last');
   var def = NONO_PUZZLES.filter(function (p) { return p.id === last; })[0];
   if (def && !NonoGame.solvedSet()[def.id]) open(def); else showLibrary();
+  if (!game || game.w !== 3) Kit.howTo('nonogram', HOWTO);
 
   window.__nono = { game: function () { return game; }, open: open, showLibrary: showLibrary, render: render };
 })();

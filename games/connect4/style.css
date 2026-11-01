@@ -1,64 +1,160 @@
-:root {
-  --bg: #14161c; --panel: #1e222b; --panel-2: #272c37;
-  --text: #f2f4f8; --muted: #97a0b3; --accent: #ffc53d;
-  --red: #ff5d6c; --yellow: #ffd23f; --board: #2f5fd0; --hole: #1a3a8a;
-}
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-  margin: 0; height: 100%; overflow: hidden;
-  background: radial-gradient(120% 80% at 50% 0%, #1c2130 0%, var(--bg) 70%);
-  color: var(--text);
-  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
-  overscroll-behavior: none; touch-action: manipulation;
-}
-.hidden { display: none !important; }
+/* Four in a Row on the arcade kit. The kit gives the shell, chips, buttons
+   and overlays; this file draws the board.
 
-.head { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 12px) 16px 4px; }
-.scores { flex: 1; text-align: center; }
-.score { font-size: 24px; font-weight: 800; line-height: 1.2; }
-.best { font-size: 12px; color: var(--muted); }
-.icon-btn {
-  width: 44px; height: 44px; flex: none; border: none; border-radius: 50%;
-  background: var(--panel-2); color: var(--text); font-size: 21px; line-height: 44px;
-  text-align: center; text-decoration: none; display: block; padding: 0;
-}
-.icon-btn:active { opacity: 0.65; }
+   The board is a .k-fit square and a size container. It is 7.5 "cells"
+   wide (7 holes + a quarter cell of frame each side) and 7.5 tall (a lane
+   on top where the next disc hovers, then 6 holes + frame), so --cs, one
+   hole pitch, is 100cqw / 7.5 and everything else is measured in it.
+   Discs sit *behind* the blue frame (an SVG with the holes cut out), so they
+   really fall into the slots. */
 
-.board-wrap { display: flex; justify-content: center; padding: max(28px, 11vh) 10px 0; }
 .board {
-  position: relative; width: 100%; max-width: 440px; aspect-ratio: 7 / 6;
-  background: var(--board); border-radius: 16px; padding: 8px;
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
-  box-shadow: 0 6px 0 #1f3f94, 0 14px 30px rgba(0,0,0,0.4);
+  container-type: size;
+  --cs: calc(100cqw / 7.5);
+  --pad: calc(var(--cs) * 0.25);
+  --p1: var(--k-red);    --p1-edge: var(--k-red-edge);
+  --p2: var(--k-yellow); --p2-edge: var(--k-yellow-edge);
+  touch-action: none;
 }
-.col { display: grid; grid-template-rows: repeat(6, 1fr); position: relative; cursor: pointer; }
-.cell { position: relative; padding: 4%; }
-.hole { width: 100%; height: 100%; border-radius: 50%; background: var(--hole); box-shadow: inset 0 3px 6px rgba(0,0,0,0.45); position: relative; }
+
+/* the lane above the board: the disc you are about to drop */
+.lane { position: absolute; left: 0; right: 0; top: 0; height: var(--cs); }
+.ghost {
+  position: absolute; top: 0; left: calc(var(--pad) + var(--col, 3) * var(--cs));
+  width: var(--cs); height: var(--cs);
+  transition: left 140ms var(--k-ease), opacity 160ms, transform 200ms var(--k-ease-pop);
+}
+.ghost::before { content: ""; position: absolute; inset: 8%; border-radius: 50%; }
+.ghost.p1::before { background: var(--p1); box-shadow: inset 0 calc(var(--cs) * -0.06) 0 var(--p1-edge), 0 calc(var(--cs) * 0.06) calc(var(--cs) * 0.14) rgba(0,0,0,0.35); }
+.ghost.p2::before { background: var(--p2); box-shadow: inset 0 calc(var(--cs) * -0.06) 0 var(--p2-edge), 0 calc(var(--cs) * 0.06) calc(var(--cs) * 0.14) rgba(0,0,0,0.35); }
+.ghost::after { /* little arrow under the hovering disc */
+  content: ""; position: absolute; left: 50%; bottom: -2%; width: 18%; height: 12%;
+  transform: translateX(-50%); background: rgba(255,255,255,0.75);
+  clip-path: polygon(0 0, 100% 0, 50% 100%); opacity: 0; transition: opacity 160ms;
+}
+.ghost.held::after { opacity: 1; }
+.ghost.held { transform: translateY(-6%) scale(1.06); }
+.ghost.off { opacity: 0; }
+.ghost.wait::before { animation: bob 0.9s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-8%); } }
+
+/* the board itself */
+.frame {
+  position: absolute; left: 0; right: 0; bottom: 0; top: var(--cs);
+  border-radius: calc(var(--cs) * 0.4);
+  box-shadow: 0 calc(var(--cs) * 0.16) 0 #213a9c, var(--k-shadow-2);
+}
+.back {
+  position: absolute; inset: calc(var(--pad) * 0.5); border-radius: calc(var(--cs) * 0.3);
+  background: radial-gradient(120% 90% at 50% 0%, #1a1d52, var(--k-bg-deep));
+}
+.discs, .glow { position: absolute; inset: var(--pad); }
+.glow {
+  width: var(--cs); left: calc(var(--pad) + var(--col, 3) * var(--cs)); right: auto;
+  border-radius: calc(var(--cs) * 0.5);
+  background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.06));
+  opacity: 0; transition: opacity 140ms, left 140ms var(--k-ease);
+}
+.glow.on { opacity: 1; }
+.winline { z-index: 3; }
+.front, .winline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+
 .disc {
-  position: absolute; inset: 0; border-radius: 50%;
-  box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2), inset 0 3px 0 rgba(255,255,255,0.3);
+  position: absolute; width: var(--cs); height: var(--cs);
+  left: calc(var(--c) * var(--cs)); top: calc(var(--r) * var(--cs));
 }
-.disc.p1 { background: var(--red); } .disc.p2 { background: var(--yellow); }
-.disc.drop { animation: drop 0.42s cubic-bezier(.45,0,.9,.55) both, settle 0.2s 0.42s ease-out; z-index: 5; }
-@keyframes drop { from { transform: translateY(calc(var(--rows) * -100% - 120%)); } to { transform: translateY(0); } }
-@keyframes settle { 0% { transform: translateY(0) scaleY(0.9); } 60% { transform: translateY(0) scaleY(1.04); } 100% { transform: none; } }
-.disc.win { animation: pulse 0.7s ease-in-out infinite; box-shadow: 0 0 0 4px #fff, 0 0 18px 6px rgba(255,255,255,0.8), inset 0 -4px 0 rgba(0,0,0,0.2); z-index: 4; }
-@keyframes pulse { 50% { transform: scale(1.1); } }
-.col:active .hole { filter: brightness(1.3); }
-.board.locked .col { cursor: default; }
+.disc i {
+  position: absolute; inset: 6%; border-radius: 50%;
+  background: var(--d); box-shadow: inset 0 calc(var(--cs) * -0.07) 0 var(--d-edge), inset 0 calc(var(--cs) * 0.04) 0 rgba(255,255,255,0.35);
+}
+.disc i::after { /* the moulded inner ring */
+  content: ""; position: absolute; inset: 22%; border-radius: 50%;
+  box-shadow: inset 0 calc(var(--cs) * 0.03) 0 rgba(0,0,0,0.16), 0 calc(var(--cs) * 0.02) 0 rgba(255,255,255,0.3);
+}
+.disc.p1 { --d: var(--p1); --d-edge: var(--p1-edge); }
+.disc.p2 { --d: var(--p2); --d-edge: var(--p2-edge); }
+.disc.last i::after { background: rgba(255,255,255,0.22); }
+.disc.win { z-index: 2; }
+.disc.win i { animation: winpulse 0.8s ease-in-out infinite; box-shadow: inset 0 calc(var(--cs) * -0.07) 0 var(--d-edge), 0 0 0 calc(var(--cs) * 0.05) #fff, 0 0 calc(var(--cs) * 0.3) rgba(255,255,255,0.8); }
+.board.done .disc:not(.win) i { filter: saturate(0.5) brightness(0.7); transition: filter 0.6s; }
+@keyframes winpulse { 50% { transform: scale(1.08); } }
 
-.hint { text-align: center; color: var(--muted); font-size: 14px; margin-top: 30px; padding: 0 20px; }
+.winline line { stroke: #fff; stroke-linecap: round; stroke-width: 0.16; opacity: 0.9;
+  stroke-dasharray: 5; stroke-dashoffset: 5; animation: draw 0.5s 0.15s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
 
-.pill { border: none; border-radius: 999px; padding: 14px 24px; background: var(--panel-2); color: var(--text); font-size: 17px; font-weight: 600; }
-.pill.primary { background: var(--accent); color: #24201a; }
-.pill:active { opacity: 0.75; }
-.link { background: none; border: none; color: var(--muted); font-size: 15px; margin-top: 14px; padding: 10px; }
+/* bar: whose turn it is */
+.turn {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 0 16px 0 10px; height: calc(var(--k-tap) - 2px); margin-bottom: 4px;
+  border-radius: var(--k-r-round); background: var(--k-surface-1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 0 var(--k-edge);
+  font-weight: 900; font-size: var(--k-fs-lg); white-space: nowrap;
+}
+.turn span { overflow: hidden; text-overflow: ellipsis; }
+.turn-disc, .pdisc { flex: none; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--k-red); box-shadow: inset 0 -3px 0 var(--k-red-edge); }
+.turn.p2 .turn-disc { background: var(--k-yellow); box-shadow: inset 0 -3px 0 var(--k-yellow-edge); }
+.turn.p2.thinking .turn-disc { animation: bob 0.9s ease-in-out infinite; }
+.turn.flash { animation: k-bump 0.3s var(--k-ease-pop); }
 
-.over { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(10,12,16,0.8); }
-.over-card { background: var(--panel); border-radius: 22px; padding: 26px 28px; text-align: center; animation: pop 0.28s cubic-bezier(.2,1.3,.5,1); }
-.over-card h2 { margin: 0 0 14px; font-size: 22px; }
-.over-emoji { font-size: 48px; }
-.over-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
-.menu { display: flex; flex-direction: column; gap: 10px; min-width: 220px; }
-@keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* side panel: the two players and the score this sitting */
+.players { display: flex; gap: var(--k-s3); flex: 1 1 auto; justify-content: center; }
+.player {
+  display: flex; align-items: center; gap: 10px; flex: 1 1 0; min-width: 0; max-width: 260px;
+  padding: 10px 14px; margin-bottom: 4px; border-radius: var(--k-r-lg); background: var(--k-surface-1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 0 var(--k-edge);
+  transition: transform var(--k-med) var(--k-ease-pop), box-shadow var(--k-med);
+}
+.player .pdisc { width: 30px; height: 30px; }
+.player.p2 .pdisc { background: var(--k-yellow); box-shadow: inset 0 -3px 0 var(--k-yellow-edge); }
+.pname { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pscore { font-size: var(--k-fs-xl); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.player.on { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 0 var(--k-edge), 0 0 0 3px var(--ring); }
+.player.p1 { --ring: var(--k-red); }
+.player.p2 { --ring: var(--k-yellow); }
+.player.bump .pscore { animation: k-bump 0.4s var(--k-ease-pop); color: var(--k-accent); }
+
+.side-btns { display: flex; gap: var(--k-s3); align-items: center; justify-content: center; }
+.mode-btn { padding: 0 1em; }
+.mode-btn [data-k-icon] { font-size: 1.2em; display: flex; }
+.hint { color: var(--k-muted); font-size: var(--k-fs); font-weight: 600; text-align: center; line-height: 1.4; }
+
+/* setup sheet */
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--k-s3); margin-top: var(--k-s3); }
+.modes .k-btn { flex-direction: column; gap: 4px; min-height: 96px; padding: 10px; white-space: normal; }
+.modes .k-btn b { font-size: 34px; line-height: 1.1; }
+.modes .k-btn small { font-size: var(--k-fs-sm); font-weight: 700; opacity: 0.8; }
+.modes .k-btn.cur { outline: 3px solid var(--k-accent); outline-offset: 3px; }
+
+@media (max-width: 430px) {
+  .turn { font-size: 17px; padding: 0 12px 0 8px; gap: 8px; }
+  .player { padding: 8px 10px; gap: 8px; }
+  .player .pdisc { width: 24px; height: 24px; }
+  .pname { font-size: 15px; }
+  .k-side { flex-direction: column; gap: var(--k-s3); }
+  .players { width: 100%; }
+}
+@media (min-width: 700px) and (min-height: 600px) {
+  .player { padding: 14px 18px; }
+  .player .pdisc { width: 38px; height: 38px; }
+  .pname { font-size: var(--k-fs-lg); }
+  .modes .k-btn { min-height: 120px; }
+  .modes .k-btn b { font-size: 44px; }
+}
+/* landscape: players stacked in the side column */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-side { gap: var(--k-s4); }
+  .k-side .players { flex-direction: column; flex: none; }
+  .k-side .player { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost, .glow { transition: none; }
+  .ghost.wait::before, .disc.win i, .turn.p2.thinking .turn-disc { animation: none; }
+  .winline line { animation: none; stroke-dashoffset: 0; }
+}
+
+/* phones: the turn pill needs the room; the wins total lives on the menu tile */
+@media (max-width: 430px) {
+  #wins-chip { display: none; }
+}

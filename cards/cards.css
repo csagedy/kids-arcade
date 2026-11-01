@@ -1,0 +1,289 @@
+/* Shared look for the card games, on top of the arcade kit (kit/kit.css):
+   a felt table with a wooden rim, cards (crisp SVG faces, a candy-purple
+   back), seats for the computer friends, and the kit-styled overlays.
+   Card sizes follow --cw (card width).
+
+   Pages on the kit (<html class="k-app">) get the kit's night-sky page and
+   put the table in the stage: <main class="k-stage"><div class="cd-table">.
+   Older pages without the kit still get a felt page, and the old classes
+   (.head, .icon-btn, .pill, .over, .seg) keep working, now in kit colours. */
+:root {
+  --bg: #14161c; --panel: #22265e; --panel-2: #2d3275;
+  --text: #f6f5ff; --muted: #b9d8c6; --accent: #ffd23f;
+  --felt: #1f6b47; --felt-2: #0f3d29;
+  --s-S: #23264f; --s-H: #e5374a; --s-C: #16955a; --s-D: #2a6ee8;
+  --cd-paper: #fffdf7;
+  --cd-back: #7a4be0; --cd-back-2: #5530b8;
+  --cd-wood: #8a5a2f; --cd-wood-2: #6b4423; --cd-wood-3: #4a2d14;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+/* pages not on the kit: the whole page is felt */
+html:not(.k-app), html:not(.k-app) body {
+  margin: 0; height: 100%; overflow: hidden;
+  background: radial-gradient(130% 90% at 50% 35%, var(--felt) 0%, var(--felt-2) 80%);
+  color: var(--text);
+  font: 600 16px/1.4 var(--k-font, ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif);
+  overscroll-behavior: none; touch-action: manipulation;
+}
+.hidden { display: none !important; }
+
+/* ---------- the table ----------
+   A felt surface with a wooden rim. Give it the stage's whole box; it is a
+   size container, so --cw can be worked out from 100cqw / 100cqh. */
+.cd-table {
+  position: relative; width: 100%; height: 100%;
+  border-radius: var(--k-r-xl, 32px);
+  background:
+    radial-gradient(110% 80% at 50% 38%, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(130% 100% at 50% 40%, #237a52 0%, #19643f 50%, #0f3d29 100%);
+  box-shadow:
+    inset 0 0 0 4px var(--cd-wood-2), inset 0 0 0 8px var(--cd-wood), inset 0 0 0 10px var(--cd-wood-3),
+    inset 0 16px 34px rgba(0, 0, 0, 0.35), inset 0 -10px 30px rgba(0, 0, 0, 0.25),
+    0 7px 0 #082116, var(--k-shadow-2, 0 10px 30px rgba(5, 6, 30, 0.5));
+  container-type: size;
+}
+/* phones (either way up): a thinner rim */
+@media (max-width: 430px), (max-height: 430px) {
+  .cd-table {
+    border-radius: var(--k-r-lg, 24px);
+    box-shadow:
+      inset 0 0 0 3px var(--cd-wood-2), inset 0 0 0 6px var(--cd-wood), inset 0 0 0 7px var(--cd-wood-3),
+      inset 0 12px 26px rgba(0, 0, 0, 0.35), 0 5px 0 #082116, var(--k-shadow-2, 0 10px 30px rgba(5, 6, 30, 0.5));
+  }
+}
+/* a soft label on the felt ("31 left", "Your turn") */
+.cd-note { color: var(--muted); font-weight: 800; font-size: var(--k-fs-sm, 13px); text-align: center; }
+
+/* ---------- header (older pages; kit pages use .k-bar) ---------- */
+.head { display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + 10px) 14px 4px; }
+.scores { flex: 1; text-align: center; min-width: 0; }
+.score { font-size: 21px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.best { font-size: 12px; color: var(--muted); font-weight: 700; }
+.icon-btn {
+  width: 46px; height: 46px; flex: none; border: none; border-radius: 16px; margin-bottom: 4px;
+  background: var(--k-surface-2, #2d3275); color: var(--text); font-size: 20px; line-height: 46px;
+  text-align: center; text-decoration: none; display: block; padding: 0;
+  box-shadow: 0 4px 0 var(--k-edge, #12143a);
+}
+.icon-btn:active { transform: translateY(4px); box-shadow: none; }
+
+/* ---------- buttons and result cards (older pages) ---------- */
+.pill {
+  border: none; border-radius: var(--k-r, 16px); padding: 14px 22px; margin-bottom: 5px;
+  background: var(--k-surface-2, #2d3275); color: var(--text); font: 800 17px/1 var(--k-font, inherit);
+  box-shadow: 0 5px 0 var(--k-edge, #12143a), inset 0 2px 0 rgba(255,255,255,0.15);
+}
+.pill.primary { background: var(--accent); color: var(--k-accent-ink, #3b2a00); box-shadow: 0 5px 0 var(--k-accent-edge, #d69a00), inset 0 2px 0 rgba(255,255,255,0.3); }
+.pill:active { transform: translateY(5px); box-shadow: none; }
+.link { background: none; border: none; color: var(--k-muted, #aeb2e0); font-size: 15px; font-weight: 700; margin-top: 12px; padding: 10px; }
+
+.over { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(8, 9, 32, 0.66); padding: 16px; }
+.over-card {
+  background: linear-gradient(180deg, #343a8c 0%, var(--panel) 55%); border-radius: var(--k-r-xl, 32px); padding: 26px 22px; text-align: center; max-width: 400px; width: 100%;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), 0 8px 0 var(--k-edge, #12143a); animation: cd-pop 0.32s cubic-bezier(.2,1.3,.5,1);
+}
+.over-card h2 { margin: 0 0 14px; font-size: 24px; font-weight: 900; }
+.over-emoji { font-size: 56px; line-height: 1.1; }
+.over-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+@keyframes cd-pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* segmented toggle for setup options (kit pages can use .k-seg) */
+.seg { display: flex; background: var(--k-bg-deep, #0c0d2a); border-radius: var(--k-r, 16px); padding: 5px; gap: 4px; }
+.seg button { flex: 1; border: none; background: none; color: var(--k-muted, #aeb2e0); font-size: 15px; font-weight: 800; padding: 10px 6px; border-radius: 12px; }
+.seg button.on { background: var(--panel-2); color: var(--text); box-shadow: 0 3px 0 var(--k-edge, #12143a); }
+.opt-label { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--k-muted, #aeb2e0); margin: 14px 0 6px; text-align: left; }
+.opt-note { font-size: 13px; color: var(--k-muted, #aeb2e0); margin-top: 6px; min-height: 18px; }
+
+/* ---------- cards ---------- */
+.card {
+  position: absolute; width: var(--cw); height: calc(var(--cw) * 1.4);
+  -webkit-perspective: 800px; perspective: 800px;
+  transition: left 0.25s ease, top 0.25s ease, transform 0.18s ease;
+}
+.card-in {
+  position: absolute; inset: 0; -webkit-transform-style: preserve-3d; transform-style: preserve-3d;
+  transform: rotateY(180deg); transition: transform 0.32s ease;
+}
+.card.faceup .card-in { transform: none; }
+/* Which side shows is also switched with opacity halfway through the turn,
+   so a browser that flattens the 3D (some WebKit builds do) still shows the
+   right side. */
+.card-face, .card-back {
+  position: absolute; inset: 0; border-radius: calc(var(--cw) * 0.09);
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.22), 0 calc(var(--cw) * 0.03) calc(var(--cw) * 0.08) rgba(0, 0, 0, 0.32);
+  transition: opacity 0s linear 0.16s;
+}
+.card-face { opacity: 0; }
+.card.faceup .card-face { opacity: 1; }
+.card.faceup .card-back { opacity: 0; }
+.card-face {
+  background: var(--cd-paper); overflow: hidden;
+  background-image: linear-gradient(180deg, #fff 0%, var(--cd-paper) 60%, #f6f1e4 100%);
+}
+.card-face::after {   /* a hairline inner edge, like printed card stock */
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 max(1px, calc(var(--cw) * 0.008)) rgba(30, 32, 70, 0.14);
+}
+.card-back {
+  transform: rotateY(180deg);
+  border: calc(var(--cw) * 0.055) solid var(--cd-paper);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cpattern id='p' width='14' height='14' patternUnits='userSpaceOnUse' patternTransform='rotate(45 50 70)'%3E%3Crect width='14' height='14' fill='none'/%3E%3Cpath d='M0 7h14M7 0v14' stroke='%23ffffff' stroke-opacity='.13' stroke-width='2.2'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='140' fill='url(%23p)'/%3E%3Crect x='7' y='7' width='86' height='126' rx='7' fill='none' stroke='%23ffffff' stroke-opacity='.4' stroke-width='1.6'/%3E%3Ccircle cx='50' cy='70' r='19' fill='%23ffd23f' stroke='%23c98a00' stroke-width='3'/%3E%3Cpath d='M50 56.5l3.9 8.3 9 1.2-6.6 6.3 1.7 9-8-4.4-8 4.4 1.7-9-6.6-6.3 9-1.2z' fill='%23fffdf7'/%3E%3C/svg%3E") center / 100% 100% no-repeat,
+    radial-gradient(120% 90% at 30% 20%, #9a6cf4 0%, var(--cd-back) 45%, var(--cd-back-2) 100%);
+}
+.s-S { --suit: var(--s-S); } .s-H { --suit: var(--s-H); }
+.s-C { --suit: var(--s-C); } .s-D { --suit: var(--s-D); }
+.s-S .card-face { color: var(--s-S); } .s-H .card-face { color: var(--s-H); }
+.s-C .card-face { color: var(--s-C); } .s-D .card-face { color: var(--s-D); }
+
+/* the face is one SVG, 100 x 140 units */
+.c-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.c-svg text {
+  font-family: var(--k-font, ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif);
+  font-weight: 900; font-size: 29px; fill: currentColor; letter-spacing: -1px;
+}
+/* Options a table (or any ancestor) can switch on:
+   .cd-two-color  classic red / black suits instead of four colours
+   .cd-peek       a big rank and suit along the top edge (the middle shrinks
+                  to make room), so a card peeking out from under another
+                  (solitaire columns) still reads */
+.cd-two-color { --s-S: #1d1f33; --s-C: #1d1f33; --s-H: #e5374a; --s-D: #e5374a; }
+.c-pk { display: none; }
+.c-svg .c-pk-r { font-size: 40px; letter-spacing: -2px; }
+.cd-peek .c-tl { display: none; }
+.cd-peek .c-pk { display: inline; }
+.cd-peek .c-mid { transform: matrix(0.8, 0, 0, 0.8, 10, 18); }
+.cd-court { display: block; }
+.cd-pip { width: 1em; height: 1em; display: inline-block; vertical-align: -0.12em; overflow: visible; }
+.cd-flyer { position: fixed; z-index: 80; transform-origin: 0 0; pointer-events: none; transition: none; }
+
+/* a hand: cards are positioned by Cards.fan */
+.hand { position: relative; width: 100%; transition: height 0.2s; }
+.hand .card.playable { transform: translateY(-12%); }
+.hand .card.playable .card-face { box-shadow: 0 0 0 calc(var(--cw) * 0.035) var(--accent), 0 calc(var(--cw) * 0.06) calc(var(--cw) * 0.14) rgba(0, 0, 0, 0.4); }
+.hand .card.dim .card-face { filter: brightness(0.74) saturate(0.7); }
+.hand .card.sel { transform: translateY(-22%); }
+.hand .card.sel .card-face { box-shadow: 0 0 0 calc(var(--cw) * 0.045) var(--accent), 0 0 calc(var(--cw) * 0.22) rgba(255, 210, 63, 0.7), 0 calc(var(--cw) * 0.08) calc(var(--cw) * 0.16) rgba(0, 0, 0, 0.4); }
+.hand .card.shake { animation: cd-shake 0.32s; }
+.hand .card.nudge { animation: cd-nudge 0.5s 2; }
+@keyframes cd-shake { 25% { margin-left: -6px; } 75% { margin-left: 6px; } }
+@keyframes cd-nudge { 50% { transform: translateY(-24%); } }
+
+/* a pile: the box is one card's size; cards stack inside it */
+.pile { position: relative; width: var(--cw); height: calc(var(--cw) * 1.4); border-radius: calc(var(--cw) * 0.09); }
+.pile.empty { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22); background: rgba(0, 0, 0, 0.12); }
+
+/* ---------- seats ----------
+   Column by default (avatar over name and count); .cd-seat--row lays it
+   out sideways for a side column. */
+.cd-seat {
+  --av: 52px;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 96px; padding: 8px 4px 8px; border-radius: 18px;
+  background: rgba(4, 30, 18, 0.28); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.cd-seat.active { background: rgba(255, 255, 255, 0.14); box-shadow: 0 0 0 3px var(--accent), 0 0 22px rgba(255, 210, 63, 0.35); }
+.cd-avatar {
+  width: var(--av); height: var(--av); flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--av) * 0.64); line-height: 1;
+  background: radial-gradient(circle at 40% 30%, #fffdf7, #e7e1cf);
+  box-shadow: 0 calc(var(--av) * 0.07) 0 rgba(0, 0, 0, 0.28), inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+.cd-seat.active .cd-avatar { animation: cd-bob 1s ease-in-out infinite; }
+@keyframes cd-bob { 50% { transform: translateY(-3px) rotate(-5deg); } }
+.cd-info { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.cd-name { font-weight: 900; font-size: 14px; line-height: 1.2; color: #fffdf7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cd-count { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 900; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cd-seat.last .cd-count { color: var(--accent); }
+.cd-mini {
+  width: 11px; height: 15px; border-radius: 2.5px; border: 1.5px solid var(--cd-paper); flex: none;
+  background: linear-gradient(160deg, #9a6cf4, var(--cd-back-2));
+}
+.cd-seat--row { flex-direction: row; width: auto; padding: 8px 14px 8px 8px; gap: 10px; }
+.cd-seat--row .cd-info { align-items: flex-start; }
+.cd-bubble {
+  position: absolute; top: 100%; left: 50%; z-index: 20; white-space: nowrap;
+  background: var(--cd-paper); color: #1b1d4a; font-size: 14px; font-weight: 900;
+  padding: 6px 12px; border-radius: 14px; margin-top: 4px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2), 0 6px 16px rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%) scale(0.6); opacity: 0; pointer-events: none;
+  transition: transform 0.18s cubic-bezier(.2, 1.45, .5, 1), opacity 0.15s;
+}
+.cd-bubble::before { content: ''; position: absolute; top: -6px; left: 50%; margin-left: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: var(--cd-paper); }
+.cd-bubble.show { transform: translateX(-50%) scale(1); opacity: 1; }
+.cd-seat--row .cd-bubble { top: 50%; left: 100%; margin: 0 0 0 8px; transform: translate(0, -50%) scale(0.6); transform-origin: 0 50%; }
+.cd-seat--row .cd-bubble.show { transform: translate(0, -50%) scale(1); }
+.cd-seat--row .cd-bubble::before { top: 50%; left: -6px; margin: -6px 0 0; border: 6px solid transparent; border-left: 0; border-right-color: var(--cd-paper); }
+
+/* ---------- overlays (Cards.choose / handoff / banner) ---------- */
+.cd-overlay { z-index: 100; }
+/* without the kit stylesheet these still need a look */
+html:not(.k-app) .cd-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 9, 32, 0.7); padding: 16px; }
+html:not(.k-app) .cd-sheet { background: var(--panel); border-radius: 28px; padding: 24px; text-align: center; max-width: 400px; width: 100%; animation: cd-pop 0.28s cubic-bezier(.2,1.3,.5,1); }
+.cd-sheet h2 { margin: 0 0 16px; }
+.cd-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cd-choice {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: 20px; background: var(--cd-paper); color: #1b1d4a;
+  font-size: 46px; line-height: 1; padding: 18px 0 14px; font-weight: 900; cursor: pointer;
+  box-shadow: 0 6px 0 #c9c1ab, 0 10px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out;
+}
+.cd-choice:active { transform: translateY(6px); box-shadow: 0 0 0 #c9c1ab, 0 2px 6px rgba(0, 0, 0, 0.3); }
+.cd-choice .cd-pip { width: 1.15em; height: 1.15em; }
+.cd-choice__name { font-size: 14px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: #6b6f99; }
+.cd-choice.s-S { color: var(--s-S); } .cd-choice.s-H { color: var(--s-H); }
+.cd-choice.s-C { color: var(--s-C); } .cd-choice.s-D { color: var(--s-D); }
+.cd-handoff { background: radial-gradient(120% 90% at 50% 40%, #1f6b47, #0b2d1e); }
+.cd-big { font-size: 72px; line-height: 1; }
+.cd-banner {
+  position: fixed; left: 50%; top: 44%; z-index: 90; pointer-events: none;
+  display: flex; align-items: center; gap: 0.25em;
+  font: 900 44px/1.1 var(--k-font, system-ui, sans-serif); color: #fff; white-space: nowrap; letter-spacing: -0.01em;
+  -webkit-text-stroke: 2px rgba(10, 11, 40, 0.55); paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgba(10, 11, 40, 0.45), 0 0 30px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  animation: cd-banner 0.9s ease-out both;
+}
+.cd-banner .cd-pip { filter: drop-shadow(0 3px 0 rgba(10, 11, 40, 0.4)); }
+@keyframes cd-banner {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  32% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { transform: translate(-50%, -70%) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .card-in, .hand, .card-face, .card-back { transition: none; }
+  .cd-seat.active .cd-avatar, .hand .card.nudge, .cd-banner, .over-card, .cd-sheet { animation: none; }
+}
+
+/* iPad sizes: the header, seats and overlays grow with the cards */
+@media (min-width: 700px) and (min-height: 600px) {
+  .head { padding: calc(env(safe-area-inset-top) + 16px) 24px 6px; gap: 14px; }
+  .score { font-size: 28px; }
+  .best { font-size: 15px; }
+  .icon-btn { width: 58px; height: 58px; line-height: 58px; font-size: 24px; border-radius: 20px; }
+  .cd-seat { --av: 76px; width: 136px; padding: 12px 6px 12px; border-radius: 24px; gap: 6px; }
+  .cd-seat--row { width: auto; padding: 10px 18px 10px 10px; gap: 14px; }
+  .cd-name { font-size: 19px; }
+  .cd-count { font-size: 18px; gap: 7px; }
+  .cd-mini { width: 15px; height: 20px; border-radius: 3px; }
+  .cd-bubble { font-size: 19px; padding: 8px 16px; border-radius: 18px; }
+  .over-card { max-width: 500px; padding: 34px; }
+  .over-card h2 { font-size: 30px; }
+  .cd-choices { gap: 18px; }
+  .cd-choice { font-size: 70px; padding: 24px 0 18px; border-radius: 24px; }
+  .cd-choice__name { font-size: 16px; }
+  .cd-big { font-size: 96px; }
+  .cd-banner { font-size: 66px; -webkit-text-stroke-width: 3px; }
+  .pill { font-size: 19px; padding: 16px 26px; }
+  .cd-note { font-size: 17px; }
+}

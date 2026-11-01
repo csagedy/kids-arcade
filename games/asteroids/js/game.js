@@ -1,4 +1,4 @@
-/* Asteroids on 240 x H. The ship turns toward the finger and drifts gently
+/* Asteroids on a W x H screen (set by the UI for the screen's shape). The ship turns toward the finger and drifts gently
    after it; it fires by itself while touched. Rocks split big -> medium ->
    small. Everything wraps around the edges. After a hit the ship comes back
    blinking and cannot be hurt for a few seconds. */
@@ -15,6 +15,7 @@ function AsteroidsGame() {
   this.over = false;
   this.shots = [];
   this.rocks = [];
+  this.broken = [];      // rocks just broken, for the UI's sparks
   this.ufo = null;
   this.ufoShots = [];
   this.ufoTimer = 14;
@@ -23,12 +24,13 @@ function AsteroidsGame() {
   this.respawn = 0;
   this.invuln = 2;          // seconds of blinking safety (also at the start)
   this.target = null;       // {x, y} while a finger is down
+  this.standoff = 34;       // the ship stops thrusting this far from the finger (the UI may raise it)
   this.ship = { x: W / 2, y: H / 2, vx: 0, vy: 0, a: -Math.PI / 2, r: 5 };
   this.buildWave();
 }
 
 AsteroidsGame.prototype.buildWave = function () {
-  var n = Math.min(2 + this.wave, 6);
+  var n = Math.min(2 + this.wave, 6) + (W * H > 90000 ? 1 : 0);   // a bigger sky gets one more rock
   this.rocks = [];
   for (var i = 0; i < n; i++) {
     // start on an edge, away from the ship
@@ -89,7 +91,7 @@ AsteroidsGame.prototype.update = function (dt) {
         while (diff < -Math.PI) diff += Math.PI * 2;
         var maxTurn = 5.5 * dt;
         s.a += Math.max(-maxTurn, Math.min(maxTurn, diff));
-        if (d > 34 && Math.abs(diff) < 1.2) {
+        if (d > this.standoff && Math.abs(diff) < 1.2) {
           s.vx += Math.cos(s.a) * 70 * dt; s.vy += Math.sin(s.a) * 70 * dt;
           thrusting = true;
         }
@@ -143,7 +145,7 @@ AsteroidsGame.prototype.update = function (dt) {
       }
     }
     if (!hit && this.ufo && this.dist(b.x, b.y, this.ufo.x, this.ufo.y) <= 8) {
-      this.score += 200; ev.push('ufoboom'); this.ufo = null; hit = true;
+      this.score += 200; ev.push('ufoboom'); this.broken.push({ x: this.ufo.x, y: this.ufo.y, size: 4, pts: 200 }); this.ufo = null; hit = true;
     }
     if (hit) this.shots.splice(i, 1);
   }
@@ -152,7 +154,7 @@ AsteroidsGame.prototype.update = function (dt) {
   this.ufoTimer -= dt;
   if (!this.ufo && this.ufoTimer <= 0 && this.wave >= 2 && this.rocks.length > 0) {
     var fromLeft = Math.random() < 0.5;
-    this.ufo = { x: fromLeft ? -8 : W + 8, y: 30 + Math.random() * (H - 60), vx: fromLeft ? 28 : -28, t: 0, fire: 1.5 };
+    this.ufo = { x: fromLeft ? -8 : W + 8, y: 30 + Math.random() * (H - 60), vx: fromLeft ? 28 : -28, t: 0, fire: 1.8 };
     ev.push('ufo');
   }
   if (this.ufo) {
@@ -205,6 +207,7 @@ AsteroidsGame.prototype.update = function (dt) {
 
 AsteroidsGame.prototype.breakRock = function (idx, ev) {
   var rk = this.rocks.splice(idx, 1)[0];
+  this.broken.push({ x: rk.x, y: rk.y, size: rk.size, pts: ROCK_SCORE[rk.size] });
   this.score += ROCK_SCORE[rk.size];
   ev.push('boom' + rk.size);
   if (rk.size > 1) {

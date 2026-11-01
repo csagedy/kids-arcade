@@ -3,9 +3,10 @@
    can rotate, which usually opens up other solutions too. Seeded by level
    number so level 7 is level 7 on every phone. */
 
+/* The kit's candy palette, then two extras. */
 var SHAPE_COLORS = [
-  '#e5484d', '#ff8a3d', '#ffd645', '#3fb950', '#26c6c6',
-  '#4fa3f7', '#a06cf0', '#f06ca8', '#c3d130', '#8b5a2b'
+  '#ff5d73', '#ff9f43', '#ffd23f', '#3ddc84', '#2ee6c9',
+  '#4cc2ff', '#a77bff', '#ff7ac6', '#c3e03a', '#b9805a'
 ];
 
 function shapesRandom(seed) {

@@ -29,11 +29,15 @@ BBGame.prototype.snapshot = function () {
 BBGame.prototype.restore = function (s) {
   try {
     if (!s || !s.board || s.board.length !== SIZE * SIZE || !s.tray) return false;
-    for (var i = 0; i < SIZE * SIZE; i++) this.board[i] = s.board[i] | 0;
-    this.score = s.score | 0;
-    this.streak = s.streak | 0;
+    if (!Array.isArray(s.tray) || s.tray.length !== 3) return false;
+    var nc = BB_COLORS.length;
+    // A damaged save must never leave invisible blocks or colourless pieces.
+    function colour(v) { v = v | 0; return ((v % nc) + nc) % nc; }
+    for (var i = 0; i < SIZE * SIZE; i++) { var v = s.board[i] | 0; this.board[i] = v > 0 ? colour(v - 1) + 1 : 0; }
+    this.score = Math.max(0, s.score | 0);
+    this.streak = Math.max(0, s.streak | 0);
     this.tray = s.tray.map(function (t) {
-      return t && SHAPES[t[0]] ? makePiece(SHAPES[t[0]], t[1] % BB_COLORS.length) : null;
+      return Array.isArray(t) && SHAPES[t[0]] ? makePiece(SHAPES[t[0]], colour(t[1])) : null;
     });
     if (this.tray.every(function (p) { return p === null; })) this.deal();
     return true;

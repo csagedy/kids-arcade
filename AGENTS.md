@@ -126,3 +126,34 @@ bd prime                # Refresh Beads context
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/core-concepts/sync-concepts.md for details and anti-patterns.
 <!-- END BEADS CODEX SETUP -->
+
+## Build & Test
+
+No build step, no dependencies: plain static HTML/CSS/JS with classic
+`<script>` tags (works from `file://`). See README.md "Running it" and
+"Testing".
+
+```bash
+python3 -m http.server 8160          # serve the repo root, open http://localhost:8160
+node tools/shot.mjs http://localhost:8160/games/<id>/ <outdir> --sizes=ipad,ipadl,phone,phonel
+                                     # headless WebKit screenshots; console errors exit 2
+python3 tools/update-sw.py           # after changing ANY file: precache list + cache version
+python3 tools/nono-check.py          # nonograms need no guessing
+node games/klondike/tools/verify.js  # every Solitaire deal still solves
+```
+
+Playwright + a hand-extracted WebKit live outside the repo in
+`~/.cache/arcade-tools` (`webkit/pw_run.sh`). In `--js`, prefix calls that
+return a promise (`Kit.result`, `Kit.confirm`) with `void`.
+
+## Architecture Overview
+
+Kids' arcade web app (iPads in the car, phones at home, offline first via
+`sw.js`). `index.html` is the menu (`GAMES` / `ACTION` / `CARDS` lists, tile
+art in `menu-art.js`). Each game is a folder in `games/<id>/` with
+`index.html`, `js/game.js` (rules, no DOM) and `js/ui.js` (screen). Shared
+layers: `kit/` (design system, overlays, sound, storage: the `Kit` global;
+`games/2048` is the reference), `cabinet/` (pixel-canvas action games, on the
+kit) and `cards/` (card games, on the kit). The only game/menu contract is
+localStorage `arcade.stat.<id>`. Full API, layout and storage keys:
+README.md.

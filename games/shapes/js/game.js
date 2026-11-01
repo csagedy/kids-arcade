@@ -23,10 +23,13 @@ function ShapesGame(level, saved) {
   this.pieces = level.pieces.map(function (p) {
     return { cells: p.cells, color: p.color, at: p.at, rot: 0, pos: null };
   });
-  if (saved && saved.level === level.number && saved.pieces && saved.pieces.length === this.pieces.length) {
+  if (saved && saved.level === level.number && Array.isArray(saved.pieces) && saved.pieces.length === this.pieces.length) {
     for (var i = 0; i < this.pieces.length; i++) {
-      this.pieces[i].rot = saved.pieces[i].rot | 0;
-      this.pieces[i].pos = saved.pieces[i].pos;
+      var sp = saved.pieces[i] || {}, pos = sp.pos;
+      this.pieces[i].rot = ((sp.rot | 0) % 4 + 4) % 4;
+      // only trust a saved spot that is two whole numbers and still fits
+      if (Array.isArray(pos) && pos.length === 2 && pos[0] === (pos[0] | 0) && pos[1] === (pos[1] | 0) &&
+          this.canPlace(i, pos[0], pos[1])) this.pieces[i].pos = [pos[0], pos[1]];
     }
   }
 }

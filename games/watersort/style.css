@@ -1,137 +1,130 @@
-:root {
-  --bg: #14161c;
-  --panel: #1e222b;
-  --panel-2: #272c37;
-  --text: #f2f4f8;
-  --muted: #97a0b3;
-  --accent: #ffc53d;
-  --glass: rgba(255,255,255,0.09);
-  --tube-w: 56px;
-  --seg-h: 34px;
-}
+/* Water Sort on the arcade kit. The kit draws the shell, chips, buttons and
+   overlays; this file draws the tubes.
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-html, body {
-  margin: 0; height: 100%; overflow: hidden;
-  background: radial-gradient(120% 80% at 50% 0%, #1c2130 0%, var(--bg) 70%);
-  color: var(--text);
-  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  -webkit-user-select: none; user-select: none;
-  overscroll-behavior: none; touch-action: manipulation;
-  display: flex; flex-direction: column;
-}
-
-.hidden { display: none !important; }
-
-.head {
-  display: flex; align-items: center; gap: 6px;
-  padding: calc(env(safe-area-inset-top) + 12px) 14px 6px;
-}
-.level { flex: 1; min-width: 0; font-weight: 700; font-size: 17px; white-space: nowrap; }
-.icon-btn {
-  width: 44px; height: 44px; flex: none; border: none; border-radius: 50%;
-  background: var(--panel-2); color: var(--text); font-size: 20px; line-height: 44px;
-  text-align: center; text-decoration: none; display: block; padding: 0;
-}
-.icon-btn:active { opacity: 0.65; }
-.icon-btn:disabled { opacity: 0.3; }
+   ui.js measures the stage and picks how many rows of tubes give the biggest
+   tubes, then sets px sizes on the board: --tw (tube width), --seg (one unit
+   of liquid), --slot-w / --slot-h (the tap area around a tube, which includes
+   room to lift it). */
 
 .board {
-  flex: 1; min-height: 0;
-  display: flex; flex-wrap: wrap; align-content: center; justify-content: center;
-  gap: 18px 14px; padding: 10px 14px calc(env(safe-area-inset-bottom) + 20px);
+  --tw: 60px; --seg: 40px; --slot-w: 100px; --slot-h: 260px; --lift: 26px;
+  position: relative; flex: none;
+  display: flex; flex-wrap: wrap; justify-content: center; align-content: center;
+}
+
+.slot {
+  position: relative; width: var(--slot-w); height: var(--slot-h);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(var(--tw) * 0.25);
+  cursor: pointer;
 }
 
 .tube {
-  width: var(--tube-w);
-  height: calc(var(--seg-h) * 4 + 8px);
-  padding: 4px;
-  border: 3px solid var(--glass);
-  border-top: none;
-  border-radius: 6px 6px calc(var(--tube-w) / 2) calc(var(--tube-w) / 2);
-  background: linear-gradient(100deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-  display: flex; flex-direction: column-reverse;
-  transition: transform 0.16s cubic-bezier(.2,1.4,.5,1);
-  position: relative;
+  --c-neck: calc(var(--tw) * 0.32);
+  position: relative; width: var(--tw); height: calc(var(--seg) * 4 + var(--c-neck) + var(--tw) * 0.1);
+  transition: transform 0.2s var(--k-ease-pop);
 }
-.tube.sel { transform: translateY(-16px); }
-.tube.sel::after {
-  content: ''; position: absolute; inset: -6px; border-radius: 10px 10px 34px 34px;
-  border: 2px solid var(--accent); opacity: 0.65;
+/* the glass: a rounded test tube with a lip and a shine */
+.glass {
+  position: absolute; inset: 0;
+  border-radius: calc(var(--tw) * 0.14) calc(var(--tw) * 0.14) calc(var(--tw) * 0.5) calc(var(--tw) * 0.5);
+  background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.07));
+  box-shadow: inset 0 0 0 calc(var(--tw) * 0.055) rgba(200, 210, 255, 0.28), 0 calc(var(--tw) * 0.08) 0 rgba(5, 6, 30, 0.35);
 }
-.tube.full-done { border-color: rgba(255,197,61,0.7); box-shadow: 0 0 14px rgba(255,197,61,0.25); }
-.tube.pouring { z-index: 5; animation: tilt 0.62s ease-in-out; }
+.glass::before {   /* lip */
+  content: ''; position: absolute; left: -9%; right: -9%; top: calc(var(--tw) * -0.06); height: calc(var(--tw) * 0.16);
+  border-radius: 99px; background: #9aa3e6; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18);
+}
+.glass::after {    /* shine */
+  content: ''; position: absolute; left: 18%; width: 11%; top: 14%; bottom: 16%; border-radius: 99px;
+  background: rgba(255, 255, 255, 0.28); z-index: 2;
+}
+.liquid {
+  position: absolute; left: 9%; right: 9%; bottom: calc(var(--tw) * 0.08); height: calc(var(--seg) * 4);
+  border-radius: 0 0 calc(var(--tw) * 0.42) calc(var(--tw) * 0.42);
+  overflow: hidden; display: flex; flex-direction: column-reverse;
+}
+.run {
+  flex: none; height: calc(var(--seg) * var(--n));
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.16), rgba(0,0,0,0) 30%, rgba(255,255,255,0.18) 48%, rgba(0,0,0,0) 64%, rgba(0,0,0,0.12)),
+    var(--c);
+  transform-origin: bottom;
+}
+/* the liquid's surface */
+.run:last-child { box-shadow: inset 0 calc(var(--seg) * 0.1) 0 rgba(255, 255, 255, 0.32); }
+.run.fill { animation: fill 0.34s 0.22s ease-out backwards; }
+@keyframes fill { from { transform: scaleY(0); } }
+
+/* picked up */
+.slot.sel .tube { transform: translateY(calc(var(--lift) * -1)); }
+.slot.sel .glass { box-shadow: inset 0 0 0 calc(var(--tw) * 0.055) var(--k-accent), 0 0 calc(var(--tw) * 0.3) rgba(255, 210, 63, 0.45); }
+
+/* finished tube: a cork pops on and it cheers */
+.cork {
+  position: absolute; left: 14%; right: 14%; top: calc(var(--tw) * -0.2); height: calc(var(--tw) * 0.34); z-index: 3;
+  border-radius: calc(var(--tw) * 0.1) calc(var(--tw) * 0.1) calc(var(--tw) * 0.05) calc(var(--tw) * 0.05);
+  background: linear-gradient(180deg, #e8b06a, #b77a3b); box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2);
+}
+.cork.new { animation: cork 0.5s 0.45s var(--k-ease-pop) backwards; }
+@keyframes cork { from { transform: translateY(-120%) scale(0.6); opacity: 0; } }
+.slot.done .glass { box-shadow: inset 0 0 0 calc(var(--tw) * 0.055) rgba(255, 210, 63, 0.7), 0 0 calc(var(--tw) * 0.35) rgba(255, 210, 63, 0.3); }
+.slot.cheer .tube { animation: cheer 0.6s 0.4s ease-in-out; }
+@keyframes cheer { 30% { transform: translateY(-18%) scale(1.06); } 60% { transform: none; } }
+.slot.nope .tube { animation: k-shake 0.36s; }
+
+/* pouring: the source tube flies over the target and tips */
+.slot.pouring { z-index: 5; }
+.slot.pouring .tube { animation: tilt 0.66s ease-in-out; }
 @keyframes tilt {
-  0% { transform: none; }
-  30% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
-  72% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  0% { transform: translateY(calc(var(--lift) * -1)); }
+  30%, 70% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
   100% { transform: none; }
 }
-.tube.hint-to { animation: nudge 0.7s ease-in-out infinite; }
-.tube.hint-to::after {
-  content: ''; position: absolute; inset: -6px; border-radius: 10px 10px 34px 34px;
-  border: 2px dashed var(--accent); opacity: 0.9;
-}
-@keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.tube.cheer { animation: cheer 0.6s ease-in-out; }
-@keyframes cheer { 0%, 100% { transform: none; } 30% { transform: translateY(-14px) scale(1.06); } 60% { transform: translateY(0); } }
 .stream {
-  position: fixed; z-index: 6; width: 7px; margin-left: -3.5px; border-radius: 4px;
+  position: fixed; z-index: 6; margin-left: calc(var(--w) / -2); width: var(--w); border-radius: 99px;
   pointer-events: none; transform-origin: top; animation: stream 0.42s ease-in-out both;
 }
-@keyframes stream {
-  0% { transform: scaleY(0); opacity: 0; }
-  25% { transform: scaleY(1); opacity: 1; }
-  80% { transform: scaleY(1); opacity: 1; }
-  100% { transform: scaleY(1); opacity: 0; }
-}
+@keyframes stream { 0% { transform: scaleY(0); } 25%, 80% { transform: scaleY(1); opacity: 1; } 100% { opacity: 0; } }
 
-.seg {
-  height: var(--seg-h);
-  border-radius: 3px;
-  margin-top: 1px;
+/* hint: a bouncing arrow over the tube to pour into */
+.arrow {
+  position: absolute; left: 50%; top: 0; width: calc(var(--tw) * 0.7); height: calc(var(--tw) * 0.7); margin-left: calc(var(--tw) * -0.35);
+  color: var(--k-accent); animation: point 0.7s ease-in-out infinite; z-index: 4;
 }
-/* the lowest segment follows the tube's rounded bottom */
-.seg:first-child { border-radius: 3px 3px calc(var(--tube-w) / 2 - 6px) calc(var(--tube-w) / 2 - 6px); }
-.seg.pour-in { animation: pourIn 0.25s ease-out 0.2s backwards; }
-@keyframes pourIn {
-  from { transform: translateY(-70%); opacity: 0.35; }
-  to { transform: translateY(0); opacity: 1; }
-}
+.arrow svg { width: 100%; height: 100%; transform: rotate(90deg); filter: drop-shadow(0 3px 0 var(--k-accent-edge)); }
+.arrow .k-icon { stroke-width: 3.4; }
+@keyframes point { 50% { transform: translateY(30%); } }
 
+/* "no moves left" bar at the bottom of the stage */
 .stuck {
-  position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 22px);
-  background: var(--panel-2); color: var(--text); font-size: 14px; font-weight: 600;
-  padding: 6px 8px 6px 18px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-  display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  position: absolute; left: 50%; bottom: var(--k-s3); transform: translateX(-50%); z-index: 8;
+  display: flex; align-items: center; gap: var(--k-s3); white-space: nowrap;
+  padding: 8px 8px 8px 20px; border-radius: var(--k-r-round);
+  background: #fffdf7; color: #1b1d4a; font-weight: 800;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.25), var(--k-shadow-2);
+  animation: k-toast-in var(--k-slow) var(--k-ease-pop) both;
 }
-.pill.small { padding: 9px 14px; font-size: 14px; min-height: 44px; background: var(--accent); color: #24201a; }
-.tip {
-  position: fixed; left: 24px; right: 24px; text-align: center; color: var(--muted); font-size: 14px;
-  bottom: calc(env(safe-area-inset-bottom) + 26px); pointer-events: none;
-}
-.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 30; pointer-events: none; }
-#undo-btn.nudge { animation: nudgebtn 0.6s ease-in-out 3; background: var(--accent); color: #24201a; }
-@keyframes nudgebtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+.stuck .k-btn { margin-bottom: 4px; }
 
-.pill {
-  border: none; border-radius: 999px; padding: 11px 20px;
-  background: var(--panel-2); color: var(--text); font-size: 15px; font-weight: 600;
-}
-.pill.primary { background: var(--accent); color: #24201a; }
-.pill:active { opacity: 0.75; }
+/* ---------- side panel ---------- */
+.side-big .lbl { display: none; }
+.side-big { padding: 0; width: var(--k-tap); }
+.side-small { display: flex; gap: var(--k-s3); }
+.side-big.k-used { opacity: 0.4; filter: saturate(0.3); }
 
-.win {
-  position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
-  background: rgba(10,12,16,0.82);
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-shell--side > .k-side { gap: var(--k-s4); }
+  .side-big { width: auto; padding: 0 1.2em; min-height: calc(var(--k-tap) + 6px); font-size: var(--k-fs-lg); }
+  .side-big .lbl { display: inline; }
+  .side-small { justify-content: center; }
 }
-.win-card {
-  background: var(--panel); border-radius: 22px; padding: 26px 24px; text-align: center;
-  animation: pop 0.28s cubic-bezier(.2,1.3,.5,1);
+@media (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
+  .side-big { width: auto; padding: 0 1.4em; }
+  .side-big .lbl { display: inline; }
 }
-.win-card h2 { margin: 6px 0 18px; font-size: 21px; }
-.win-emoji { font-size: 44px; }
-.win-actions { display: flex; gap: 10px; justify-content: center; }
-@keyframes pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tube { transition: none; }
+  .run.fill, .cork.new, .slot.cheer .tube, .slot.pouring .tube, .stream, .arrow, .slot.nope .tube, .stuck { animation: none; }
+}

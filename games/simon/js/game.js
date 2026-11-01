@@ -12,7 +12,7 @@ function SimonGame() {
 SimonGame.LIVES = 3;
 
 SimonGame.loadBest = function () {
-  try { return parseInt(localStorage.getItem('simon.best'), 10) || 0; } catch (e) { return 0; }
+  try { return Math.max(0, parseInt(localStorage.getItem('simon.best'), 10) || 0); } catch (e) { return 0; }
 };
 
 SimonGame.prototype.saveBest = function () {

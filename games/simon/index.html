@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,57 +8,57 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
+<meta name="theme-color" content="#161843">
 <title>Simon</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="k-noswipe">
 
-<header class="head">
-  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
-  <div class="scores">
-    <div class="score">Round <span id="round">0</span></div>
-    <div class="best">Best <span id="best">0</span></div>
-    <div class="lives" id="lives" aria-label="Tries left"></div>
-  </div>
-  <button id="mute-btn" class="icon-btn" aria-label="Sound">🔊</button>
-</header>
+<div class="k-shell k-shell--side">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid">
+      <div class="k-stats">
+        <div class="k-stat k-stat--accent" id="round-chip"><span class="k-stat__label">Round</span><b class="k-stat__val" id="round">0</b></div>
+        <div class="k-stat" id="best-chip"><span class="k-stat__label">Best</span><b class="k-stat__val" id="best">0</b></div>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </header>
 
-<div id="status" class="status">&nbsp;</div>
-<div id="sound-hint" class="sound-hint hidden">🔈 No sound? Check the silent switch</div>
+  <main class="k-stage">
+    <div id="board" class="board k-fit" style="--k-aspect: 1">
+      <div class="simon" id="simon">
+        <button class="pad p0" aria-label="Green"></button>
+        <button class="pad p1" aria-label="Red"></button>
+        <button class="pad p2" aria-label="Yellow"></button>
+        <button class="pad p3" aria-label="Blue"></button>
+      </div>
+      <div class="hub" id="hub">
+        <button id="start-btn" class="go" aria-label="Start"><span data-k-icon="play"></span></button>
+        <div class="hub-info" id="hub-info"><b id="hub-n">1</b><span id="hub-label">Watch</span></div>
+      </div>
+    </div>
+  </main>
 
-<main class="board-wrap">
-  <div class="simon">
-    <button class="pad p0" aria-label="Green"></button>
-    <button class="pad p1" aria-label="Red"></button>
-    <button class="pad p2" aria-label="Yellow"></button>
-    <button class="pad p3" aria-label="Blue"></button>
-    <div class="hub"></div>
-  </div>
-</main>
-
-<div id="start" class="start">
-  <button id="start-btn" class="pill primary big">Start</button>
-  <div class="hint">Watch the pads light up, then tap them in the same order.</div>
+  <aside class="k-side">
+    <div class="status-card">
+      <div class="status" id="status" aria-live="polite">Tap play to start!</div>
+      <div class="lives" id="lives" aria-label="Tries left"></div>
+    </div>
+    <div class="hint k-only-landscape">Watch the pads light up, then tap them in the same order. Each round adds one more!</div>
+  </aside>
 </div>
 
-<div id="over" class="over hidden">
-  <div class="over-card">
-    <h2>Great try!</h2>
-    <div class="over-score"><span id="over-n">0</span> <small>rounds</small></div>
-    <div class="over-best">Best <span id="over-best">0</span></div>
-    <button id="over-again" class="pill primary">Play again</button>
-  </div>
-</div>
-
+<script src="../../kit/kit.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

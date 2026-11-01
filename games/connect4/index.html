@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,59 +8,58 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
+<meta name="theme-color" content="#161843">
 <title>Four in a Row</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="head">
-  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
-  <div class="scores">
-    <div class="score" id="status">Your turn</div>
-    <div class="best" id="sub">Wins <span id="wins">0</span></div>
-  </div>
-  <button id="menu-btn" class="icon-btn" aria-label="New game">⟳</button>
-</header>
-
-<div class="board-wrap">
-  <div id="board" class="board"></div>
-</div>
-
-<div class="hint" id="hint">Tap a column to drop a disc. Get four in a row!</div>
-
-<div id="setup" class="over hidden">
-  <div class="over-card">
-    <h2>Four in a Row</h2>
-    <div class="menu">
-      <button class="pill" data-mode="easy">🙂 Easy</button>
-      <button class="pill" data-mode="medium">😎 Medium</button>
-      <button class="pill" data-mode="hard">🤖 Hard</button>
-      <button class="pill" data-mode="two">👫 Two players</button>
+<div class="k-shell k-shell--side">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
     </div>
-    <button id="setup-cancel" class="link hidden">Keep playing</button>
-  </div>
-</div>
-
-<div id="over" class="over hidden">
-  <div class="over-card">
-    <div class="over-emoji" id="over-emoji">🎉</div>
-    <h2 id="over-title">You win!</h2>
-    <div class="over-actions">
-      <button id="over-menu" class="pill">Change game</button>
-      <button id="over-again" class="pill primary">Play again</button>
+    <div class="k-bar__mid">
+      <div class="turn" id="turn" aria-live="polite"><i class="turn-disc"></i><span id="status">Your turn</span></div>
+      <div class="k-stat k-stat--accent" id="wins-chip"><span class="k-stat__label">Wins</span><b class="k-stat__val" id="wins">0</b></div>
     </div>
-  </div>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Take back" disabled></button>
+      <button id="new-btn" class="k-btn k-btn--icon" data-k-icon="restart" aria-label="New game"></button>
+    </div>
+  </header>
+
+  <main class="k-stage">
+    <div id="board" class="board k-fit" style="--k-aspect: 1">
+      <div class="lane" id="lane"><i class="ghost" id="ghost"></i></div>
+      <div class="frame" id="frame">
+        <div class="back"></div>
+        <div class="glow" id="glow"></div>
+        <div class="discs" id="discs"></div>
+        <svg class="front" id="front" aria-hidden="true"></svg>
+        <svg class="winline" id="winline" aria-hidden="true"></svg>
+      </div>
+    </div>
+  </main>
+
+  <aside class="k-side">
+    <div class="players">
+      <div class="player p1" id="pl1"><i class="pdisc"></i><span class="pname" id="name1">You</span><b class="pscore" id="score1">0</b></div>
+      <div class="player p2" id="pl2"><i class="pdisc"></i><span class="pname" id="name2">Computer</span><b class="pscore" id="score2">0</b></div>
+    </div>
+    <div class="side-btns">
+      <button id="mode-btn" class="k-btn mode-btn" aria-label="Change game"><span data-k-icon="settings"></span><span id="mode-label">Easy</span></button>
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+    <div class="hint k-only-landscape">Drop discs from the top. Four in a line wins: across, up or slanted!</div>
+  </aside>
 </div>
 
+<script src="../../kit/kit.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

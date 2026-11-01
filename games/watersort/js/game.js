@@ -30,6 +30,16 @@ Game.prototype.undo = function () {
   return m;
 };
 
+/* The helper button: one more empty tube, once per level. It joins the
+   starting layout so "start over" keeps it. */
+Game.prototype.addTube = function () {
+  if (this.extra) return false;
+  this.extra = true;
+  this.start.push([]);
+  this.tubes.push([]);
+  return true;
+};
+
 Game.prototype.isSolved = function () { return isSolved(this.tubes); };
 
 /* A tube that's full of one colour is finished — worth showing, since it tells

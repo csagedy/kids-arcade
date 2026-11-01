@@ -14,11 +14,13 @@ function Renderer(canvas, stage) {
   this.active = 1;
   this.hintIdx = -1;
   this.hintUntil = 0;
+  this.shineUntil = 0;
   this.dirty = true;
 
   var self = this;
   this.frame = function () {
-    if (self.dirty || performance.now() < self.hintUntil) self.draw();
+    var now = performance.now();
+    if (self.dirty || now < self.hintUntil || now < self.shineUntil) self.draw();
     requestAnimationFrame(self.frame);
   };
   requestAnimationFrame(this.frame);
@@ -118,7 +120,7 @@ Renderer.prototype.resize = function () {
 
 Renderer.prototype.fit = function () {
   var p = this.puzzle;
-  var s = Math.min(this.cw / p.w, this.ch / p.h) * 0.92;
+  var s = Math.min((this.cw - 32) / p.w, (this.ch - 40) / p.h);
   this.view.s = s;
   this.view.tx = (this.cw - p.w * s) / 2;
   this.view.ty = (this.ch - p.h * s) / 2;
@@ -156,6 +158,16 @@ Renderer.prototype.draw = function () {
 
   ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
   ctx.clearRect(0, 0, this.cw, this.ch);
+  // the sheet of paper: a soft shadow and a dark under-edge, like the kit's boards
+  var pw = p.w * v.s, ph = p.h * v.s, rad = Math.min(14, Math.max(4, v.s * 0.6));
+  ctx.save();
+  ctx.fillStyle = '#090a22';
+  roundRectPath(ctx, v.tx - 6, v.ty - 6 + 8, pw + 12, ph + 12, rad + 6); ctx.fill();
+  ctx.shadowColor = 'rgba(5, 6, 30, 0.55)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+  ctx.fillStyle = '#ffffff';
+  roundRectPath(ctx, v.tx - 6, v.ty - 6, pw + 12, ph + 12, rad + 6); ctx.fill();
+  ctx.restore();
+
   ctx.save();
   ctx.translate(v.tx, v.ty);
   ctx.scale(v.s, v.s);
@@ -171,12 +183,99 @@ Renderer.prototype.draw = function () {
   if (this.hintIdx >= 0 && now < this.hintUntil) {
     var x = (this.hintIdx % p.w) * v.s + v.tx, y = Math.floor(this.hintIdx / p.w) * v.s + v.ty;
     var pulse = 0.5 + 0.5 * Math.sin(now / 140);
-    ctx.strokeStyle = 'rgba(255,197,61,' + (0.55 + 0.45 * pulse) + ')';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(x - 2, y - 2, v.s + 4, v.s + 4);
+    var grow = 4 + pulse * Math.max(6, v.s * 0.4);
+    ctx.strokeStyle = 'rgba(255, 210, 63,' + (0.6 + 0.4 * pulse) + ')';
+    ctx.lineWidth = 4;
+    roundRectPath(ctx, x - grow, y - grow, v.s + grow * 2, v.s + grow * 2, 8); ctx.stroke();
+    ctx.strokeStyle = 'rgba(214, 154, 0, 0.9)';
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, x - 2, y - 2, v.s + 4, v.s + 4, 4); ctx.stroke();
   } else {
     this.hintIdx = -1;
   }
 
+  if (now < this.shineUntil) this.drawShine(ctx, now, pw, ph);
+
   this.dirty = false;
+};
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+/* Glide the view to { s, tx, ty } (zoom buttons, hints, the finish). */
+Renderer.prototype.animateTo = function (to, ms) {
+  var self = this, from = { s: this.view.s, tx: this.view.tx, ty: this.view.ty }, t0 = performance.now();
+  ms = Kit.reduced ? 0 : (ms || 320);
+  this.animId = (this.animId || 0) + 1;
+  var id = this.animId;
+  (function step(now) {
+    if (id !== self.animId) return;
+    var k = ms ? Math.min(1, (now - t0) / ms) : 1, e = 1 - Math.pow(1 - k, 3);
+    self.view.s = from.s + (to.s - from.s) * e;
+    self.view.tx = from.tx + (to.tx - from.tx) * e;
+    self.view.ty = from.ty + (to.ty - from.ty) * e;
+    self.dirty = true;
+    if (k < 1) requestAnimationFrame(step); else self.clamp();
+  })(t0);
+};
+
+/* The view that shows the whole picture. */
+Renderer.prototype.fitView = function () {
+  var p = this.puzzle, s = Math.min((this.cw - 32) / p.w, (this.ch - 40) / p.h);
+  return { s: s, tx: (this.cw - p.w * s) / 2, ty: (this.ch - p.h * s) / 2 };
+};
+
+/* Zoom by k about the middle of the stage, kept within the usual limits. */
+Renderer.prototype.zoomView = function (k) {
+  var v = this.view, s = Math.max(this.fitScale * 0.9, Math.min(v.s * k, 90)), kk = s / v.s;
+  var cx = this.cw / 2, cy = this.ch / 2;
+  return { s: s, tx: cx - (cx - v.tx) * kk, ty: cy - (cy - v.ty) * kk };
+};
+
+/* The finish: a band of light sweeps across the picture and little
+   four-point sparkles twinkle over it. */
+Renderer.prototype.shine = function (ms) {
+  var now = performance.now();
+  this.shineStart = now;
+  this.shineMs = ms;
+  this.shineUntil = now + ms + 40;
+  this.sparkles = [];
+  for (var i = 0; i < 16; i++) {
+    this.sparkles.push({ u: 0.06 + Math.random() * 0.88, v: 0.06 + Math.random() * 0.88, at: Math.random() * 0.7, size: 0.6 + Math.random() * 0.6 });
+  }
+  this.dirty = true;
+};
+
+Renderer.prototype.drawShine = function (ctx, now, pw, ph) {
+  var v = this.view, t = (now - this.shineStart) / this.shineMs;
+  if (t < 0 || t > 1) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(v.tx, v.ty, pw, ph); ctx.clip();
+  // the sweep: a soft white band moving along the diagonal
+  var span = pw + ph, pos = -0.25 + t * 1.5, band = 0.18;
+  var g = ctx.createLinearGradient(v.tx, v.ty, v.tx + span / 2, v.ty + span / 2);
+  var stop = function (o, a) { if (o > 0 && o < 1) g.addColorStop(o, 'rgba(255,255,255,' + a + ')'); };
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  stop(pos - band, 0); stop(pos, 0.6); stop(pos + band, 0);
+  ctx.fillStyle = g;
+  ctx.fillRect(v.tx, v.ty, pw, ph);
+  ctx.restore();
+  var unit = Math.min(pw, ph) / 9;
+  for (var i = 0; i < this.sparkles.length; i++) {
+    var sp = this.sparkles[i], k = (t - sp.at) / 0.3;
+    if (k <= 0 || k >= 1) continue;
+    var r = Math.sin(k * Math.PI) * unit * sp.size, x = v.tx + sp.u * pw, y = v.ty + sp.v * ph;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(k * 1.2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(255, 210, 63, 0.9)'; ctx.shadowBlur = r * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, -r); ctx.quadraticCurveTo(0, 0, r, 0); ctx.quadraticCurveTo(0, 0, 0, r);
+    ctx.quadraticCurveTo(0, 0, -r, 0); ctx.quadraticCurveTo(0, 0, 0, -r);
+    ctx.fill();
+    ctx.restore();
+  }
 };

@@ -1,100 +1,139 @@
-:root {
-  --bg: #14161c; --panel: #1e222b; --panel-2: #272c37;
-  --text: #f2f4f8; --muted: #97a0b3; --accent: #ffc53d;
-}
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-  margin: 0; height: 100%; overflow: hidden;
-  background: radial-gradient(120% 80% at 50% 0%, #1c2130 0%, var(--bg) 70%);
-  color: var(--text);
-  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  -webkit-user-select: none; user-select: none;
-  overscroll-behavior: none; touch-action: manipulation;
-  display: flex; flex-direction: column;
-}
-.hidden { display: none !important; }
+/* Memory Match on the arcade kit. The kit draws the shell, chips, buttons
+   and overlays; this file draws the board and the cards.
 
-.head { display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 12px) 16px 4px; }
-.scores { flex: 1; text-align: center; }
-.score { font-size: 26px; font-weight: 800; line-height: 1.1; }
-.score small { font-size: 13px; font-weight: 600; color: var(--muted); }
-.best { font-size: 12px; color: var(--muted); min-height: 17px; }
-.icon-btn {
-  width: 38px; height: 38px; flex: none; border: none; border-radius: 50%;
-  background: var(--panel-2); color: var(--text); font-size: 19px; line-height: 38px;
-  text-align: center; text-decoration: none; display: block; padding: 0;
-}
-.icon-btn:active { opacity: 0.65; }
+   The board is a .k-fit box whose aspect is cols / rows. ui.js picks the
+   column count that gives the biggest cards for the space (a Hard board is
+   4 x 6 standing up and 6 x 4 lying down), and the board is a size
+   container, so a card is 100cqw / cols wide on any screen. */
 
-.sizes { display: flex; justify-content: center; gap: 8px; padding: 8px 16px 4px; }
-.size-btn {
-  border: none; border-radius: 999px; padding: 0 18px; min-height: 44px; font-size: 14px; font-weight: 600;
-  background: var(--panel); color: var(--muted);
-}
-.themes { display: flex; justify-content: center; gap: 8px; padding: 2px 16px 0; }
-.theme-btn { border: none; border-radius: 999px; min-width: 56px; min-height: 44px; padding: 0 12px; font-size: 22px; background: var(--panel); opacity: 0.6; }
-.theme-btn.on { opacity: 1; outline: 2px solid var(--accent); background: var(--panel-2); }
-.size-btn.on { background: var(--accent); color: #24201a; }
-
-.board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px 14px calc(env(safe-area-inset-bottom) + 14px); min-height: 0; }
 .board {
-  --cols: 4; --rows: 4;
-  display: grid; gap: 10px;
+  container-type: size;
+  --cols: 3; --rows: 4;
+  --cell: calc(100cqw / var(--cols));
+  --pad: calc(var(--cell) * 0.05);
+  display: grid;
   grid-template-columns: repeat(var(--cols), 1fr);
-  width: 100%; max-width: 420px;
-  /* keep cards square and the whole grid on screen */
-  max-height: 100%;
-  aspect-ratio: var(--cols) / var(--rows);
+  grid-template-rows: repeat(var(--rows), 1fr);
+  /* the back colour follows the picture theme */
+  --back: var(--k-orange); --back-edge: var(--k-orange-edge); --back-hi: #ffc285;
 }
+.board[data-theme="food"]     { --back: var(--k-pink);   --back-edge: var(--k-pink-edge);   --back-hi: #ffb0de; }
+.board[data-theme="vehicles"] { --back: var(--k-blue);   --back-edge: var(--k-blue-edge);   --back-hi: #9adcff; }
+.board[data-theme="mixed"]    { --back: var(--k-purple); --back-edge: var(--k-purple-edge); --back-hi: #cbb1ff; }
+
 .card {
-  position: relative; border: none; padding: 0; background: none;
-  perspective: 600px; aspect-ratio: 1; min-width: 0;
+  position: relative; display: block; min-width: 0; min-height: 0;
+  border: none; padding: 0; margin: 0; background: none; cursor: pointer;
+  perspective: 900px;
+  transition: transform 90ms ease-out;
 }
+.card:active:not(.up) { transform: scale(0.94); }
+.card:focus-visible { outline: none; }
+.card:focus-visible .back { box-shadow: 0 0 0 4px var(--k-accent); }
+
 .face {
-  position: absolute; inset: 0; border-radius: 12px;
+  position: absolute; inset: var(--pad) var(--pad) calc(var(--pad) * 1.6);
+  border-radius: calc(var(--cell) * 0.16);
   display: flex; align-items: center; justify-content: center;
-  backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+  /* A flip is two quarter turns: the face showing turns edge-on, then the
+     other face turns in from edge-on. No backface-visibility needed (it is
+     unreliable in WebKit once anything above is animated). */
+  transition: transform var(--flip) ease-in, box-shadow 0.25s;
+  --flip: 0.17s;
 }
 .back {
-  background: linear-gradient(135deg, #3a4a7a, #26c6c6);
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,0.35) 0 8%, transparent 9%),
+    radial-gradient(circle at 70% 78%, rgba(255,255,255,0.18) 0 6%, transparent 7%),
+    linear-gradient(160deg, var(--back-hi), var(--back) 55%);
+  box-shadow: 0 calc(var(--cell) * 0.05) 0 var(--back-edge), 0 calc(var(--cell) * 0.07) calc(var(--cell) * 0.1) rgba(5, 6, 30, 0.35),
+              inset 0 calc(var(--cell) * 0.02) 0 rgba(255,255,255,0.35);
 }
-.back::after { content: '?'; font-size: 26px; font-weight: 800; color: rgba(255,255,255,0.55); }
+/* inner dashed frame and the theme emoji in a soft bubble */
+.back::before {
+  content: ''; position: absolute; inset: 9%; border-radius: calc(var(--cell) * 0.11);
+  border: calc(var(--cell) * 0.018) dashed rgba(255, 255, 255, 0.45);
+}
+.back span {
+  width: 46%; height: 46%; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.3); font-size: calc(var(--cell) * 0.26); line-height: 1;
+}
+.back { transition-delay: var(--flip), 0s; transition-timing-function: ease-out; }
 .front {
-  background: #f2f4f8; color: #222; font-size: clamp(26px, 9vmin, 48px);
-  transform: rotateY(180deg);
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.12);
+  background: linear-gradient(180deg, #ffffff, #eef0ff);
+  font-size: calc(var(--cell) * 0.5); line-height: 1;
+  transform: rotateY(90deg);
+  box-shadow: 0 calc(var(--cell) * 0.05) 0 #b8bce9, 0 calc(var(--cell) * 0.07) calc(var(--cell) * 0.1) rgba(5, 6, 30, 0.35);
 }
-.card.peek .back, .card.up .back { transform: rotateY(180deg); }
-.card.peek .front, .card.up .front { transform: rotateY(360deg); }
-.card.matched .front { background: #dff7e6; }
-.card.matched { opacity: 0.75; }
-.card.pop .front { animation: pop 0.3s ease-out; }
-@keyframes pop { 50% { transform: rotateY(360deg) scale(1.12); } }
+.card.up .back { transform: rotateY(-90deg); transition-delay: 0s; transition-timing-function: ease-in; }
+.card.up .front { transform: rotateY(0); transition-delay: var(--flip), 0s; transition-timing-function: ease-out; }
 
-.pill { border: none; border-radius: 999px; padding: 12px 22px; background: var(--panel-2); color: var(--text); font-size: 15px; font-weight: 600; }
-.pill.primary { background: var(--accent); color: #24201a; }
-.pill:active { opacity: 0.75; }
-
-.over { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(10,12,16,0.85); }
-.over-card { background: var(--panel); border-radius: 22px; padding: 26px 28px; text-align: center; animation: popin 0.28s cubic-bezier(.2,1.3,.5,1); }
-.over-card h2 { margin: 4px 0 8px; font-size: 20px; }
-.over-emoji { font-size: 44px; }
-.over-score { font-size: 40px; font-weight: 800; }
-.over-score small { font-size: 14px; color: var(--muted); }
-.over-best { color: var(--accent); font-weight: 700; font-size: 14px; margin-top: 2px; }
-.over-card .pill { margin-top: 18px; }
-@keyframes popin { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-.stars { font-size: 30px; letter-spacing: 4px; margin-top: 6px; }
-.over-best.muted { color: var(--muted); font-weight: 600; }
-.card { cursor: pointer; }
-.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
-.confetti i { position: absolute; left: 50%; top: 40%; width: 9px; height: 14px; border-radius: 2px; opacity: 0; animation: confetti 1.6s ease-out forwards; }
-@keyframes confetti {
-  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+/* a match: green ring, a check badge, then it settles down a little */
+.card.matched .front {
+  background: linear-gradient(180deg, #f2fff7, #d6f7e4);
+  box-shadow: 0 calc(var(--cell) * 0.05) 0 var(--k-good-edge), 0 0 0 calc(var(--cell) * 0.035) var(--k-good) inset;
 }
-.card.matched.pop { animation: matchhop 0.35s ease-out; }
-@keyframes matchhop { 50% { transform: scale(1.1); } }
+.card.matched::after {
+  content: ''; position: absolute; right: 2%; top: 2%; width: 26%; height: 26%; border-radius: 50%;
+  background: var(--k-good) no-repeat center / 70% url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306301a' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  box-shadow: 0 calc(var(--cell) * 0.02) 0 var(--k-good-edge);
+  animation: badge 0.4s 0.15s var(--k-ease-pop) both;
+}
+.card.matched.settled { opacity: 0.78; }
+.card.pop { animation: hop 0.45s var(--k-ease-pop); }
+.card.miss { animation: k-shake 0.36s 0.3s; }
+.card.miss .front { box-shadow: 0 calc(var(--cell) * 0.05) 0 #b8bce9, 0 0 0 calc(var(--cell) * 0.03) var(--k-bad) inset; }
+.card.deal { animation: deal 0.42s var(--k-ease-pop) both; animation-delay: calc(var(--i) * 28ms); }
+@keyframes hop { 40% { transform: translateY(-8%) scale(1.1); } 70% { transform: scale(0.97); } }
+@keyframes badge { from { transform: scale(0); } }
+@keyframes deal { from { transform: translateY(30%) scale(0.4); opacity: 0; } }
+
+/* the "look closely" count-down bar over the board while Easy shows every card */
+.peekbar {
+  position: absolute; left: 10%; right: 10%; bottom: -2px; height: 8px; border-radius: 99px;
+  background: rgba(255,255,255,0.12); overflow: hidden; pointer-events: none;
+}
+.peekbar i { position: absolute; inset: 0; background: var(--k-accent); border-radius: inherit; transform-origin: left; animation: drain var(--ms) linear forwards; }
+@keyframes drain { to { transform: scaleX(0); } }
+
+/* "Remember them!" in the top bar while Easy shows every card */
+.peek-msg {
+  display: flex; align-items: center; gap: 0.4em; padding: 0 16px; min-height: calc(var(--k-tap) - 4px);
+  border-radius: var(--k-r-round); background: var(--k-accent); color: var(--k-accent-ink);
+  box-shadow: 0 4px 0 var(--k-accent-edge); margin-bottom: 4px;
+  font-weight: 900; font-size: var(--k-fs); white-space: nowrap;
+  animation: k-pop var(--k-slow) var(--k-ease-pop) both;
+}
+.peek-msg span { font-size: 1.3em; line-height: 1; }
+
+/* ---------- side panel ---------- */
+.sizes { flex: 0 1 360px; }
+.themes { display: flex; gap: var(--k-s2); justify-content: center; }
+.theme-btn { padding: 0; font-size: calc(var(--k-tap) * 0.5); }
+.theme-btn.k-on { --k-btn-bg: var(--k-accent); --k-btn-edge: var(--k-accent-edge); }
+.side-foot { display: flex; align-items: center; gap: var(--k-s2); }
+.best { color: var(--k-muted); font-weight: 800; font-size: var(--k-fs-sm); padding: 0 var(--k-s2) var(--k-depth); white-space: nowrap; }
+.best b { color: var(--k-accent); }
+.best:empty { display: none; }
+
+@media (max-width: 430px) {
+  .k-side { gap: var(--k-s2) var(--k-s3); padding-bottom: var(--k-s3); }
+  .sizes { flex: 1 1 100%; }
+  .best { display: none; }
+}
+
+/* landscape: a column beside the board */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-shell--side > .k-side { gap: var(--k-s4); }
+  .sizes { flex: none; }
+  .themes { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .theme-btn { width: auto; aspect-ratio: 1; height: auto; font-size: calc(var(--k-tap) * 0.55); }
+  .side-foot { justify-content: center; flex-wrap: wrap; }
+  .best { width: 100%; text-align: center; padding: 0; font-size: var(--k-fs); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .face { transition: none; }
+  .card.pop, .card.miss, .card.deal, .card.matched::after, .peek-msg { animation: none; }
+}

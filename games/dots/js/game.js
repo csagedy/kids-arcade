@@ -6,6 +6,7 @@ function DotsGame(def) {
   this.name = def.name;
   this.color = def.color;
   this.points = def.points;
+  this.def = def;
   this.next = 0;          // index of the dot to tap next
   this.misses = 0;
   this.load();

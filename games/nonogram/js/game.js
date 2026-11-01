@@ -50,7 +50,7 @@ NonoGame.prototype.load = function () {
   try {
     var s = localStorage.getItem(this.key());
     if (s && s.length === this.cells.length) {
-      for (var i = 0; i < s.length; i++) this.cells[i] = +s[i];
+      for (var i = 0; i < s.length; i++) this.cells[i] = s[i] === '1' ? 1 : s[i] === '2' ? 2 : 0;
     }
   } catch (e) {}
 };
@@ -83,7 +83,12 @@ NonoGame.prototype.isSolved = function () {
 
 /* Solved pictures are remembered separately from in-progress grids. */
 NonoGame.solvedSet = function () {
-  try { return JSON.parse(localStorage.getItem('nono.solved')) || {}; } catch (e) { return {}; }
+  // Only a plain { id: 1 } object counts; a damaged value (a string, a list)
+  // would otherwise make up solved pictures from its indexes.
+  try {
+    var v = JSON.parse(localStorage.getItem('nono.solved'));
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  } catch (e) { return {}; }
 };
 
 NonoGame.prototype.markSolved = function () {

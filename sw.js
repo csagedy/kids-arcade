@@ -1,14 +1,17 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v19';
+var CACHE = 'arcade-v27';
 
 var FILES = [
   './',
   './icon-arcade.png',
   './index.html',
   './manifest.webmanifest',
+  './menu-art.js',
   './cabinet/cabinet.css',
   './cabinet/cabinet.js',
+  './cards/cards.css',
+  './cards/cards.js',
   './games/2048/icon.png',
   './games/2048/index.html',
   './games/2048/manifest.webmanifest',
@@ -52,6 +55,12 @@ var FILES = [
   './games/connect4/style.css',
   './games/connect4/js/game.js',
   './games/connect4/js/ui.js',
+  './games/crazy8/icon.png',
+  './games/crazy8/index.html',
+  './games/crazy8/manifest.webmanifest',
+  './games/crazy8/style.css',
+  './games/crazy8/js/game.js',
+  './games/crazy8/js/ui.js',
   './games/dots/icon.png',
   './games/dots/index.html',
   './games/dots/manifest.webmanifest',
@@ -71,11 +80,31 @@ var FILES = [
   './games/frogger/manifest.webmanifest',
   './games/frogger/js/game.js',
   './games/frogger/js/ui.js',
+  './games/gofish/icon.png',
+  './games/gofish/index.html',
+  './games/gofish/manifest.webmanifest',
+  './games/gofish/style.css',
+  './games/gofish/js/game.js',
+  './games/gofish/js/ui.js',
+  './games/hatch/icon.png',
+  './games/hatch/index.html',
+  './games/hatch/manifest.webmanifest',
+  './games/hatch/style.css',
+  './games/hatch/js/art.js',
+  './games/hatch/js/game.js',
+  './games/hatch/js/ui.js',
   './games/invaders/icon.png',
   './games/invaders/index.html',
   './games/invaders/manifest.webmanifest',
   './games/invaders/js/game.js',
   './games/invaders/js/ui.js',
+  './games/klondike/icon.png',
+  './games/klondike/index.html',
+  './games/klondike/manifest.webmanifest',
+  './games/klondike/style.css',
+  './games/klondike/js/deals.js',
+  './games/klondike/js/rules.js',
+  './games/klondike/js/ui.js',
   './games/maze/icon.png',
   './games/maze/index.html',
   './games/maze/manifest.webmanifest',
@@ -129,7 +158,9 @@ var FILES = [
   './games/watersort/style.css',
   './games/watersort/js/game.js',
   './games/watersort/js/level.js',
-  './games/watersort/js/ui.js'
+  './games/watersort/js/ui.js',
+  './kit/kit.css',
+  './kit/kit.js'
 ];
 
 self.addEventListener('install', function (e) {

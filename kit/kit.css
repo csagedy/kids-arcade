@@ -1,0 +1,467 @@
+/* ==========================================================================
+   Arcade kit — the shared look for every puzzle and card game.
+   Friendly, chunky "candy" colours on a deep indigo night sky: low glare in
+   a car at night, big targets for small fingers. Plain CSS, no build.
+
+   Everything is prefixed: custom properties --k-*, classes .k-*, so a game
+   can adopt the kit piece by piece without its old styles colliding.
+   README.md ("Shared kit") documents the API.
+   ========================================================================== */
+
+:root {
+  /* night base, from deepest to most raised */
+  --k-bg: #161843;
+  --k-bg-deep: #0c0d2a;
+  --k-surface-1: #22265e;   /* panels, boards */
+  --k-surface-2: #2d3275;   /* raised: buttons, chips */
+  --k-surface-3: #3b418f;   /* hover-ish / empty cells on a board */
+  --k-edge: #12143a;        /* the dark under-edge of raised things */
+  --k-line: rgba(255, 255, 255, 0.09);
+
+  --k-text: #f6f5ff;
+  --k-muted: #aeb2e0;
+  --k-faint: #7378b4;
+
+  /* signal colours */
+  --k-accent: #ffd23f;  --k-accent-edge: #d69a00;  --k-accent-ink: #3b2a00;
+  --k-good:   #3ddc84;  --k-good-edge:   #1f9a57;  --k-good-ink:   #06301a;
+  --k-bad:    #ff5d73;  --k-bad-edge:    #c12c47;  --k-bad-ink:    #fff;
+  --k-info:   #4cc2ff;
+
+  /* the kid palette: eight candy colours (and their darker edges) */
+  --k-red: #ff5d73;    --k-red-edge: #c12c47;
+  --k-orange: #ff9f43; --k-orange-edge: #c86a12;
+  --k-yellow: #ffd23f; --k-yellow-edge: #d69a00;
+  --k-green: #3ddc84;  --k-green-edge: #1f9a57;
+  --k-teal: #2ee6c9;   --k-teal-edge: #129a86;
+  --k-blue: #4cc2ff;   --k-blue-edge: #1a7fc0;
+  --k-purple: #a77bff; --k-purple-edge: #6c45c9;
+  --k-pink: #ff7ac6;   --k-pink-edge: #c4428c;
+
+  /* shape */
+  --k-r-sm: 10px;
+  --k-r: 16px;
+  --k-r-lg: 24px;
+  --k-r-xl: 32px;
+  --k-r-round: 999px;
+
+  /* spacing scale */
+  --k-s1: 4px; --k-s2: 8px; --k-s3: 12px; --k-s4: 16px; --k-s5: 24px; --k-s6: 32px; --k-s7: 48px;
+
+  /* depth */
+  --k-depth: 5px;   /* height of a chunky button's under-edge */
+  --k-shadow-1: 0 2px 6px rgba(5, 6, 30, 0.35);
+  --k-shadow-2: 0 10px 30px rgba(5, 6, 30, 0.5);
+  --k-shadow-3: 0 24px 60px rgba(5, 6, 30, 0.6);
+  --k-glow: 0 0 0 3px rgba(255, 210, 63, 0.55);
+
+  /* motion */
+  --k-fast: 120ms;
+  --k-med: 220ms;
+  --k-slow: 420ms;
+  --k-ease: cubic-bezier(.25, .8, .3, 1);
+  --k-ease-pop: cubic-bezier(.2, 1.45, .5, 1);
+
+  /* type and touch */
+  --k-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+  --k-tap: 48px;          /* minimum touch target */
+  --k-icon: 26px;         /* icon size inside a .k-btn--icon */
+  --k-fs-sm: 13px; --k-fs: 16px; --k-fs-lg: 20px; --k-fs-xl: 28px; --k-fs-xxl: 40px;
+
+  /* safe areas (notches, home bar) */
+  --k-safe-t: env(safe-area-inset-top, 0px);
+  --k-safe-r: env(safe-area-inset-right, 0px);
+  --k-safe-b: env(safe-area-inset-bottom, 0px);
+  --k-safe-l: env(safe-area-inset-left, 0px);
+  --k-gutter: 14px;
+}
+
+/* tablets (iPad portrait and landscape): bigger everything */
+@media (min-width: 700px) and (min-height: 600px) {
+  :root {
+    --k-tap: 58px; --k-icon: 30px; --k-depth: 6px;
+    --k-fs-sm: 15px; --k-fs: 18px; --k-fs-lg: 23px; --k-fs-xl: 34px; --k-fs-xxl: 50px;
+    --k-gutter: 24px;
+  }
+}
+
+/* ---------- base ---------- */
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body {
+  margin: 0;
+  background-color: var(--k-bg);
+  color: var(--k-text);
+  font: 500 var(--k-fs)/1.35 var(--k-font);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+body {
+  background:
+    radial-gradient(120% 60% at 50% -10%, #2b2f7a 0%, rgba(43, 47, 122, 0) 60%),
+    radial-gradient(90% 60% at 100% 110%, rgba(167, 123, 255, 0.16), transparent 60%),
+    linear-gradient(180deg, var(--k-bg) 0%, var(--k-bg-deep) 100%) fixed;
+  background-color: var(--k-bg);
+  overflow-x: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { -webkit-appearance: none; appearance: none; }
+.k-hidden, [hidden] { display: none !important; }
+.k-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* A game page: one screen, no scrolling, no rubber band, no double-tap zoom. */
+html.k-app, html.k-app body {
+  height: 100%; overflow: hidden; overscroll-behavior: none;
+  touch-action: manipulation; position: relative;
+}
+/* Swipe games add .k-noswipe to <body> so the browser never pans or zooms. */
+.k-noswipe, .k-noswipe * { touch-action: none; }
+
+/* ---------- icons ---------- */
+.k-icon { width: 1em; height: 1em; display: block; flex: none; overflow: visible; }
+
+/* ---------- buttons ----------
+   A chunky 3D candy button: an under-edge shadow it presses down into.
+   Colour it with a modifier or by setting --k-btn-bg / --k-btn-edge / --k-btn-ink. */
+.k-btn {
+  --k-btn-bg: var(--k-surface-2);
+  --k-btn-edge: var(--k-edge);
+  --k-btn-ink: var(--k-text);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.45em;
+  min-height: var(--k-tap); min-width: var(--k-tap);
+  padding: 0 1.25em; margin: 0 0 var(--k-depth);
+  border: none; border-radius: var(--k-r);
+  background: var(--k-btn-bg);
+  color: var(--k-btn-ink);
+  font: 800 var(--k-fs)/1 var(--k-font); letter-spacing: 0.01em;
+  text-decoration: none; white-space: nowrap; cursor: pointer;
+  box-shadow: 0 var(--k-depth) 0 var(--k-btn-edge), 0 calc(var(--k-depth) + 4px) 12px rgba(5, 6, 30, 0.35),
+              inset 0 2px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out, filter var(--k-fast);
+}
+.k-btn:active:not(:disabled), .k-btn.k-pressed {
+  transform: translateY(var(--k-depth));
+  box-shadow: 0 0 0 var(--k-btn-edge), 0 2px 4px rgba(5, 6, 30, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+.k-btn:disabled, .k-btn.k-disabled { opacity: 0.38; cursor: default; filter: saturate(0.4); }
+.k-btn:focus-visible { outline: 3px solid var(--k-accent); outline-offset: 3px; }
+.k-btn .k-icon { font-size: 1.25em; }
+
+.k-btn--primary { --k-btn-bg: var(--k-accent); --k-btn-edge: var(--k-accent-edge); --k-btn-ink: var(--k-accent-ink); }
+.k-btn--good    { --k-btn-bg: var(--k-good);   --k-btn-edge: var(--k-good-edge);   --k-btn-ink: var(--k-good-ink); }
+.k-btn--bad     { --k-btn-bg: var(--k-bad);    --k-btn-edge: var(--k-bad-edge);    --k-btn-ink: var(--k-bad-ink); }
+.k-btn--blue    { --k-btn-bg: var(--k-blue);   --k-btn-edge: var(--k-blue-edge);   --k-btn-ink: #062a44; }
+.k-btn--purple  { --k-btn-bg: var(--k-purple); --k-btn-edge: var(--k-purple-edge); --k-btn-ink: #fff; }
+.k-btn--pink    { --k-btn-bg: var(--k-pink);   --k-btn-edge: var(--k-pink-edge);   --k-btn-ink: #3d0526; }
+.k-btn--ghost {
+  --k-btn-bg: transparent; --k-btn-edge: transparent;
+  box-shadow: inset 0 0 0 2px var(--k-line); color: var(--k-muted);
+}
+.k-btn--ghost:active:not(:disabled) { transform: scale(0.96); box-shadow: inset 0 0 0 2px var(--k-line); }
+.k-btn--lg { min-height: calc(var(--k-tap) + 10px); font-size: var(--k-fs-lg); padding: 0 1.4em; border-radius: var(--k-r-lg); }
+.k-btn--sm { min-height: 40px; min-width: 40px; font-size: var(--k-fs-sm); padding: 0 1em; border-radius: var(--k-r-sm); --k-depth: 4px; }
+.k-btn--block { display: flex; width: 100%; }
+.k-btn--icon { padding: 0; width: var(--k-tap); height: var(--k-tap); border-radius: calc(var(--k-tap) * 0.36); }
+.k-btn--icon .k-icon { font-size: var(--k-icon); }
+.k-btn--round { border-radius: var(--k-r-round); }
+
+/* a row of buttons */
+.k-row { display: flex; gap: var(--k-s3); justify-content: center; flex-wrap: wrap; }
+.k-row > .k-btn { flex: 1 1 0; }
+
+/* segmented toggle (Easy / Medium / Hard) */
+.k-seg { display: flex; gap: 4px; padding: 5px; border-radius: var(--k-r); background: var(--k-bg-deep); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+.k-seg > button {
+  flex: 1; min-height: max(44px, calc(var(--k-tap) - 8px)); border: none; border-radius: calc(var(--k-r) - 4px);
+  background: none; color: var(--k-muted); font-weight: 800; font-size: var(--k-fs); cursor: pointer;
+}
+.k-seg > button.k-on { background: var(--k-surface-2); color: var(--k-text); box-shadow: 0 3px 0 var(--k-edge), inset 0 1px 0 rgba(255,255,255,0.15); }
+
+/* ---------- panels ---------- */
+.k-panel {
+  background: var(--k-surface-1); border-radius: var(--k-r-lg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 6px 0 var(--k-edge), var(--k-shadow-2);
+}
+.k-label { font-size: var(--k-fs-sm); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--k-muted); }
+
+/* ==========================================================================
+   Game shell
+     <div class="k-shell [k-shell--side]">
+       <header class="k-bar"> start | mid | end </header>
+       <main class="k-stage"> <div class="k-fit" style="--k-aspect:1">board</div> </main>
+       <aside class="k-side"> optional panel </aside>
+       <footer class="k-foot"> optional hint line </footer>
+     </div>
+   Portrait: everything stacks in DOM order and the stage takes what's left.
+   .k-shell--side in landscape: the side panel moves beside the stage.
+   ========================================================================== */
+.k-shell {
+  position: relative;
+  display: flex; flex-direction: column;
+  height: 100%; height: 100dvh; width: 100%;
+  padding: var(--k-safe-t) var(--k-safe-r) var(--k-safe-b) var(--k-safe-l);
+  overflow: hidden;
+}
+
+.k-bar {
+  flex: none;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--k-s3);
+  padding: var(--k-s3) var(--k-gutter) var(--k-s1);
+  min-height: calc(var(--k-tap) + var(--k-depth) + 16px);
+}
+.k-bar__start, .k-bar__end { display: flex; align-items: center; gap: var(--k-s2); min-width: 0; }
+.k-bar__start { justify-self: start; }
+.k-bar__end { justify-self: end; }
+.k-bar__mid { display: flex; align-items: center; justify-content: center; gap: var(--k-s2); min-width: 0; }
+.k-bar .k-btn { margin-bottom: var(--k-depth); }
+@media (min-width: 700px) and (min-height: 600px) {
+  .k-bar__start, .k-bar__end { gap: var(--k-s3); }
+}
+
+.k-title {
+  font-weight: 900; font-size: var(--k-fs-lg); letter-spacing: -0.01em; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+/* score chips: <div class="k-stat"><span class="k-stat__label">Score</span><b class="k-stat__val">0</b></div> */
+.k-stats { display: flex; gap: var(--k-s2); align-items: stretch; }
+.k-stat {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: calc(var(--k-tap) * 1.55); padding: 5px 12px 6px;
+  border-radius: var(--k-r); background: var(--k-surface-1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 0 var(--k-edge);
+  margin-bottom: 4px;
+}
+.k-stat__label { font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--k-muted); line-height: 1.1; }
+.k-stat__val { font-size: var(--k-fs-lg); font-weight: 900; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.k-stat--accent .k-stat__val { color: var(--k-accent); }
+.k-stat.k-bump .k-stat__val { animation: k-bump 0.3s var(--k-ease-pop); }
+/* phones: give up exact centring so the middle can use every spare pixel */
+@media (max-width: 430px) {
+  .k-bar { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--k-s2); }
+  .k-stats { gap: 6px; }
+  .k-stat { min-width: 0; padding: 4px 8px 5px; }
+  .k-stat__label { font-size: 10px; }
+  .k-stat__val { font-size: 18px; }
+}
+@media (min-width: 700px) and (min-height: 600px) {
+  .k-stat { padding: 7px 18px 8px; border-radius: var(--k-r-lg); }
+  .k-stat__label { font-size: 13px; }
+}
+
+/* the stage takes the remaining space and is a size container, so a board
+   inside can be "as big as fits" with container units */
+.k-stage {
+  position: relative;
+  flex: 1 1 0; min-height: 0; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--k-s3) var(--k-gutter) calc(var(--k-s4) + var(--k-depth));
+  container-type: size; container-name: k-stage;
+}
+
+/* .k-fit: the largest box of aspect --k-aspect (width / height) that fits
+   the stage. No px caps; set --k-fit-max (e.g. 900px) to cap it on desktop. */
+.k-fit {
+  --k-aspect: 1;
+  position: relative; flex: none;
+  width: min(100cqw, 100cqh * var(--k-aspect), var(--k-fit-max, 100000px));
+  height: min(100cqh, 100cqw / var(--k-aspect), var(--k-fit-max, 100000px) / var(--k-aspect));
+}
+/* Older browsers without container units: Kit.fit() sets px sizes instead. */
+
+.k-side {
+  flex: none;
+  display: flex; align-items: center; justify-content: center; gap: var(--k-s3); flex-wrap: wrap;
+  padding: var(--k-s2) var(--k-gutter);
+}
+.k-foot {
+  flex: none; text-align: center; color: var(--k-muted); font-size: var(--k-fs-sm); font-weight: 600;
+  padding: var(--k-s2) var(--k-gutter) var(--k-s3);
+}
+
+/* side panel layout in landscape (iPad landscape, phones on their side) */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-shell--side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 32%);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "bar bar" "stage side" "foot side";
+  }
+  .k-shell--side > .k-bar { grid-area: bar; }
+  .k-shell--side > .k-stage { grid-area: stage; padding-right: var(--k-s2); }
+  .k-shell--side > .k-side {
+    grid-area: side; flex-direction: column; align-items: stretch; justify-content: center;
+    flex-wrap: nowrap; padding: var(--k-s3) var(--k-gutter) var(--k-s3) var(--k-s2); min-height: 0;
+  }
+  .k-shell--side > .k-foot { grid-area: foot; }
+  .k-shell--side-left { grid-template-columns: minmax(260px, 32%) minmax(0, 1fr); grid-template-areas: "bar bar" "side stage" "side foot"; }
+  .k-shell--side-left > .k-stage { padding-right: var(--k-gutter); padding-left: var(--k-s2); }
+  .k-shell--side-left > .k-side { padding: var(--k-s3) var(--k-s2) var(--k-s3) var(--k-gutter); }
+  /* things only shown in one orientation */
+  .k-only-portrait { display: none !important; }
+}
+@media not all and (orientation: landscape), (max-width: 639px) {
+  .k-only-landscape { display: none !important; }
+}
+
+/* ==========================================================================
+   Overlays: Kit.result / Kit.confirm / Kit.howTo / Kit.sheet
+   ========================================================================== */
+.k-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--k-safe-t) + 16px) calc(var(--k-safe-r) + 16px) calc(var(--k-safe-b) + 16px) calc(var(--k-safe-l) + 16px);
+  background: rgba(8, 9, 32, 0.66);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  animation: k-fade var(--k-med) ease-out both;
+  touch-action: none;
+}
+.k-overlay.k-out { animation: k-fade-out 160ms ease-in both; }
+.k-card {
+  position: relative; width: 100%; max-width: 400px; max-height: 100%; overflow: auto;
+  padding: var(--k-s6) var(--k-s5) var(--k-s5);
+  border-radius: var(--k-r-xl);
+  background: linear-gradient(180deg, #343a8c 0%, var(--k-surface-1) 55%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.12), 0 8px 0 var(--k-edge), var(--k-shadow-3);
+  text-align: center;
+  animation: k-pop var(--k-slow) var(--k-ease-pop) both;
+}
+.k-out .k-card { animation: k-pop-out 160ms ease-in both; }
+@media (min-width: 700px) and (min-height: 600px) {
+  .k-card { max-width: 500px; padding: var(--k-s7) var(--k-s6) var(--k-s6); }
+}
+.k-card__art { font-size: 64px; line-height: 1; margin: -4px auto var(--k-s3); display: flex; justify-content: center; }
+.k-card__art .k-icon { font-size: 72px; color: var(--k-accent); }
+.k-card__art.k-wiggle { animation: k-wiggle 1.4s ease-in-out 0.3s infinite; }
+.k-card h2 { margin: 0 0 var(--k-s2); font-size: var(--k-fs-xl); font-weight: 900; letter-spacing: -0.01em; line-height: 1.1; }
+.k-card p { margin: 0 auto var(--k-s4); color: var(--k-muted); font-size: var(--k-fs); max-width: 30em; }
+.k-card p b { color: var(--k-text); }
+.k-card .k-row { margin-top: var(--k-s4); }
+@media (min-width: 700px) and (min-height: 600px) {
+  .k-card__art { font-size: 88px; }
+  .k-card__art .k-icon { font-size: 96px; }
+}
+
+.k-card__stats { display: flex; justify-content: center; gap: var(--k-s3); margin: var(--k-s4) 0 var(--k-s2); flex-wrap: wrap; }
+.k-card__stat { flex: 1 1 0; min-width: 84px; max-width: 160px; padding: 10px 8px; border-radius: var(--k-r); background: rgba(10, 11, 40, 0.35); }
+.k-card__stat b { display: block; font-size: var(--k-fs-xl); font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.k-card__stat span { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--k-muted); }
+.k-card__stat.k-hi b { color: var(--k-accent); }
+.k-badge {
+  display: inline-block; padding: 6px 14px; border-radius: var(--k-r-round);
+  background: var(--k-accent); color: var(--k-accent-ink); font-weight: 900; font-size: var(--k-fs-sm);
+  letter-spacing: 0.04em; box-shadow: 0 3px 0 var(--k-accent-edge);
+  animation: k-pop 0.5s var(--k-ease-pop) 0.25s both;
+}
+
+.k-stars { display: flex; justify-content: center; gap: 6px; margin: 0 0 var(--k-s3); font-size: 52px; }
+.k-stars .k-icon { color: rgba(10, 11, 40, 0.45); }
+.k-stars .k-on .k-icon { color: var(--k-accent); filter: drop-shadow(0 3px 0 var(--k-accent-edge)); }
+.k-stars .k-on { animation: k-star 0.5s var(--k-ease-pop) both; }
+.k-stars > :nth-child(2) { transform: translateY(-10px); }
+.k-stars > :nth-child(1).k-on { animation-delay: 0.25s; }
+.k-stars > :nth-child(2).k-on { animation-delay: 0.45s; }
+.k-stars > :nth-child(3).k-on { animation-delay: 0.65s; }
+
+/* how-to-play steps */
+.k-steps { list-style: none; margin: var(--k-s2) 0 0; padding: 0; text-align: left; display: grid; gap: var(--k-s3); }
+.k-steps li { display: flex; align-items: center; gap: var(--k-s3); padding: 10px 14px; border-radius: var(--k-r); background: rgba(10, 11, 40, 0.3); font-size: var(--k-fs); font-weight: 600; }
+.k-steps .k-step__art { flex: none; width: 1.9em; text-align: center; font-size: 1.6em; line-height: 1; display: flex; justify-content: center; color: var(--k-accent); }
+
+/* Short landscape screens (a phone on its side, ~375px tall): a compact
+   card so the stars, stats and buttons all fit without scrolling. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .k-overlay { padding: calc(var(--k-safe-t) + 8px) calc(var(--k-safe-r) + 12px) calc(var(--k-safe-b) + 8px) calc(var(--k-safe-l) + 12px); }
+  .k-card { max-width: 560px; padding: var(--k-s4) var(--k-s5) var(--k-s3); border-radius: var(--k-r-lg); }
+  .k-card__art { font-size: 40px; margin: 0 auto var(--k-s1); }
+  .k-card__art .k-icon { font-size: 44px; }
+  .k-card h2 { font-size: 22px; margin-bottom: var(--k-s1); }
+  .k-card p { margin-bottom: var(--k-s2); font-size: 15px; }
+  .k-card .k-row { margin-top: var(--k-s2); }
+  .k-card .k-row .k-btn--lg { min-height: var(--k-tap); font-size: var(--k-fs); border-radius: var(--k-r); }
+  .k-stars { font-size: 34px; margin-bottom: var(--k-s1); }
+  .k-stars > :nth-child(2) { transform: translateY(-6px); }
+  .k-card__stats { margin: var(--k-s2) 0 var(--k-s1); gap: var(--k-s2); }
+  .k-card__stat { padding: 5px 8px; }
+  .k-card__stat b { font-size: 22px; }
+  .k-card__stat span { font-size: 11px; }
+  .k-badge { padding: 4px 12px; }
+  /* how-to steps: two columns so four steps take two rows */
+  .k-steps { grid-template-columns: 1fr 1fr; gap: var(--k-s2); }
+  .k-steps li { padding: 7px 10px; font-size: 14px; }
+  .k-steps .k-step__art { font-size: 1.35em; }
+}
+
+/* Narrow phones (375px portrait): two icon buttons won't fit side by side,
+   so let card buttons size to their labels and wrap onto their own rows. */
+@media (max-width: 399px) {
+  .k-card { padding-left: var(--k-s4); padding-right: var(--k-s4); }
+  .k-card .k-row { gap: var(--k-s2) var(--k-s3); }
+  .k-card .k-row > .k-btn { flex: 1 1 auto; padding: 0 1em; }
+  .k-card .k-row > .k-btn span { white-space: normal; }
+}
+
+/* bottom sheet variant (Kit.sheet) */
+.k-overlay--sheet { align-items: flex-end; padding-bottom: 0; }
+.k-overlay--sheet .k-card { border-radius: var(--k-r-xl) var(--k-r-xl) 0 0; padding-bottom: calc(var(--k-safe-b) + var(--k-s5)); max-width: 600px; animation-name: k-rise; }
+
+/* toast */
+.k-toast {
+  position: fixed; left: 50%; bottom: calc(var(--k-safe-b) + 28px); z-index: 120;
+  display: flex; align-items: center; gap: 10px; max-width: calc(100% - 32px);
+  padding: 12px 20px; border-radius: var(--k-r-round);
+  background: #fffdf7; color: #1b1d4a; font-weight: 800; font-size: var(--k-fs);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.25), var(--k-shadow-2);
+  transform: translateX(-50%); pointer-events: none;
+  animation: k-toast-in var(--k-slow) var(--k-ease-pop) both;
+}
+.k-toast .k-icon { font-size: 1.3em; color: var(--k-purple); }
+.k-toast.k-out { animation: k-toast-out 200ms ease-in both; }
+.k-toast--top { bottom: auto; top: calc(var(--k-safe-t) + 10px); }   /* over the bar, never the board */
+
+/* floating "+8" score pop: Kit.floatText */
+.k-float {
+  position: fixed; z-index: 90; pointer-events: none; transform: translate(-50%, -50%);
+  font-weight: 900; font-size: var(--k-fs-lg); color: var(--k-accent);
+  text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+  animation: k-float 0.8s ease-out both;
+}
+
+/* confetti */
+.k-confetti { position: fixed; inset: 0; z-index: 110; pointer-events: none; overflow: hidden; }
+.k-confetti i {
+  position: absolute; width: 10px; height: 16px; border-radius: 3px; opacity: 0;
+  animation: k-confetti var(--k-dur, 1.6s) cubic-bezier(.15,.6,.4,1) forwards;
+}
+.k-confetti i.k-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+/* ---------- reusable animation helpers ---------- */
+.k-shake { animation: k-shake 0.36s; }
+.k-pulse { animation: k-pulse 1.6s ease-in-out infinite; }
+.k-pop-in { animation: k-pop var(--k-slow) var(--k-ease-pop) both; }
+
+@keyframes k-fade { from { opacity: 0; } }
+@keyframes k-fade-out { to { opacity: 0; } }
+@keyframes k-pop { from { transform: scale(0.7); opacity: 0; } }
+@keyframes k-pop-out { to { transform: scale(0.9); opacity: 0; } }
+@keyframes k-rise { from { transform: translateY(60px); opacity: 0; } }
+@keyframes k-bump { 40% { transform: scale(1.25); } }
+@keyframes k-wiggle { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(-9deg) scale(1.05); } 30% { transform: rotate(7deg); } 45% { transform: rotate(0); } }
+@keyframes k-star { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
+@keyframes k-shake { 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+@keyframes k-pulse { 50% { transform: scale(1.06); } }
+@keyframes k-toast-in { from { transform: translate(-50%, 30px) scale(0.8); opacity: 0; } }
+@keyframes k-toast-out { to { transform: translate(-50%, 20px); opacity: 0; } }
+@keyframes k-float { 0% { opacity: 0; transform: translate(-50%, -20%) scale(0.7); } 20% { opacity: 1; transform: translate(-50%, -60%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -190%) scale(1); } }
+@keyframes k-confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-overlay, .k-card, .k-badge, .k-stars .k-on, .k-card__art.k-wiggle, .k-toast, .k-pulse,
+  .k-pop-in, .k-shake, .k-stat.k-bump .k-stat__val { animation: none !important; }
+  .k-btn { transition: none; }
+}

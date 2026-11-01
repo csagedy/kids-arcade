@@ -1,134 +1,215 @@
-/* Arcade cabinet chrome shared by the action games. Top to bottom: a lit
-   marquee with the game's name, a dark screen bezel with scanlines and a
-   vignette, and a control deck with a joystick and buttons that are just
-   for looks. The screen takes almost all of the height. */
+/* Cabinet look for the action games, layered on the arcade kit (kit.css).
+   The kit gives the night-sky page, the top bar, icon buttons, score chips
+   and cards; this file adds the glowing CRT screen in a chunky bezel, the
+   landscape side panel (the bar becomes a column beside the screen, with the
+   scores, the high-score table and help) and the arcade touches on cards.
+
+   Page shell (every cabinet game):
+     <div class="k-shell cab-shell">
+       <header class="k-bar"> back | #cab-stats | #pause-btn #mute-btn </header>
+       <main class="k-stage"><div class="cab-bezel"><div class="cab-crt"><canvas></canvas></div></div></main>
+       <aside class="cab-side"> .cab-marquee  #cab-hi  .cab-help-btn  .cab-hint </aside>
+     </div>
+   cabinet.js sizes the canvas in whole device pixels (no CSS stretching). */
+
 :root {
-  --cab-bg: #0b0c10; --cab-body: #1b1e29; --cab-body-2: #2a2e3c; --cab-edge: #0e1016;
-  --cab-text: #e8f0ff; --cab-muted: #7d879b; --cab-glow: #7cf2ff; --cab-amber: #ffb300;
-  --cab-stripe: #ff2e7e;
-  --pixel-font: "Courier New", Courier, ui-monospace, Menlo, monospace;
+  --cab-bg: #05060f;
+  --cab-glow: #7cf2ff;
+  --cab-amber: #ffd23f;
+  --cab-pink: #ff7ac6;
+  --cab-mono: ui-monospace, "SF Mono", Menlo, "Courier New", monospace;
+  --cab-side-w: clamp(210px, 23vw, 290px);
+  --cab-bz: 8px;   /* bezel thickness */
 }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-  margin: 0; height: 100%; overflow: hidden;
-  background: var(--cab-bg);
-  color: var(--cab-text);
-  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  -webkit-user-select: none; user-select: none;
-  overscroll-behavior: none; touch-action: none;
-}
-body { display: flex; flex-direction: column; }
-.hidden { display: none !important; }
+@media (min-width: 700px) and (min-height: 600px) { :root { --cab-bz: 12px; } }
 
-/* ---- marquee ---- */
-.cab-marquee {
-  display: flex; align-items: center; gap: 8px;
-  padding: calc(env(safe-area-inset-top) + 6px) 10px 6px;
-  background: linear-gradient(180deg, var(--cab-body-2), var(--cab-body));
-  border-bottom: 3px solid var(--cab-edge);
-}
-.cab-marquee .ttl {
-  flex: 1; text-align: center; padding: 7px 8px; border-radius: 6px;
-  background: linear-gradient(180deg, #2b1f45, #16102a);
-  border: 2px solid #4b3a7a; box-shadow: inset 0 0 18px rgba(124,242,255,0.15), 0 0 12px rgba(255,46,126,0.25);
-  font-family: var(--pixel-font); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--cab-glow); text-shadow: 0 0 8px rgba(124,242,255,0.8), 0 0 18px rgba(255,46,126,0.5);
-  font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.cab-btn-icon {
-  width: 36px; height: 36px; flex: none; border: none; border-radius: 6px;
-  background: var(--cab-edge); color: var(--cab-text); font-size: 16px; line-height: 36px;
-  text-align: center; text-decoration: none; display: block; padding: 0;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-}
-.cab-btn-icon:active { opacity: 0.65; }
-
-/* ---- screen ---- */
-.cab-screen-wrap {
-  /* Column flex so the bezel can take the space with flex:1 — Safari does not
-     reliably resolve a percentage height inside a flex item. */
-  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch;
-  padding: 8px 8px 6px;
-  background: linear-gradient(90deg, var(--cab-body-2) 0%, var(--cab-body) 12%, var(--cab-body) 88%, var(--cab-body-2) 100%);
-}
+/* ---------- screen ---------- */
+.cab-shell > .k-stage { padding-bottom: var(--k-s3); }
 .cab-bezel {
-  position: relative; padding: 10px; border-radius: 14px;
-  background: #07080c;
-  box-shadow: inset 0 0 0 2px #23263a, inset 0 0 30px rgba(0,0,0,0.9), 0 6px 18px rgba(0,0,0,0.6);
-  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  position: relative; flex: none;
+  padding: var(--cab-bz);
+  border-radius: calc(var(--cab-bz) + 12px);
+  background: linear-gradient(180deg, #262a6a 0%, #191b4c 40%, #121438 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.10), inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+              0 6px 0 var(--k-edge), var(--k-shadow-2);
 }
 .cab-crt {
-  position: relative; border-radius: 8px; overflow: hidden; background: #000;
-  flex: 1; min-width: 0; min-height: 0; width: 100%; height: 100%; display: flex;
+  --cab-px: 3px;
+  position: relative; overflow: hidden; border-radius: 10px;
+  background: var(--cab-bg);
+  box-shadow: 0 0 0 2px #03030a, 0 0 22px rgba(124, 242, 255, 0.10);
 }
-/* CSS does the scaling: the canvas fills the CRT box and object-fit keeps
-   its aspect. No JavaScript measuring, so no browser can get it wrong. */
 .cab-crt canvas {
-  display: block; width: 100%; height: 100%; object-fit: contain;
-  image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none;
+  display: block; width: 240px; height: 320px;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  touch-action: none; cursor: crosshair;
 }
+/* scanlines, one per logical pixel row, plus a soft tube vignette and glass glint */
 .cab-crt::after {
-  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 8px;
+  content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   background:
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 1px, transparent 1px, transparent 3px),
-    radial-gradient(120% 100% at 50% 50%, transparent 62%, rgba(0,0,0,0.5) 100%);
-  mix-blend-mode: multiply;
+    linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0) 22%),
+    repeating-linear-gradient(180deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) calc(var(--cab-px) * 0.62), rgba(0,0,0,0.26) calc(var(--cab-px) * 0.62), rgba(0,0,0,0.26) var(--cab-px)),
+    radial-gradient(130% 110% at 50% 50%, transparent 66%, rgba(0, 0, 0, 0.45) 100%);
 }
 
-/* ---- control deck ---- */
-.cab-deck {
-  padding: 6px 14px calc(env(safe-area-inset-bottom) + 8px);
-  background: linear-gradient(180deg, var(--cab-body-2), var(--cab-body) 40%, #14161f);
-  border-top: 3px solid var(--cab-edge);
-  display: flex; align-items: center; gap: 12px;
+/* 3-2-1 before a kept round goes on (Cabinet.countdown) */
+.cab-count {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none; z-index: 1;
+  font: 800 clamp(64px, 18vmin, 150px)/1 var(--cab-mono); color: var(--cab-amber);
+  text-shadow: 0 0 14px rgba(255, 210, 63, 0.8), 0 0 34px rgba(255, 122, 198, 0.55), 0 4px 0 #000;
 }
-.cab-deck::before, .cab-deck::after { content: ''; }
-.cab-stick { width: 34px; height: 34px; flex: none; position: relative; }
-.cab-stick::before { content: ''; position: absolute; left: 50%; bottom: 4px; width: 18px; height: 8px; margin-left: -9px; border-radius: 50%; background: #0e1016; box-shadow: inset 0 1px 2px #000; }
-.cab-stick::after { content: ''; position: absolute; left: 50%; top: 0; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff6b9d, #b3123f 70%); box-shadow: 0 8px 0 -4px #333, 0 2px 4px rgba(0,0,0,0.6); }
+.cab-count--on { animation: cab-count 0.6s ease-out both; }
+@keyframes cab-count { from { transform: scale(1.6); opacity: 0; } 30% { transform: scale(1); opacity: 1; } to { opacity: 0.85; } }
+
+/* ---------- bar and chips ---------- */
+.cab-shell .k-stat__val { white-space: nowrap; }
+.cab-lives .k-stat__val { display: flex; align-items: center; justify-content: center; gap: 1px; color: var(--k-red); min-height: 1.15em; }
+.cab-lives .k-stat__val .k-icon { font-size: 0.82em; filter: drop-shadow(0 1px 0 var(--k-red-edge)); }
+.cab-lives .k-stat__val span { color: var(--k-text); font-size: 0.85em; margin-left: 2px; }
+.k-stat.cab-hurt { animation: cab-hurt 0.45s ease-out; }
+@keyframes cab-hurt { 0%, 100% { transform: none; } 20% { transform: translateX(-4px) rotate(-3deg); } 45% { transform: translateX(4px) rotate(3deg); } 70% { transform: translateX(-2px); } }
+#pause-btn.k-disabled { opacity: 0.38; }
+/* phones show two chips; extra ones come back when there is room */
+@media (max-width: 699px) { .cab-shell .k-stat.cab-more { display: none; } }
+
+/* ---------- side panel ---------- */
+.cab-side { flex: none; display: flex; flex-direction: column; align-items: center; gap: var(--k-s3); padding: 0 var(--k-gutter) var(--k-s3); }
+.cab-side > :not(.cab-hint) { display: none; }   /* portrait: just the hint line */
 .cab-hint {
-  flex: 1; text-align: center; color: var(--cab-amber); font-size: 11px; font-family: var(--pixel-font);
-  letter-spacing: 0.08em; text-transform: uppercase; text-shadow: 0 0 6px rgba(255,179,0,0.4);
+  margin: 0; text-align: center; color: var(--k-muted); font-size: var(--k-fs-sm); font-weight: 700; line-height: 1.3;
 }
-.cab-buttons { display: flex; gap: 8px; flex: none; }
-.cab-buttons i {
-  display: block; width: 22px; height: 22px; border-radius: 50%;
-  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.4), 0 2px 3px rgba(0,0,0,0.6);
+.cab-marquee {
+  padding: 10px 12px; border-radius: var(--k-r); text-align: center; width: 100%;
+  background: linear-gradient(180deg, #2b1f55, #160f30);
+  box-shadow: inset 0 0 0 2px #4b3a8a, inset 0 0 18px rgba(124, 242, 255, 0.18), 0 4px 0 var(--k-edge);
+  font: 800 var(--k-fs-lg)/1.1 var(--cab-mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--cab-glow); text-shadow: 0 0 8px rgba(124, 242, 255, 0.8), 0 0 18px rgba(255, 122, 198, 0.5);
 }
-.cab-buttons i:nth-child(1) { background: radial-gradient(circle at 35% 30%, #ffe08a, #d18f00); }
-.cab-buttons i:nth-child(2) { background: radial-gradient(circle at 35% 30%, #9ef7ff, #0aa6c2); }
 
-/* ---- overlays ---- */
-.cab-overlay {
-  position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
-  background: rgba(5,6,10,0.72); padding: 20px;
+/* high-score table (side panel and cards): a little black CRT */
+.cab-hi { width: 100%; }
+.cab-hi-title { font-size: 12px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--k-muted); text-align: center; margin-bottom: 6px; }
+.cab-table {
+  list-style: none; margin: 0; padding: 8px 12px; border-radius: var(--k-r);
+  background: var(--cab-bg); box-shadow: inset 0 0 0 2px #1d2150, inset 0 0 20px rgba(124, 242, 255, 0.06);
+  font: 700 15px/1.55 var(--cab-mono); letter-spacing: 0.08em; color: var(--cab-glow);
+  text-shadow: 0 0 6px rgba(124, 242, 255, 0.45);
 }
-.cab-card {
-  background: #10121a; border: 2px solid var(--cab-glow); border-radius: 6px;
-  box-shadow: 0 0 24px rgba(124,242,255,0.25), inset 0 0 40px rgba(124,242,255,0.05);
-  padding: 22px 26px; text-align: center; min-width: 240px; max-width: 320px;
-  font-family: var(--pixel-font); animation: cabpop 0.2s steps(4);
-  max-height: 100%; overflow-y: auto;
-}
-@keyframes cabpop { from { transform: scale(0.9); opacity: 0; } }
-.cab-title { font-size: 20px; font-weight: 700; letter-spacing: 0.14em; color: var(--cab-amber); text-shadow: 0 0 10px rgba(255,179,0,0.5); margin-bottom: 10px; }
-.cab-line { font-size: 15px; letter-spacing: 0.08em; color: var(--cab-text); margin: 4px 0; }
-.cab-line.small { font-size: 12px; color: var(--cab-muted); }
-.cab-scores { margin: 14px 0 6px; text-align: left; }
-.cab-row { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 0.1em; padding: 2px 0; color: var(--cab-glow); }
-.cab-row:first-child { color: var(--cab-amber); }
-.cab-btn {
-  margin: 16px 4px 0; border: none; border-radius: 4px; padding: 12px 22px;
-  background: var(--cab-amber); color: #1a1200; font-family: var(--pixel-font); font-weight: 700;
-  font-size: 15px; letter-spacing: 0.12em; box-shadow: 0 4px 0 #8a5e00;
-  animation: blink 1.2s steps(2) infinite;
-}
-.cab-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #8a5e00; }
-@keyframes blink { 50% { filter: brightness(1.25); } }
-.cab-initials { display: flex; justify-content: center; gap: 8px; margin: 12px 0 4px; }
-.cab-letter { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.cab-arrow { border: none; background: var(--cab-body-2); color: var(--cab-glow); width: 52px; height: 44px; touch-action: none; border-radius: 4px; font-size: 14px; }
-.cab-arrow:active { background: var(--cab-glow); color: #000; }
-.cab-box { width: 52px; height: 56px; touch-action: none; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--cab-amber); border: 2px solid var(--cab-glow); border-radius: 4px; }
+.cab-table li { display: flex; gap: 10px; }
+.cab-table li:first-child { color: var(--cab-amber); text-shadow: 0 0 6px rgba(255, 210, 63, 0.5); }
+.cab-table li.cab-new { color: #fff; animation: cab-blink 0.9s steps(2) infinite; }
+.cab-rank { opacity: 0.55; width: 1ch; }
+.cab-ini { flex: 1; }
+.cab-pts { text-align: right; font-variant-numeric: tabular-nums; }
+.cab-table--empty { text-align: center; color: var(--k-muted); text-shadow: none; font: 700 14px/1.5 var(--k-font); padding: 12px; }
+@keyframes cab-blink { 50% { opacity: 0.45; } }
 
-.cab-btn-icon.cab-pause { font-size: 14px; }
+/* ---------- landscape: the bar and the side panel form a column on the right ---------- */
+@media (orientation: landscape) and (min-width: 640px) {
+  .cab-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--cab-side-w);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "stage bar" "stage side";
+  }
+  .cab-shell > .k-stage { grid-area: stage; padding: var(--k-s3) var(--k-s2) var(--k-s3) var(--k-gutter); }
+  .cab-shell > .k-bar {
+    grid-area: bar; min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "start . end" "mid mid mid";
+    row-gap: var(--k-s3); padding: var(--k-s4) var(--k-gutter) 0 var(--k-s2);
+  }
+  .cab-shell > .k-bar .k-bar__start { grid-area: start; }
+  .cab-shell > .k-bar .k-bar__end { grid-area: end; }
+  .cab-shell > .k-bar .k-bar__mid { grid-area: mid; justify-content: stretch; }
+  .cab-shell .k-stats { flex-direction: column; width: 100%; gap: var(--k-s2); }
+  .cab-shell .k-stat {
+    flex-direction: row; justify-content: space-between; align-items: center; min-width: 0;
+    padding: 8px 14px 9px; margin-bottom: 0;
+  }
+  .cab-shell .k-stat.cab-more { display: flex; }
+  .cab-shell .k-stat__label { font-size: 12px; }
+  .cab-shell .k-stat__val { font-size: var(--k-fs-lg); }
+  .cab-shell > .cab-side {
+    grid-area: side; min-height: 0; overflow: hidden;
+    justify-content: flex-start; align-items: stretch;
+    padding: var(--k-s4) var(--k-gutter) calc(var(--k-s4) + var(--k-safe-b)) var(--k-s2);
+  }
+  .cab-shell > .cab-side > * { display: block; }
+  .cab-shell > .cab-side > .cab-side-btns { display: flex; gap: var(--k-s3); justify-content: center; }
+  .cab-hint { margin-top: auto; }
+}
+/* short landscape screens (phones on their side): drop the extras */
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 520px) {
+  .cab-shell > .cab-side > .cab-hi, .cab-shell > .cab-side > .cab-marquee { display: none; }
+  .cab-shell > .k-bar { padding-top: var(--k-s2); row-gap: var(--k-s2); }
+  .cab-shell .k-stat { padding: 4px 12px 5px; }
+  .cab-shell .k-stat__val { font-size: 17px; }
+  .cab-shell > .cab-side { padding-top: var(--k-s2); }
+}
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 680px) {
+  .cab-shell > .cab-side > .cab-marquee { display: none; }
+}
+
+/* ---------- cards ---------- */
+.k-card.cab-card { background: linear-gradient(180deg, #2c2f78 0%, var(--k-surface-1) 60%); }
+.cab-title {
+  margin: -6px auto var(--k-s3); padding: 12px 18px; border-radius: var(--k-r);
+  background: linear-gradient(180deg, #2b1f55, #160f30);
+  box-shadow: inset 0 0 0 2px #5a46a0, inset 0 0 22px rgba(124, 242, 255, 0.2), 0 5px 0 var(--k-edge);
+  font: 800 var(--k-fs-xl)/1.1 var(--cab-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--cab-glow); text-shadow: 0 0 10px rgba(124, 242, 255, 0.85), 0 0 24px rgba(255, 122, 198, 0.55);
+  animation: cab-neon 3s ease-in-out infinite;
+}
+@keyframes cab-neon { 0%, 100% { filter: none; } 48% { filter: none; } 50% { filter: brightness(0.6); } 53% { filter: none; } }
+.cab-card-scores { margin: var(--k-s3) auto 0; max-width: 300px; }
+.cab-card-scores .cab-table { font-size: 17px; }
+.cab-extra { margin: var(--k-s3) 0 0; }
+.cab-extra .k-seg { max-width: 340px; margin: 0 auto; }
+.cab-extra .k-label { display: block; margin: var(--k-s3) 0 6px; }
+
+.k-btn.cab-card-help { display: flex; margin: var(--k-s3) auto 0; min-height: var(--k-tap); gap: 6px; }
+.k-row > .k-btn.cab-card-help--icon { flex: none; margin: 0; width: calc(var(--k-tap) + 10px); height: auto; min-height: calc(var(--k-tap) + 10px); }
+
+/* initials: three letters with arrows above and below */
+.cab-initials { display: flex; justify-content: center; gap: var(--k-s3); margin: var(--k-s2) 0 0; }
+.cab-letter { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cab-arrow.cab-up .k-icon { transform: rotate(-90deg); }
+.cab-arrow.cab-dn .k-icon { transform: rotate(90deg); }
+.cab-box {
+  width: calc(var(--k-tap) + 6px); height: calc(var(--k-tap) + 14px); margin-bottom: var(--k-depth);
+  display: flex; align-items: center; justify-content: center; border-radius: var(--k-r);
+  background: var(--cab-bg); box-shadow: inset 0 0 0 2px #2d3275, inset 0 0 16px rgba(255, 210, 63, 0.15);
+  font: 800 34px/1 var(--cab-mono); color: var(--cab-amber); text-shadow: 0 0 10px rgba(255, 210, 63, 0.6);
+  cursor: pointer; touch-action: none;
+}
+.cab-box.cab-flip { animation: cab-flip 0.16s ease-out; }
+@keyframes cab-flip { from { transform: scaleY(0.6); } }
+
+/* phones on their side: squeeze the cards so the buttons stay on screen */
+@media (max-height: 520px) {
+  .k-card.cab-card { padding: var(--k-s4) var(--k-s5) var(--k-s4); }
+  .cab-card .k-card__art { display: none; }
+  .cab-card h2 { margin-bottom: 2px; }
+  .cab-card p { margin-bottom: var(--k-s2); }
+  .cab-card .k-card__stats { margin: var(--k-s2) 0 0; }
+  .cab-card .k-card__stat { padding: 4px 8px; }
+  .cab-card .k-card__stat b { font-size: var(--k-fs-lg); }
+  .cab-card--ini .k-card__stats { display: none; }   /* the score is in the bar */
+  .cab-card--attract.cab-card--extra > p { display: none; }   /* room for the options */
+  .cab-title { margin: 0 auto var(--k-s2); padding: 8px 14px; font-size: var(--k-fs-lg); }
+  .cab-card-scores { margin-top: var(--k-s2); }
+  .cab-card-scores .cab-table { font-size: 14px; line-height: 1.2; padding: 4px 12px; }
+  .cab-card .k-row { margin-top: var(--k-s3); }
+  .cab-card .k-btn--lg, .k-row > .k-btn.cab-card-help--icon { min-height: var(--k-tap); }
+  .cab-extra .k-label { margin: var(--k-s2) 0 4px; }
+  .cab-box { height: var(--k-tap); font-size: 28px; }
+  .cab-initials { margin: 0; }
+  .k-btn.cab-card-help { margin-top: var(--k-s2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cab-title, .cab-table li.cab-new, .k-stat.cab-hurt, .cab-box.cab-flip, .cab-count--on { animation: none; }
+}

@@ -17,49 +17,54 @@ function G2048(saved) {
 
 G2048.SAVE_KEY = 'g2048.game';
 
-G2048.loadBest = function () {
-  try { return parseInt(localStorage.getItem('g2048.best'), 10) || 0; } catch (e) { return 0; }
-};
+G2048.loadBest = function () { return Math.max(0, parseInt(Kit.load('g2048.best', 0), 10) || 0); };
 
 G2048.prototype.saveBest = function () {
-  try {
-    localStorage.setItem('g2048.best', String(this.best));
-    localStorage.setItem('arcade.stat.2048', 'Best ' + this.best);
-  } catch (e) {}
+  Kit.save('g2048.best', this.best);
+  Kit.stat('2048', 'Best ' + this.best);
 };
 
 G2048.prototype.save = function () {
-  try {
-    localStorage.setItem(G2048.SAVE_KEY, JSON.stringify({
-      grid: Array.prototype.slice.call(this.grid), score: this.score,
-      won: this.won, keepGoing: this.keepGoing,
-      prev: this.prev ? {
-        grid: Array.prototype.slice.call(this.prev.grid), score: this.prev.score,
-        won: this.prev.won, keepGoing: this.prev.keepGoing
-      } : null
-    }));
-  } catch (e) {}
+  Kit.save(G2048.SAVE_KEY, {
+    grid: Array.prototype.slice.call(this.grid), score: this.score,
+    won: this.won, keepGoing: this.keepGoing,
+    prev: this.prev ? {
+      grid: Array.prototype.slice.call(this.prev.grid), score: this.prev.score,
+      won: this.prev.won, keepGoing: this.prev.keepGoing
+    } : null
+  });
 };
 
-G2048.loadSaved = function () {
-  try { return JSON.parse(localStorage.getItem(G2048.SAVE_KEY)); } catch (e) { return null; }
-};
+G2048.loadSaved = function () { return Kit.load(G2048.SAVE_KEY, null); };
 
 G2048.prototype.restore = function (s) {
-  if (!s || !s.grid || s.grid.length !== N * N) return false;
-  for (var i = 0; i < N * N; i++) this.grid[i] = s.grid[i] | 0;
-  this.score = s.score | 0;
+  if (!validGrid(s && s.grid)) return false;
+  for (var i = 0; i < N * N; i++) this.grid[i] = s.grid[i];
+  this.score = Math.max(0, s.score | 0);
   this.won = !!s.won;
   this.keepGoing = !!s.keepGoing;
   // Older saves have no `prev`; a malformed one is just dropped.
   var p = s.prev;
-  if (p && p.grid && p.grid.length === N * N) {
+  if (p && validGrid(p.grid)) {
     var pg = new Uint8Array(N * N);
-    for (var j = 0; j < N * N; j++) pg[j] = p.grid[j] | 0;
+    for (var j = 0; j < N * N; j++) pg[j] = p.grid[j];
     this.prev = { grid: pg, score: p.score | 0, won: !!p.won, keepGoing: !!p.keepGoing };
   }
   return true;
 };
+
+/* A saved grid must be 16 whole exponents (0 empty .. 17 = 131072) with at
+   least one tile; anything else (a damaged save) means a fresh game. */
+function validGrid(g) {
+  if (!g || typeof g !== 'object' || g.length !== N * N) return false;
+  var tiles = 0;
+  for (var i = 0; i < N * N; i++) {
+    var v = g[i];
+    if (typeof v !== 'number' || v !== Math.floor(v) || v < 0 || v > 17) return false;
+    if (v) tiles++;
+  }
+  return tiles > 0;
+}
 
 G2048.prototype.empties = function () {
   var out = [];

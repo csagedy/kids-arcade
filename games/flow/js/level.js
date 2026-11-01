@@ -4,9 +4,11 @@
    solution, and it fills the board. The RNG is seeded from the level number
    so level 12 is the same puzzle on every phone, every time. */
 
+/* The kit's candy palette first (red, blue, green, yellow, orange, purple,
+   teal, pink), then four more that stay easy to tell apart. */
 var FLOW_COLORS = [
-  '#e5484d', '#4fa3f7', '#3fb950', '#ffd645', '#ff8a3d',
-  '#a06cf0', '#26c6c6', '#f06ca8', '#c3d130', '#8b5a2b', '#eceff4', '#7a4bd0'
+  '#ff5d73', '#4cc2ff', '#3ddc84', '#ffd23f', '#ff9f43',
+  '#a77bff', '#2ee6c9', '#ff7ac6', '#c3e03a', '#b9805a', '#f2f2ff', '#5b6cff'
 ];
 
 function seededRandom(seed) {

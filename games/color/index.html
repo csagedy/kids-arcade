@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,45 +8,60 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
+<meta name="theme-color" content="#161843">
 <title>Color by Number</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<section id="library" class="screen">
-  <header class="lib-head">
-    <a class="icon-btn" href="../../index.html" aria-label="Arcade">‹</a>
-    <h1>Color by Number</h1>
-    <button id="photo-btn" class="pill">＋ From a Photo</button>
+<!-- the picture library -->
+<section id="library" class="k-shell screen">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid"><div class="k-title">Color by Number</div></div>
+    <div class="k-bar__end">
+      <button id="photo-btn" class="k-btn k-btn--primary photo-btn" aria-label="Make one from a photo"><span class="ico" data-ico="camera"></span><span class="lbl">Photo</span></button>
+    </div>
   </header>
+  <nav id="lib-tabs" class="lib-tabs" aria-label="Sections"></nav>
   <div id="lib-grid" class="lib-grid"></div>
   <input type="file" id="photo-input" accept="image/*" hidden>
 </section>
 
-<section id="game" class="screen hidden">
-  <header class="game-head">
-    <button id="back-btn" class="icon-btn" aria-label="Back">‹</button>
-    <div class="progress-wrap"><div id="progress-bar" class="progress-bar"></div></div>
-    <button id="undo-btn" class="icon-btn" aria-label="Undo" disabled>↺</button>
-    <button id="hint-btn" class="icon-btn" aria-label="Hint">?</button>
+<!-- colouring a picture -->
+<section id="game" class="k-shell k-shell--side screen k-hidden">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <button id="back-btn" class="k-btn k-btn--icon" data-k-icon="back" aria-label="Back to the pictures"></button>
+    </div>
+    <div class="k-bar__mid">
+      <div class="progress" id="progress" aria-label="Progress">
+        <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+        <b id="progress-pct">0%</b>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="hint-btn" class="k-btn k-btn--icon" data-k-icon="hint" aria-label="Find one to colour"></button>
+    </div>
   </header>
-  <div id="stage" class="stage"><canvas id="canvas"></canvas></div>
-  <div id="palette" class="palette"></div>
+  <main id="stage" class="k-stage paint-stage"><canvas id="canvas"></canvas></main>
+  <aside class="k-side paint-side">
+    <div id="palette" class="palette" role="group" aria-label="Colours"></div>
+    <div class="tools">
+      <button id="zoom-out" class="k-btn k-btn--icon k-btn--sm" aria-label="Zoom out"><span class="ico" data-ico="zoomout"></span></button>
+      <button id="zoom-fit" class="k-btn k-btn--icon k-btn--sm" aria-label="Show the whole picture"><span class="ico" data-ico="fit"></span></button>
+      <button id="zoom-in" class="k-btn k-btn--icon k-btn--sm" aria-label="Zoom in"><span class="ico" data-ico="zoomin"></span></button>
+      <button id="help-btn" class="k-btn k-btn--icon k-btn--sm" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon k-btn--sm" aria-label="Sound"></button>
+    </div>
+  </aside>
 </section>
 
-<div id="done" class="done hidden">
-  <canvas id="confetti" class="confetti"></canvas>
-  <div class="done-card">
-    <canvas id="done-thumb" width="240" height="240"></canvas>
-    <h2>Beautiful! You finished it!</h2>
-    <div class="done-actions">
-      <button id="done-again" class="pill">Do it again</button>
-      <button id="done-back" class="pill primary">Pick another</button>
-    </div>
-  </div>
-</div>
-
+<script src="../../kit/kit.js"></script>
 <script src="js/util.js"></script>
 <script src="js/quantize.js"></script>
 <script src="js/puzzles-data.js"></script>
@@ -57,12 +72,6 @@
 <script src="js/render.js"></script>
 <script src="js/input.js"></script>
 <script src="js/app.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

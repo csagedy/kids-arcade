@@ -3,9 +3,10 @@
 
 var CAP = 4;   // units of liquid per tube
 
+// the kit's candy palette, then two extras that stay apart from it
 var COLORS = [
-  '#e5484d', '#4fa3f7', '#3fb950', '#ffd645', '#a06cf0',
-  '#ff8a3d', '#26c6c6', '#f06ca8', '#8b5a2b', '#c3d130'
+  '#ff5d73', '#4cc2ff', '#3ddc84', '#ffd23f', '#a77bff',
+  '#ff9f43', '#2ee6c9', '#ff7ac6', '#a8693a', '#f2f4ff'
 ];
 
 function topRun(tube) {

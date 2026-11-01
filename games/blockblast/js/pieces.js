@@ -1,9 +1,14 @@
 /* Piece shapes. There is no rotation in this game, so every orientation a
    player might want is listed as its own shape. */
 
+// the kit's candy palette, and the darker under-edge of each colour
 var BB_COLORS = [
-  '#e5484d', '#ff8a3d', '#ffd645', '#3fb950',
-  '#26c6c6', '#4fa3f7', '#a06cf0', '#f06ca8'
+  '#ff5d73', '#ff9f43', '#ffd23f', '#3ddc84',
+  '#2ee6c9', '#4cc2ff', '#a77bff', '#ff7ac6'
+];
+var BB_EDGES = [
+  '#c12c47', '#c86a12', '#d69a00', '#1f9a57',
+  '#129a86', '#1a7fc0', '#6c45c9', '#c4428c'
 ];
 
 var SHAPES = [

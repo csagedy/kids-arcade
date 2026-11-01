@@ -4,8 +4,8 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#14161c",
-  "theme_color": "#14161c",
+  "orientation": "any",
+  "background_color": "#161843",
+  "theme_color": "#161843",
   "icons": [{ "src": "icon-arcade.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }]
 }

@@ -2,74 +2,74 @@
    checked by tools/nono-check.py to be solvable with line logic alone. */
 
 var NONO_PUZZLES = [
-  { "id": "heart3", "name": "Heart", "color": "#e5484d", "art": [
+  { "id": "heart3", "name": "Heart", "color": "#ff5d73", "art": [
     "#.#",
     "###",
     ".#."
   ]},
-  { "id": "sparkle3", "name": "Sparkle", "color": "#ffd645", "art": [
+  { "id": "sparkle3", "name": "Sparkle", "color": "#ffd23f", "art": [
     ".#.",
     "###",
     ".#."
   ]},
-  { "id": "tent3", "name": "Tent", "color": "#ff8a3d", "art": [
+  { "id": "tent3", "name": "Tent", "color": "#ff9f43", "art": [
     ".#.",
     "###",
     "#.#"
   ]},
-  { "id": "balloon4", "name": "Balloon", "color": "#f06ca8", "art": [
+  { "id": "balloon4", "name": "Balloon", "color": "#ff7ac6", "art": [
     ".##.",
     "####",
     ".##.",
     "..#."
   ]},
-  { "id": "mushroom4", "name": "Mushroom", "color": "#e5484d", "art": [
+  { "id": "mushroom4", "name": "Mushroom", "color": "#ff5d73", "art": [
     ".##.",
     "####",
     ".##.",
     ".##."
   ]},
-  { "id": "critter4", "name": "Critter", "color": "#a06cf0", "art": [
+  { "id": "critter4", "name": "Critter", "color": "#a77bff", "art": [
     "#..#",
     "####",
     "####",
     "#..#"
   ]},
-  { "id": "bug4", "name": "Bug", "color": "#3fb950", "art": [
+  { "id": "bug4", "name": "Bug", "color": "#3ddc84", "art": [
     ".##.",
     "####",
     ".##.",
     "#..#"
   ]},
-  { "id": "heart5", "name": "Heart", "color": "#e5484d", "art": [
+  { "id": "heart5", "name": "Heart", "color": "#ff5d73", "art": [
     ".#.#.",
     "#####",
     "#####",
     ".###.",
     "..#.."
   ]},
-  { "id": "plus5", "name": "Plus", "color": "#3fb950", "art": [
+  { "id": "plus5", "name": "Plus", "color": "#3ddc84", "art": [
     "..#..",
     "..#..",
     "#####",
     "..#..",
     "..#.."
   ]},
-  { "id": "cup5", "name": "Cup", "color": "#4fa3f7", "art": [
+  { "id": "cup5", "name": "Cup", "color": "#4cc2ff", "art": [
     "####.",
     "#####",
     "####.",
     "####.",
     ".##.."
   ]},
-  { "id": "tree5", "name": "Tree", "color": "#3fb950", "art": [
+  { "id": "tree5", "name": "Tree", "color": "#3ddc84", "art": [
     "..#..",
     ".###.",
     "#####",
     "..#..",
     "..#.."
   ]},
-  { "id": "arrow5", "name": "Arrow", "color": "#ffd645", "art": [
+  { "id": "arrow5", "name": "Arrow", "color": "#ffd23f", "art": [
     "..#..",
     ".###.",
     "#.#.#",
@@ -83,28 +83,28 @@ var NONO_PUZZLES = [
     "#####",
     "#.#.#"
   ]},
-  { "id": "sun5", "name": "Sun", "color": "#ffd645", "art": [
+  { "id": "sun5", "name": "Sun", "color": "#ffd23f", "art": [
     "#.#.#",
     ".###.",
     "#####",
     ".###.",
     "#.#.#"
   ]},
-  { "id": "flag5", "name": "Flag", "color": "#e5484d", "art": [
+  { "id": "flag5", "name": "Flag", "color": "#ff5d73", "art": [
     "####.",
     "#####",
     "####.",
     "#....",
     "#...."
   ]},
-  { "id": "gem5", "name": "Gem", "color": "#26c6c6", "art": [
+  { "id": "gem5", "name": "Gem", "color": "#2ee6c9", "art": [
     "..#..",
     ".###.",
     "#####",
     ".###.",
     "..#.."
   ]},
-  { "id": "house6", "name": "House", "color": "#ff8a3d", "art": [
+  { "id": "house6", "name": "House", "color": "#ff9f43", "art": [
     "..##..",
     ".####.",
     "######",
@@ -112,7 +112,7 @@ var NONO_PUZZLES = [
     "#.##.#",
     "#.##.#"
   ]},
-  { "id": "boat6", "name": "Boat", "color": "#4fa3f7", "art": [
+  { "id": "boat6", "name": "Boat", "color": "#4cc2ff", "art": [
     "...#..",
     "..##..",
     ".###..",
@@ -120,7 +120,7 @@ var NONO_PUZZLES = [
     "######",
     ".####."
   ]},
-  { "id": "blossom6", "name": "Blossom", "color": "#f06ca8", "art": [
+  { "id": "blossom6", "name": "Blossom", "color": "#ff7ac6", "art": [
     ".#..#.",
     "#.##.#",
     ".####.",
@@ -128,7 +128,7 @@ var NONO_PUZZLES = [
     "..##..",
     ".####."
   ]},
-  { "id": "tulip6", "name": "Tulip", "color": "#f06ca8", "art": [
+  { "id": "tulip6", "name": "Tulip", "color": "#ff7ac6", "art": [
     "#.##.#",
     "######",
     ".####.",
@@ -136,7 +136,7 @@ var NONO_PUZZLES = [
     "..##..",
     "..##.."
   ]},
-  { "id": "car6", "name": "Car", "color": "#4fa3f7", "art": [
+  { "id": "car6", "name": "Car", "color": "#4cc2ff", "art": [
     "......",
     ".####.",
     "######",
@@ -152,7 +152,7 @@ var NONO_PUZZLES = [
     ".####.",
     "######"
   ]},
-  { "id": "cat7", "name": "Cat", "color": "#a06cf0", "art": [
+  { "id": "cat7", "name": "Cat", "color": "#a77bff", "art": [
     "#.....#",
     "##...##",
     "#######",
@@ -161,7 +161,7 @@ var NONO_PUZZLES = [
     ".#####.",
     "..#.#.."
   ]},
-  { "id": "duck7", "name": "Duck", "color": "#ffd645", "art": [
+  { "id": "duck7", "name": "Duck", "color": "#ffd23f", "art": [
     "..##...",
     ".####..",
     "###.#..",
@@ -170,7 +170,7 @@ var NONO_PUZZLES = [
     "#######",
     ".#####."
   ]},
-  { "id": "star7", "name": "Star", "color": "#ffd645", "art": [
+  { "id": "star7", "name": "Star", "color": "#ffd23f", "art": [
     "...#...",
     "..###..",
     ".#####.",
@@ -179,7 +179,7 @@ var NONO_PUZZLES = [
     "..#.#..",
     ".#...#."
   ]},
-  { "id": "pine7", "name": "Pine", "color": "#3fb950", "art": [
+  { "id": "pine7", "name": "Pine", "color": "#3ddc84", "art": [
     "...#...",
     "..###..",
     ".#####.",
@@ -188,7 +188,7 @@ var NONO_PUZZLES = [
     "#######",
     "...#..."
   ]},
-  { "id": "sailboat7", "name": "Sailboat", "color": "#4fa3f7", "art": [
+  { "id": "sailboat7", "name": "Sailboat", "color": "#4cc2ff", "art": [
     "...#...",
     "...##..",
     "...###.",
@@ -206,7 +206,7 @@ var NONO_PUZZLES = [
     ".#####.",
     "..###.."
   ]},
-  { "id": "crown7", "name": "Crown", "color": "#ffd645", "art": [
+  { "id": "crown7", "name": "Crown", "color": "#ffd23f", "art": [
     "#..#..#",
     "#######",
     "#######",
@@ -215,7 +215,7 @@ var NONO_PUZZLES = [
     "#######",
     "......."
   ]},
-  { "id": "bus7", "name": "Bus", "color": "#ffd645", "art": [
+  { "id": "bus7", "name": "Bus", "color": "#ffd23f", "art": [
     "#######",
     "#.#.#.#",
     "#######",
@@ -224,7 +224,7 @@ var NONO_PUZZLES = [
     ".#...#.",
     "......."
   ]},
-  { "id": "rainbow7", "name": "Rainbow", "color": "#a06cf0", "art": [
+  { "id": "rainbow7", "name": "Rainbow", "color": "#a77bff", "art": [
     "..###..",
     ".#####.",
     "##...##",
@@ -233,7 +233,7 @@ var NONO_PUZZLES = [
     "#.....#",
     "......."
   ]},
-  { "id": "fish8", "name": "Fish", "color": "#26c6c6", "art": [
+  { "id": "fish8", "name": "Fish", "color": "#2ee6c9", "art": [
     "........",
     "..###..#",
     ".#####.#",
@@ -243,7 +243,7 @@ var NONO_PUZZLES = [
     "..###...",
     "........"
   ]},
-  { "id": "mug8", "name": "Mug", "color": "#ff8a3d", "art": [
+  { "id": "mug8", "name": "Mug", "color": "#ff9f43", "art": [
     "........",
     "######..",
     "######.#",
@@ -253,7 +253,7 @@ var NONO_PUZZLES = [
     ".####...",
     "........"
   ]},
-  { "id": "umbrella8", "name": "Umbrella", "color": "#f06ca8", "art": [
+  { "id": "umbrella8", "name": "Umbrella", "color": "#ff7ac6", "art": [
     "...##...",
     ".######.",
     "########",
@@ -263,7 +263,7 @@ var NONO_PUZZLES = [
     ".#.#....",
     ".###...."
   ]},
-  { "id": "key8", "name": "Key", "color": "#ffd645", "art": [
+  { "id": "key8", "name": "Key", "color": "#ffd23f", "art": [
     ".###....",
     "#####...",
     "#####...",
@@ -273,7 +273,7 @@ var NONO_PUZZLES = [
     "..###...",
     "..#.#..."
   ]},
-  { "id": "bell8", "name": "Bell", "color": "#ffd645", "art": [
+  { "id": "bell8", "name": "Bell", "color": "#ffd23f", "art": [
     "...##...",
     "..####..",
     "..####..",
@@ -283,7 +283,7 @@ var NONO_PUZZLES = [
     "...##...",
     "........"
   ]},
-  { "id": "flower8", "name": "Flower", "color": "#f06ca8", "art": [
+  { "id": "flower8", "name": "Flower", "color": "#ff7ac6", "art": [
     "...#....",
     "..###...",
     ".#.#.#..",
@@ -293,7 +293,7 @@ var NONO_PUZZLES = [
     ".#.#.#..",
     "..###..."
   ]},
-  { "id": "trophy8", "name": "Trophy", "color": "#ffd645", "art": [
+  { "id": "trophy8", "name": "Trophy", "color": "#ffd23f", "art": [
     "########",
     "#.####.#",
     "#.####.#",
@@ -303,7 +303,7 @@ var NONO_PUZZLES = [
     "...##...",
     ".######."
   ]},
-  { "id": "lolli8", "name": "Lollipop", "color": "#f06ca8", "art": [
+  { "id": "lolli8", "name": "Lollipop", "color": "#ff7ac6", "art": [
     "..####..",
     ".######.",
     "########",
@@ -335,7 +335,7 @@ var NONO_PUZZLES = [
     "..#....#..",
     ".........."
   ]},
-  { "id": "rocket10", "name": "Rocket", "color": "#e5484d", "art": [
+  { "id": "rocket10", "name": "Rocket", "color": "#ff5d73", "art": [
     "....##....",
     "...####...",
     "...#..#...",
@@ -347,7 +347,7 @@ var NONO_PUZZLES = [
     "...#..#...",
     "..#....#.."
   ]},
-  { "id": "butterfly10", "name": "Butterfly", "color": "#a06cf0", "art": [
+  { "id": "butterfly10", "name": "Butterfly", "color": "#a77bff", "art": [
     "#........#",
     ".#..##..#.",
     "##.####.##",
@@ -383,7 +383,7 @@ var NONO_PUZZLES = [
     "####..####",
     "##########"
   ]},
-  { "id": "apple10", "name": "Apple", "color": "#e5484d", "art": [
+  { "id": "apple10", "name": "Apple", "color": "#ff5d73", "art": [
     ".....#....",
     "....#.....",
     "..######..",
@@ -395,7 +395,7 @@ var NONO_PUZZLES = [
     ".###..###.",
     ".........."
   ]},
-  { "id": "icecream10", "name": "Ice Cream", "color": "#f06ca8", "art": [
+  { "id": "icecream10", "name": "Ice Cream", "color": "#ff7ac6", "art": [
     "...####...",
     "..######..",
     ".########.",
@@ -407,7 +407,7 @@ var NONO_PUZZLES = [
     "....##....",
     "....##...."
   ]},
-  { "id": "penguin10", "name": "Penguin", "color": "#4fa3f7", "art": [
+  { "id": "penguin10", "name": "Penguin", "color": "#4cc2ff", "art": [
     "...####...",
     "..######..",
     "..#.##.#..",

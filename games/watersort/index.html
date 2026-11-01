@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="k-app">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,46 +8,52 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
-<meta name="theme-color" content="#14161c">
+<meta name="theme-color" content="#161843">
 <title>Water Sort</title>
+<link rel="stylesheet" href="../../kit/kit.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="head">
-  <a class="icon-btn" href="../../index.html" aria-label="Back">‹</a>
-  <div class="level">Level <span id="level-n">1</span></div>
-  <button id="hint-btn" class="icon-btn" aria-label="Hint">💡</button>
-  <button id="undo-btn" class="icon-btn" aria-label="Undo">↺</button>
-  <button id="mute-btn" class="icon-btn" aria-label="Sound on">🔊</button>
-  <button id="restart-btn" class="icon-btn" aria-label="Restart">⟳</button>
-</header>
-
-<main id="board" class="board"></main>
-<div id="tip" class="tip hidden">Tap a tube, then tap another tube to pour. Fill each tube with one colour!</div>
-<div id="stuck" class="stuck hidden"><span id="stuck-text">No moves left</span> <button id="stuck-undo" class="pill small">↺ Undo</button></div>
-<canvas id="confetti" class="confetti"></canvas>
-
-<div id="win" class="win hidden">
-  <div class="win-card">
-    <div class="win-emoji">🎉</div>
-    <h2>Level <span id="win-n">1</span> done!</h2>
-    <div class="win-actions">
-      <button id="win-replay" class="pill">Again</button>
-      <button id="win-next" class="pill primary">Next level</button>
+<div class="k-shell k-shell--side">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
     </div>
-  </div>
+    <div class="k-bar__mid">
+      <div class="k-stats">
+        <div class="k-stat k-stat--accent" id="level-chip"><span class="k-stat__label">Level</span><b class="k-stat__val" id="level-n">1</b></div>
+        <div class="k-stat" id="moves-chip"><span class="k-stat__label">Moves</span><b class="k-stat__val" id="moves">0</b></div>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="restart-btn" class="k-btn k-btn--icon" data-k-icon="restart" aria-label="Start this level over"></button>
+    </div>
+  </header>
+
+  <main class="k-stage" id="stage">
+    <div id="board" class="board"></div>
+    <div id="stuck" class="stuck k-hidden" role="status">
+      <span id="stuck-text">No moves left</span>
+      <button id="stuck-undo" class="k-btn k-btn--primary k-btn--sm"><span data-k-icon="undo"></span><span>Undo</span></button>
+    </div>
+  </main>
+
+  <aside class="k-side">
+    <button id="hint-btn" class="k-btn k-btn--primary side-big" aria-label="Hint"><span data-k-icon="hint"></span><span class="lbl">Hint</span></button>
+    <button id="tube-btn" class="k-btn k-btn--blue side-big" aria-label="Add an empty tube"><span data-k-icon="new"></span><span class="lbl">Tube</span></button>
+    <div class="side-small">
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </aside>
 </div>
 
+<script src="../../kit/kit.js"></script>
 <script src="js/level.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("../../sw.js").catch(function () {});
-  });
-}
-</script>
+<script>Kit.registerSW('../../sw.js');</script>
 </body>
 </html>

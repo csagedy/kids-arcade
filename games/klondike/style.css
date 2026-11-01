@@ -1,0 +1,92 @@
+/* Klondike on the arcade kit. The felt table and the cards come from
+   cards/cards.css, with two of its options switched on: .cd-two-color (red
+   and black suits, which the rules talk about) and .cd-peek (a big rank and
+   suit along the top edge, so a card still reads when only its top edge
+   peeks out of a column). This file draws the empty slots, drag and hint
+   effects. js/ui.js positions every card in px from the board size (--cw is
+   the card width). */
+
+.kl-stage { padding: var(--k-s2) 6px var(--k-s2); align-items: stretch; justify-content: stretch; }
+@media (min-width: 700px) and (min-height: 600px) { .kl-stage { padding: var(--k-s3) var(--k-gutter) var(--k-s2); } }
+.kl-board.kl-still .card, .kl-board.kl-still .card .card-in { transition: none !important; }
+.kl-felt { padding: 18px 16px; }
+@media (max-width: 430px), (max-height: 430px) { .kl-felt { padding: 12px 10px; } }
+.kl-board { position: relative; isolation: isolate; z-index: 0; flex: 1 1 auto; width: 100%; height: 100%; touch-action: none; --cw: 60px; }
+
+/* ---------- slots ---------- */
+.kl-slot {
+  position: absolute; width: var(--cw); height: calc(var(--cw) * 1.4);
+  border-radius: calc(var(--cw) * 0.11);
+  background: rgba(0, 0, 0, 0.14);
+  box-shadow: inset 0 0 0 calc(var(--cw) * 0.025 + 1px) rgba(255, 255, 255, 0.22);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255, 255, 255, 0.26); font-weight: 900; font-size: calc(var(--cw) * 0.5);
+  transition: box-shadow var(--k-med), background var(--k-med);
+}
+.kl-slot--found::after { content: attr(data-suit); font-size: calc(var(--cw) * 0.62); }
+.kl-slot--col::after { content: 'K'; font-size: calc(var(--cw) * 0.42); opacity: 0.8; }
+.kl-slot--stock { cursor: pointer; color: rgba(255, 255, 255, 0.6); }
+.kl-slot--stock .k-icon { width: 46%; height: 46%; }
+.kl-slot--stock.kl-done { color: rgba(255, 255, 255, 0.18); }
+.kl-slot.kl-target { background: rgba(255, 210, 63, 0.18); box-shadow: inset 0 0 0 calc(var(--cw) * 0.04 + 1px) var(--k-accent); }
+
+/* ---------- cards ---------- */
+.kl-board .card { transition: left 0.24s var(--k-ease), top 0.24s var(--k-ease), transform 0.16s ease; cursor: pointer; }
+.kl-board .card .card-in { transition: transform 0.28s ease; }
+.kl-board .card .card-face, .kl-board .card .card-back { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 calc(var(--cw) * 0.03) calc(var(--cw) * 0.07) rgba(5, 6, 30, 0.35); }
+/* dragging: lift the run off the table */
+.kl-board .card.kl-drag { transition: none; }
+.kl-board .card.kl-drag .card-face { box-shadow: 0 calc(var(--cw) * 0.12) calc(var(--cw) * 0.24) rgba(5, 6, 30, 0.55); }
+.kl-board .card.kl-lift { transform: scale(1.05); }
+
+/* a hint: the cards to move glow, and so does where they go */
+.kl-board .card.kl-hint .card-face, .kl-board .card.kl-hint .card-back { animation: kl-glow 0.7s ease-in-out 3; }
+@keyframes kl-glow {
+  50% { box-shadow: 0 0 0 calc(var(--cw) * 0.05 + 1px) var(--k-accent), 0 0 calc(var(--cw) * 0.3) rgba(255, 210, 63, 0.75); }
+}
+.kl-board .card.kl-hint { transform: translateY(calc(var(--cw) * -0.05)); }
+.kl-board .card.kl-no { animation: kl-no 0.32s; }
+@keyframes kl-no { 20% { transform: translateX(calc(var(--cw) * -0.08)); } 60% { transform: translateX(calc(var(--cw) * 0.08)); } }
+.kl-board .card.kl-home .card-face { animation: kl-home 0.42s ease-out; }
+@keyframes kl-home { 0% { box-shadow: 0 0 0 0 rgba(255, 210, 63, 0.9); } 100% { box-shadow: 0 0 0 calc(var(--cw) * 0.25) rgba(255, 210, 63, 0); } }
+
+/* ---------- side panel / bottom row ---------- */
+.kl-side { gap: var(--k-s3); padding-bottom: calc(var(--k-s3) + var(--k-safe-b) * 0); }
+.kl-main-btns, .kl-small-btns { display: flex; gap: var(--k-s3); }
+.kl-wide { padding: 0 1.1em; }
+.kl-wide [data-k-icon] { font-size: var(--k-icon); display: flex; }
+.kl-mode { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.kl-mode b { font-size: var(--k-fs-lg); font-weight: 900; }
+.kl-wins { color: var(--k-muted); font-size: var(--k-fs-sm); font-weight: 700; }
+@media (max-width: 430px) {
+  .kl-side { gap: var(--k-s2); }
+  .kl-main-btns, .kl-small-btns { gap: var(--k-s2); }
+  .kl-wide { padding: 0 0.85em; }
+}
+
+/* landscape: a slim tool rail on the right, the table takes the rest */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-shell.k-shell--side { grid-template-columns: minmax(0, 1fr) auto; }
+  .k-shell--side > .kl-side { justify-content: center; align-items: stretch; gap: var(--k-s4); padding-left: var(--k-s1); }
+  .kl-side .kl-main-btns { flex-direction: column; }
+  .kl-side .kl-small-btns { justify-content: center; }
+  .kl-stage { padding-right: var(--k-s2); padding-left: max(var(--k-s3), var(--k-safe-l)); }
+}
+
+/* new-deal sheet */
+.kl-opts { display: flex; flex-direction: column; gap: var(--k-s2); margin: var(--k-s3) 0 var(--k-s2); text-align: left; }
+.kl-opt { justify-content: flex-start; gap: var(--k-s3); padding: var(--k-s2) var(--k-s4); min-height: calc(var(--k-tap) + 14px); }
+.kl-opt .k-icon { font-size: var(--k-icon); }
+.kl-opt__t { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
+.kl-opt__t small { font-size: var(--k-fs-sm); font-weight: 600; opacity: 0.8; }
+
+/* the win: cards bounce out of the foundations leaving trails */
+.kl-cascade { position: fixed; inset: 0; z-index: 90; width: 100%; height: 100%; pointer-events: none; display: none; transition: opacity 0.5s; }
+.kl-cascade.kl-on { display: block; pointer-events: auto; }
+.kl-cascade.kl-fade { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kl-board .card, .kl-board .card .card-in { transition: none; }
+  .kl-board .card.kl-hint .card-face, .kl-board .card.kl-no, .kl-board .card.kl-home .card-face { animation: none; }
+  .kl-board .card.kl-hint .card-face { box-shadow: 0 0 0 3px var(--k-accent); }
+}

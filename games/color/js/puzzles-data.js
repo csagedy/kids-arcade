@@ -6,6 +6,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'fox',
     name: 'Fox',
+    theme: 'wild',
     legend: { o: '#e8792b', d: '#b4571f', w: '#fff6ec', k: '#2b2118', p: '#f0938e' },
     art: [
       '................',
@@ -29,29 +30,32 @@ var BUILTIN_PUZZLES = [
   {
     id: 'rocket',
     name: 'Rocket',
-    legend: { w: '#eceff4', b: '#4fc3f7', r: '#e5484d', f: '#ff8a3d', y: '#ffd645' },
+    theme: 'space',
+    rev: 2,
+    legend: { w: '#eceff4', b: '#4fc3f7', r: '#e5484d', f: '#ff8a3d', y: '#ffd645', k: '#3a3f5a' },
     art: [
-      '................',
-      '.......ww.......',
-      '......wwww......',
-      '......wbbw......',
-      '......wbbw......',
-      '......wwww......',
-      '.....wwwwww.....',
-      '.....wwwwww.....',
-      '....rwwwwwwr....',
-      '...rrwwwwwwrr...',
-      '...rr.wwww.rr...',
-      '......wwww......',
-      '.......ff.......',
-      '......fyyf......',
-      '.......fy.......',
-      '................'
+      '.......kk.......',
+      '......krrk......',
+      '.....krrrrk.....',
+      '.....kwwwwk.....',
+      '....kwwkkwwk....',
+      '....kwkbbkwk....',
+      '....kwkbbkwk....',
+      '....kwwkkwwk....',
+      '....kwwwwwwk....',
+      '...krkwwwwkrk...',
+      '..krrkwwwwkrrk..',
+      '..krrkkkkkkrrk..',
+      '..kkk.kyyk.kkk..',
+      '.....kfyyfk.....',
+      '......kffk......',
+      '.......kk.......'
     ]
   },
   {
     id: 'flower',
     name: 'Flower',
+    theme: 'outdoors',
     legend: { p: '#f06ca8', y: '#ffd645', g: '#2fa84f', l: '#6dd36d' },
     art: [
       '................',
@@ -75,21 +79,23 @@ var BUILTIN_PUZZLES = [
   {
     id: 'fish',
     name: 'Fish',
-    legend: { o: '#ff9b3d', d: '#e5622a', w: '#fff6ec', k: '#2b2118', b: '#7fd8f7' },
+    theme: 'sea',
+    rev: 2,
+    legend: { o: '#ff9b3d', d: '#c9541f', w: '#fff6ec', k: '#2b2118', b: '#7fd8f7', y: '#ffd645' },
     art: [
       '................',
+      '.b..............',
       '................',
-      '....oooooo......',
-      '..oooooooooo.dd.',
-      '.okooooooooooddd',
-      '.oooooooooooodd.',
-      '.owwwwwwwwwwodd.',
-      '..owwwwwwwww.dd.',
-      '....wwwwww......',
+      '..b....dd.......',
+      '.b..dddddd....d.',
+      '..ddoowoowdd.dd.',
+      '.doooowoowoodyd.',
+      '.dowkowoowoodyd.',
+      '.doooowoowoodyd.',
+      '.doooowoowoodyd.',
+      '..ddoowoowdd.dd.',
+      '....dddddd....d.',
       '................',
-      '.........b......',
-      '..........b.....',
-      '.........bb.....',
       '................',
       '................',
       '................'
@@ -98,6 +104,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'heart',
     name: 'Heart',
+    theme: 'shapes',
     legend: { r: '#e5484d', w: '#ffb3b8', d: '#b8323a' },
     art: [
       '................',
@@ -121,6 +128,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'house',
     name: 'House',
+    theme: 'outdoors',
     legend: { r: '#c8553d', w: '#f4e3c1', b: '#8b5a2b', u: '#7fd8f7', g: '#4fb04f', k: '#7a4a3a' },
     art: [
       '................',
@@ -144,6 +152,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'tree',
     name: 'Tree',
+    theme: 'outdoors',
     legend: { g: '#2fa84f', l: '#6dd36d', b: '#8b5a2b', y: '#ffd645', s: '#9fe0ff' },
     art: [
       'ss............ss',
@@ -167,6 +176,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'cat',
     name: 'Cat',
+    theme: 'pets',
     legend: { o: '#f2a14b', d: '#c9772a', w: '#fff6ec', k: '#2b2118', p: '#f0938e', g: '#7bd05a' },
     art: [
       '................',
@@ -190,29 +200,32 @@ var BUILTIN_PUZZLES = [
   {
     id: 'butterfly',
     name: 'Butterfly',
+    theme: 'wild',
+    rev: 2,
     legend: { p: '#a06cf0', m: '#f06ca8', y: '#ffd645', k: '#2b2118', w: '#fff6ec' },
     art: [
-      '................',
-      '.......kk.......',
+      '.....k....k.....',
       '......k..k......',
-      '..pp..k..k..pp..',
-      '.pppp.kkkk.pppp.',
-      'ppwwppkkkkppwwpp',
-      'pwwwppkkkkppwwwp',
-      'ppwwppkkkkppwwpp',
-      '.pppp.kkkk.pppp.',
-      '..pp..kkkk..pp..',
-      '..mmmm.kk.mmmm..',
-      '.mmyymmkkmmyymm.',
-      '.mmyymm..mmyymm.',
-      '..mmmm....mmmm..',
-      '...mm......mm...',
+      '.kkkk..kk..kkkk.',
+      'kppppk.kk.kppppk',
+      'kpyypppkkpppyypk',
+      'kpyypppkkpppyypk',
+      'kpppppkkkkpppppk',
+      '.kpppppkkpppppk.',
+      '..kkkkkkkkkkkk..',
+      '..kmmmmkkmmmmk..',
+      '.kmmwwmkkmwwmmk.',
+      '.kmmwwmkkmwwmmk.',
+      '..kmmmmkkmmmmk..',
+      '...kkkk..kkkk...',
+      '................',
       '................'
     ]
   },
   {
     id: 'icecream',
     name: 'Ice Cream',
+    theme: 'food',
     legend: { p: '#f6a6c8', w: '#fff6ec', c: '#7a4a2b', t: '#e8b565', d: '#c18a3d', r: '#e5484d' },
     art: [
       '................',
@@ -236,6 +249,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'star',
     name: 'Star',
+    theme: 'shapes',
     legend: { y: '#ffd645', o: '#ff9b3d', w: '#fff3a8', k: '#2b2118' },
     art: [
       '................',
@@ -259,6 +273,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'sailboat',
     name: 'Sailboat',
+    theme: 'go',
     legend: { w: '#fff6ec', r: '#e5484d', b: '#4fa3f7', n: '#2a6fc9', k: '#8b5a2b', y: '#ffd645' },
     art: [
       '..............yy',
@@ -282,6 +297,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'apple',
     name: 'Apple',
+    theme: 'food',
     legend: { r: '#e5484d', w: '#ffb3b8', d: '#b8323a', g: '#3fb950', b: '#8b5a2b' },
     art: [
       '................',
@@ -305,7 +321,8 @@ var BUILTIN_PUZZLES = [
   {
     id: 'penguin',
     name: 'Penguin',
-    legend: { k: '#2b3345', w: '#fff6ec', o: '#ff9b3d', s: '#9fe0ff', b: '#ffffff' },
+    theme: 'wild',
+    legend: { k: '#2b3345', w: '#fff6ec', o: '#ff9b3d', s: '#9fe0ff', b: '#7fa8d8' },
     art: [
       'ss....ss....ss..',
       '.......kkkk.....',
@@ -328,6 +345,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'rainbow',
     name: 'Rainbow',
+    theme: 'shapes',
     legend: { r: '#e5484d', o: '#ff8a3d', y: '#ffd645', g: '#3fb950', b: '#4fa3f7', p: '#a06cf0', w: '#ffffff', s: '#cfeaff' },
     art: [
       '................',
@@ -351,6 +369,7 @@ var BUILTIN_PUZZLES = [
   {
     id: 'mushroom',
     name: 'Mushroom',
+    theme: 'magic',
     legend: { r: '#e5484d', w: '#fff6ec', t: '#f1d9b0', d: '#c9a36b', g: '#4fb04f' },
     art: [
       '................',
@@ -369,6 +388,256 @@ var BUILTIN_PUZZLES = [
       '.....tttttd.....',
       'gggggggggggggggg',
       'gggggggggggggggg'
+    ]
+  },
+  {
+    id: 'q-puppy',
+    name: 'Puppy',
+    theme: 'pets',
+    batch: 2,
+    legend: { b: '#d99a5b', d: '#8a5530', w: '#fff1dc', k: '#2b2118', p: '#f2788a' },
+    art: [
+      '................',
+      '...dd......dd...',
+      '..dddbbbbbbddd..',
+      '.dddbbbbbbbbddd.',
+      '.ddbbbbbbbbbbdd.',
+      '.ddbbbbbbbbbbdd.',
+      '.ddbkkbbbbkkbdd.',
+      '.ddbkwbbbbkwbdd.',
+      '.ddbbbwwwwbbbdd.',
+      '..dbbwwkkwwbbd..',
+      '..dbbwwkkwwbbd..',
+      '...bbwkwwkwbb...',
+      '....bwwppwwb....',
+      '.....bwppwb.....',
+      '......bbbb......',
+      '................'
+    ]
+  },
+  {
+    id: 'q-bunny',
+    name: 'Bunny',
+    theme: 'pets',
+    batch: 2,
+    legend: { o: '#7d7590', w: '#f6f3f0', p: '#f7a1bd', k: '#2b2118', g: '#5cc45c' },
+    art: [
+      '....oo....oo....',
+      '...owwo..owwo...',
+      '...owpo..owpo...',
+      '...owpo..owpo...',
+      '...owpo..owpo...',
+      '...owwo..owwo...',
+      '...owwooooowo...',
+      '..owwwwwwwwwwo..',
+      '.owwwwwwwwwwwwo.',
+      '.owwkwwwwwwkwwo.',
+      '.owwkwwwwwwkwwo.',
+      '.owppwwkkwwppwo.',
+      '..owwwwwwwwwwo..',
+      '...oowwwwwwoo...',
+      'g....oooooo...gg',
+      'gggggggggggggggg'
+    ]
+  },
+  {
+    id: 'q-duck',
+    name: 'Duckling',
+    theme: 'pets',
+    batch: 2,
+    legend: { y: '#ffd93d', d: '#efa21a', o: '#ff7b1f', k: '#2b2118', b: '#4fa8e8', l: '#bfe6ff' },
+    art: [
+      '................',
+      '....yyyyy.......',
+      '...yyyyyyy......',
+      '...yyykyyy......',
+      '.oooyyyyyy......',
+      '..ooyyyyyy......',
+      '....yyyyy.......',
+      '....yyyyyyyy..y.',
+      '...yyyyyyyyyyyy.',
+      '...yydddyyyyyyy.',
+      '...yyyddddyyyy..',
+      '....yyyyyyyyy...',
+      'bbbbbbbbbbbbbbbb',
+      'bllbbbbbbbbllbbb',
+      'bbbbbbllbbbbbbbb',
+      'bbbbbbbbbbbbbbbb'
+    ]
+  },
+  {
+    id: 'q-dino',
+    name: 'Little Dino',
+    theme: 'dinos',
+    batch: 2,
+    legend: { g: '#58c25a', d: '#2f8f46', l: '#c9f07a', o: '#ff9a3d', k: '#1f2a1c', w: '#ffffff' },
+    art: [
+      '................',
+      '..........dddd..',
+      '.........dggggd.',
+      '........dggkwggd',
+      '........dggkkggd',
+      '...o.o..dggggggd',
+      '..dodod.dggggdd.',
+      '..dgggdddggggd..',
+      '.dgggggggggggd..',
+      '.dgggglllgggd...',
+      'dggggllllllgd...',
+      '.dddglllllggd...',
+      '...dgggggggggd..',
+      '...dgd....dgd...',
+      '...ddd....ddd...',
+      '................'
+    ]
+  },
+  {
+    id: 'q-car',
+    name: 'Race Car',
+    theme: 'go',
+    batch: 2,
+    legend: { r: '#e5484d', d: '#a82c34', b: '#8fd8ff', k: '#262833', g: '#a9b0bd', y: '#ffd645' },
+    art: [
+      '................',
+      '................',
+      '................',
+      '.....dddddd.....',
+      '....drrrrrrd....',
+      '...drbbdbbbrd...',
+      '...drbbdbbbbrd..',
+      '.ddrrrrrrrrrrrd.',
+      'drrrrrrrrrrrrryd',
+      'drrrrrrrrrrrrrrd',
+      'drrkkkrrrrrkkkrd',
+      '.ddkgkddddkgkdd.',
+      '...kkk.....kkk..',
+      '................',
+      'kkkkkkkkkkkkkkkk',
+      'kkyykkkyykkkyykk'
+    ]
+  },
+  {
+    id: 'q-donut',
+    name: 'Donut',
+    theme: 'food',
+    batch: 2,
+    legend: { t: '#d9a061', d: '#a8673a', p: '#ff8fc0', y: '#ffd645', b: '#5ab0f0', g: '#6bd36b' },
+    art: [
+      '................',
+      '.....dddddd.....',
+      '...ddppppppdd...',
+      '..dpppyppbpppd..',
+      '.dppbppppppgppd.',
+      '.dpppppddppppyd.',
+      'dpgppdd..ddpppd.',
+      'dppppd....dppbd.',
+      'dpyppd....dpppd.',
+      'dtpppdd..ddgpptd',
+      '.dtppbppppppptd.',
+      '.dttpppyppppttd.',
+      '..dttttppttttd..',
+      '...ddttttttdd...',
+      '.....dddddd.....',
+      '................'
+    ]
+  },
+  {
+    id: 'q-pumpkin',
+    name: 'Pumpkin',
+    theme: 'outdoors',
+    batch: 2,
+    legend: { o: '#ff8a1f', d: '#d4600f', g: '#3fa34d', k: '#3b2410' },
+    art: [
+      '................',
+      '.......gg.......',
+      '.......gg.ggg...',
+      '....dddggdgg....',
+      '..ddooodddoooddd',
+      '.doooodoodoooood',
+      'doookkdoodkkoood',
+      'dookkkdoodkkkood',
+      'doooooodoooooood',
+      'dooooooooooooood',
+      'dokooooooooookod',
+      'dookkkkkkkkkkood',
+      '.dooookookkoood.',
+      '..ddoooooooodd..',
+      '....dddddddd....',
+      '................'
+    ]
+  },
+  {
+    id: 'q-snail',
+    name: 'Snail',
+    theme: 'wild',
+    batch: 2,
+    legend: { s: '#b26bd6', d: '#7a3fa3', l: '#e3b6f5', y: '#ffd977', k: '#2b2118', g: '#5cc45c' },
+    art: [
+      '................',
+      '................',
+      '.....dddd.......',
+      '...ddsssddd.....',
+      '..dssllllssd....',
+      '..dslddddlsd....',
+      '.dslds..dlsd..k.',
+      '.dsldsd.dlsd.k.k',
+      '.dslldddllsd.y.y',
+      '.dsslllllsd..yy.',
+      '..dssssssd..yyy.',
+      '.yydddddddyyyky.',
+      'yyyyyyyyyyyyyyy.',
+      '.yyyyyyyyyyyyy..',
+      'gggggggggggggggg',
+      'gggggggggggggggg'
+    ]
+  },
+  {
+    id: 'q-melon',
+    name: 'Watermelon',
+    theme: 'food',
+    batch: 2,
+    legend: { r: '#ff5a6e', k: '#2b2118', w: '#f3ffe0', g: '#4cbf4c', d: '#23853a' },
+    art: [
+      '................',
+      '................',
+      '................',
+      'drrrrrrrrrrrrrrd',
+      'dwrrrkrrrrkrrrwd',
+      'dwrrrrrrkrrrrrwd',
+      '.dwrkrrrrrrrkwd.',
+      '.dwrrrrkrrrrrwd.',
+      '..dwrrrrrrkrwd..',
+      '..dgwrrkrrrwgd..',
+      '...dgwrrrrwgd...',
+      '....dgwwwwgd....',
+      '.....ddggdd.....',
+      '.......dd.......',
+      '................',
+      '................'
+    ]
+  },
+  {
+    id: 'q-crab',
+    name: 'Crab',
+    theme: 'sea',
+    batch: 2,
+    legend: { r: '#ff6b4a', d: '#c23f2e', k: '#2b2118', s: '#f6d98c' },
+    art: [
+      '................',
+      '.dd..........dd.',
+      'drrd........drrd',
+      'drd..........drd',
+      'drrd..k..k..drrd',
+      '.ddd..d..d..ddd.',
+      '..dd..d..d..dd..',
+      '...ddddddddddd..',
+      '..drrrrrrrrrrrd.',
+      '.drrrrrrrrrrrrrd',
+      '.drrrkrrrrkrrrrd',
+      '..drrrkkkkrrrrd.',
+      '.d.ddrrrrrrrdd.d',
+      'd.d..ddddddd..d.',
+      'ssssssssssssssss',
+      'ssssssssssssssss'
     ]
   }
 ];

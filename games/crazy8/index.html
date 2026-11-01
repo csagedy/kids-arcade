@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Crazy Eights</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="../../cards/cards.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="k-shell">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid">
+      <div class="k-title" id="status">Crazy Eights</div>
+      <div class="k-stats" id="wins-chip">
+        <div class="k-stat k-stat--accent"><span class="k-stat__label">Wins</span><b class="k-stat__val" id="wins">0</b></div>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+      <button id="menu-btn" class="k-btn k-btn--icon" data-k-icon="restart" aria-label="New game"></button>
+    </div>
+  </header>
+
+  <main class="k-stage c8-stage">
+    <div class="cd-table table" id="table">
+      <div class="seats" id="seats"></div>
+
+      <div class="middle">
+        <div class="pile-col">
+          <div id="deck" class="pile" role="button" aria-label="Draw a card"></div>
+          <div class="cd-note pile-label" id="deck-label"></div>
+        </div>
+        <div class="pile-col">
+          <div id="discard" class="pile"></div>
+          <div class="suit-badge" id="suit-badge"></div>
+        </div>
+        <div class="dir" id="dir" aria-hidden="true" data-k-icon="restart"></div>
+      </div>
+
+      <div class="mine">
+        <div class="hint" id="hint"></div>
+        <div class="hand" id="hand"></div>
+        <div class="actions"><button id="pass-btn" class="k-btn k-btn--primary hidden">Keep it &amp; pass</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="setup" class="k-overlay c8-setup hidden" role="dialog" aria-modal="true">
+  <div class="k-card">
+    <div class="setup-art" aria-hidden="true"></div>
+    <h2>Crazy Eights</h2>
+    <div class="opt-label">Rules</div>
+    <div class="k-seg" id="seg-rules">
+      <button data-v="classic">Classic</button>
+      <button data-v="party">Party</button>
+    </div>
+    <div class="opt-note" id="rules-note"></div>
+    <div class="opt-label">Computer</div>
+    <div class="k-seg" id="seg-bots">
+      <button data-v="easy">🙂 Easy</button>
+      <button data-v="clever">🧠 Clever</button>
+    </div>
+    <div class="opt-label">Play with</div>
+    <div class="start-grid">
+      <button class="k-btn k-btn--good start" data-players="1"><span class="faces">🐻</span>1 friend</button>
+      <button class="k-btn k-btn--blue start" data-players="2"><span class="faces">🐻🦊</span>2 friends</button>
+      <button class="k-btn k-btn--purple start" data-players="3"><span class="faces">🐻🦊🐰</span>3 friends</button>
+      <button class="k-btn k-btn--pink start" data-players="pass"><span class="faces">🦁🐯</span>2 players, 1 iPad</button>
+    </div>
+    <div class="setup-foot">
+      <button id="help-btn" class="k-btn k-btn--ghost k-btn--sm" type="button"><span data-k-icon="help"></span>How to play</button>
+      <button id="setup-cancel" class="k-btn k-btn--sm hidden" type="button">Keep playing</button>
+    </div>
+  </div>
+</div>
+
+<script src="../../kit/kit.js"></script>
+<script src="../../cards/cards.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>
