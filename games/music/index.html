@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Music Pad</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="k-noswipe">
+
+<div class="k-shell mp" id="shell" data-mode="keys">
+  <header class="k-bar mp-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid">
+      <div class="mp-tabs" role="tablist">
+        <button class="mp-tab" data-mode="keys" role="tab" aria-label="Xylophone"></button>
+        <button class="mp-tab" data-mode="drums" role="tab" aria-label="Drums and animals"></button>
+        <button class="mp-tab" data-mode="loop" role="tab" aria-label="Loop maker"></button>
+      </div>
+    </div>
+    <div class="k-bar__end">
+      <button id="help-btn" class="k-btn k-btn--icon" data-k-icon="help" aria-label="How to play"></button>
+      <button id="mute-btn" class="k-btn k-btn--icon" aria-label="Sound"></button>
+    </div>
+  </header>
+
+  <main class="k-stage mp-stage" id="stage">
+    <div class="mp-pane" id="keys" aria-label="Xylophone"></div>
+    <div class="mp-pane" id="drums" aria-label="Drums"></div>
+    <div class="mp-pane" id="loop" aria-label="Loop maker"><div class="loop" id="grid"></div></div>
+  </main>
+
+  <footer class="mp-ctrl" id="ctrl">
+    <div class="mp-group" data-for="keys" id="voices"></div>
+    <div class="mp-group" data-for="keys">
+      <button id="scale-btn" class="k-btn k-btn--icon mp-btn" aria-label="Notes: magic five"></button>
+    </div>
+    <div class="mp-group" data-for="keys drums">
+      <button id="rec-btn" class="k-btn k-btn--icon mp-btn" aria-label="Record"></button>
+      <button id="tunes-btn" class="k-btn k-btn--icon mp-btn" aria-label="My tunes"></button>
+    </div>
+    <div class="mp-group" data-for="loop">
+      <button id="play-btn" class="k-btn k-btn--icon mp-btn k-btn--good" aria-label="Play the loop"></button>
+    </div>
+    <div class="mp-group" data-for="loop" id="tempos"></div>
+    <div class="mp-group" data-for="loop">
+      <button id="lvoice-btn" class="k-btn k-btn--icon mp-btn" aria-label="Loop instrument"></button>
+      <button id="dice-btn" class="k-btn k-btn--icon mp-btn" aria-label="Surprise me"></button>
+      <button id="clear-btn" class="k-btn k-btn--icon mp-btn" aria-label="Clear the loop"></button>
+    </div>
+  </footer>
+</div>
+
+<script src="../../kit/kit.js"></script>
+<script src="js/game.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>

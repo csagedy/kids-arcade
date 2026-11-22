@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Scene Maker</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="k-shell k-shell--side">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+      <button class="k-btn k-btn--icon wide-only help-btn" data-k-icon="help" aria-label="How to play"></button>
+      <button class="k-btn k-btn--icon wide-only mute-btn" aria-label="Sound"></button>
+    </div>
+    <div class="k-bar__mid">
+      <button id="bg-btn" class="k-btn k-btn--icon k-btn--blue" aria-label="Pick a place"><span data-ico="picture"></span></button>
+      <button id="surprise-btn" class="k-btn k-btn--icon k-btn--pink" aria-label="Surprise"><span data-ico="gift"></span></button>
+      <button id="play-btn" class="k-btn k-btn--icon k-btn--good" data-k-icon="play" aria-label="Make it come alive" aria-pressed="false"></button>
+    </div>
+    <div class="k-bar__end">
+      <button class="k-btn k-btn--icon wide-only clear-btn" aria-label="Clear the picture"><span data-ico="broom"></span></button>
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="gallery-btn" class="k-btn k-btn--icon k-btn--purple" data-k-icon="menu" aria-label="My scenes"></button>
+    </div>
+  </header>
+
+  <main class="k-stage">
+    <div id="scene" class="scene k-fit" style="--k-aspect: 1.3333">
+      <div id="bg" class="bg"></div>
+      <div id="stickers" class="stickers"></div>
+      <div id="sel" class="sel k-hidden"><button class="turn" aria-label="Turn and grow"><span data-k-icon="restart"></span></button></div>
+      <div id="tools" class="tools k-hidden" role="toolbar" aria-label="Sticker">
+        <button class="k-btn k-btn--icon" data-t="big" aria-label="Bigger"><span data-ico="bigger"></span></button>
+        <button class="k-btn k-btn--icon" data-t="small" aria-label="Smaller"><span data-ico="smaller"></span></button>
+        <button class="k-btn k-btn--icon" data-t="flip" aria-label="Flip"><span data-ico="flip"></span></button>
+        <button class="k-btn k-btn--icon" data-t="front" aria-label="Bring to front"><span data-ico="front"></span></button>
+        <button class="k-btn k-btn--icon" data-t="copy" aria-label="Copy"><span data-ico="copy"></span></button>
+        <button class="k-btn k-btn--icon k-btn--bad" data-t="bin" aria-label="Throw away"><span data-ico="bin"></span></button>
+      </div>
+    </div>
+  </main>
+
+  <aside id="tray" class="k-side tray">
+    <div class="tray-in">
+      <nav id="tabs" class="tabs" aria-label="Sticker groups"></nav>
+      <div id="grid-wrap" class="grid-wrap"><div id="grid" class="grid"></div></div>
+      <div class="bin" aria-hidden="true"><span data-ico="bin"></span></div>
+    </div>
+    <div class="tray-tools">
+      <button class="k-btn k-btn--icon clear-btn" aria-label="Clear the picture"><span data-ico="broom"></span></button>
+      <button class="k-btn k-btn--icon help-btn" data-k-icon="help" aria-label="How to play"></button>
+      <button class="k-btn k-btn--icon mute-btn" aria-label="Sound"></button>
+    </div>
+  </aside>
+</div>
+<div id="float" class="float"></div>
+
+<script src="../../kit/kit.js"></script>
+<script src="js/game.js"></script>
+<script src="js/art.js"></script>
+<script src="js/art-build.js"></script>
+<script src="js/art-sea.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>

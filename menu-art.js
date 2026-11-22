@@ -353,5 +353,73 @@ var MENU_ART = (function () {
       '<text x="30" y="68" font-size="22" text-anchor="middle" fill="#e0303f">♦</text>' +
       '<path d="M48 4l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="#ffd23f" stroke="#d69a00" stroke-width="1"/>');
   };
+  /* Music Pad: a rainbow xylophone on its two rails, a mallet mid-tap and
+     a note floating up. */
+  A.music = function () {
+    var cols = ['#ff5d73', '#ff9f43', '#ffd23f', '#2ee6c9', '#4cc2ff', '#a77bff'], bars = '';
+    cols.forEach(function (c, i) {
+      var h = 58 - i * 6, x = 20 + i * 13, y = 48 - h / 2;
+      bars += '<rect x="' + x + '" y="' + (y + 2.5) + '" width="10" height="' + h + '" rx="3.5" fill="#1b1d4a" opacity="0.25"/>' +
+        '<rect x="' + x + '" y="' + y + '" width="10" height="' + h + '" rx="3.5" fill="' + c + '"/>' +
+        '<rect x="' + (x + 2) + '" y="' + (y + 3) + '" width="2.4" height="' + (h - 8) + '" rx="1.2" fill="#fff" opacity="0.4"/>' +
+        '<circle cx="' + (x + 5) + '" cy="' + (48 - h * 0.3) + '" r="1.6" fill="#fff8e8"/>' +
+        '<circle cx="' + (x + 5) + '" cy="' + (48 + h * 0.3) + '" r="1.6" fill="#fff8e8"/>';
+    });
+    return svg('0 0 120 90', SH +
+      '<path d="M16 29.4 100 41M16 66.6 100 55" stroke="#8b5a2b" stroke-width="4" stroke-linecap="round"/>' + bars +
+      '<path d="M86 80 101 56" stroke="#e8b36a" stroke-width="3.5" stroke-linecap="round"/>' +
+      '<circle cx="103" cy="52" r="6" fill="#ff5d73"/><circle cx="101" cy="50" r="1.8" fill="#fff" opacity="0.7"/>' +
+      '<path d="M98 7v15M98 7l8 2.6v5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<ellipse cx="95" cy="22.5" rx="4" ry="3" fill="#fff"/>');
+  };
+  /* Doodle Pad: a sheet of paper with a mirrored rainbow doodle, two
+     sparkles and a crayon resting on the corner. */
+  A.draw = function () {
+    var rb = ['#ff5d73', '#ff9f43', '#ffd23f', '#3ddc84', '#4cc2ff', '#a77bff'], arcs = '';
+    rb.forEach(function (c, i) {
+      var r = 26 - i * 3.2;
+      arcs += '<path d="M' + (59 - r) + ' 56a' + r + ' ' + r + ' 0 0 1 ' + (2 * r) + ' 0" fill="none" stroke="' + c + '" stroke-width="3.4" stroke-linecap="round"/>';
+    });
+    return svg('0 0 120 90', SH +
+      '<rect x="21" y="9" width="78" height="70" rx="8" fill="#000" opacity="0.12" transform="rotate(-4 60 44)"/>' +
+      '<rect x="20" y="6" width="78" height="70" rx="8" fill="#fff" transform="rotate(-4 60 41)"/>' +
+      '<path d="M59 12v60" stroke="#c3c7ec" stroke-width="1.4" stroke-dasharray="3 3" transform="rotate(-4 60 41)"/>' +
+      '<g transform="rotate(-4 60 41)">' + arcs +
+        '<path d="M33 66q6-7 12 0t12 0M61 66q6-7 12 0t12 0" fill="none" stroke="#3ddc84" stroke-width="3.2" stroke-linecap="round"/>' +
+        '<path d="M44 16q1.2 7 7 8q-5.8 1-7 8q-1.2-7-7-8q5.8-1 7-8z" fill="#ffd23f"/>' +
+        '<path d="M74 16q1.2 7 7 8q-5.8 1-7 8q-1.2-7-7-8q5.8-1 7-8z" fill="#ffd23f"/>' +
+        '<circle cx="35" cy="14" r="1.6" fill="#ff7ac6"/><circle cx="83" cy="14" r="1.6" fill="#ff7ac6"/>' +
+      '</g>' +
+      '<g transform="translate(96 54) rotate(38)">' +
+        '<rect x="-5" y="-4" width="10" height="30" rx="2" fill="#ff5d73"/>' +
+        '<rect x="-5" y="2" width="10" height="17" fill="#000" opacity="0.22"/>' +
+        '<path d="M-5 6h10M-5 15h10" stroke="#fff" stroke-width="1.4" opacity="0.6"/>' +
+        '<path d="M-5-4L0-14L5-4z" fill="#ff5d73"/><path d="M-1.6-10.8L0-14L1.6-10.8z" fill="#000" opacity="0.3"/>' +
+      '</g>');
+  };
+  /* Scene Maker: a little sticker board (sky, hills, a red barn, a sun and
+     a cow) with a sea-turtle sticker being lifted on at the corner. */
+  A.scene = function () {
+    var ink = 'stroke="#2b2347" stroke-width="1.6" stroke-linejoin="round"';
+    return svg('0 0 120 90', SH +
+      '<rect x="12" y="12" width="84" height="66" rx="8" fill="#1b1d4a" opacity="0.35"/>' +
+      '<rect x="10" y="8" width="84" height="66" rx="8" fill="#8fd8ff"/>' +
+      '<path d="M10 50Q34 38 58 46Q78 40 94 44V66a8 8 0 0 1-8 8H18a8 8 0 0 1-8-8z" fill="#74cf5f"/>' +
+      '<circle cx="24" cy="20" r="6.5" fill="#ffd23f"/>' +
+      '<rect x="40" y="34" width="20" height="16" fill="#d8453b"/><path d="M37 35L50 25L63 35z" fill="#9e2f2f"/>' +
+      '<rect x="46" y="40" width="8" height="10" fill="#c23b33" stroke="#fff" stroke-width="1.4"/><path d="M46 40l8 10M54 40l-8 10" stroke="#fff" stroke-width="1.2"/>' +
+      '<g ' + ink + '><rect x="18" y="58" width="3" height="8" fill="#fff"/><rect x="31" y="58" width="3" height="8" fill="#fff"/>' +
+      '<rect x="15" y="50" width="22" height="11" rx="5.5" fill="#fff"/><circle cx="38" cy="51" r="5" fill="#fff"/>' +
+      '<ellipse cx="38.5" cy="54.5" rx="4" ry="2.6" fill="#ffb3c1"/></g>' +
+      '<path d="M21 52q4-1 4 3q-1 3-4 2zM28 56q3-2 4 1q0 2-3 2z" fill="#2b2347"/><circle cx="37" cy="50" r="0.9" fill="#2b2347"/>' +
+      '<ellipse cx="86" cy="62" rx="16" ry="5" fill="#000" opacity="0.18"/>' +
+      '<g transform="translate(86 42) rotate(-18)" ' + ink + '>' +
+        '<path d="M5-6Q12-18 22-17Q17-10 10-3zM5 6Q12 18 22 17Q17 10 10 3zM-9-5Q-16-11-20-9Q-17-4-10-1zM-9 5Q-16 11-20 9Q-17 4-10 1z" fill="#7fcf9a"/>' +
+        '<ellipse cx="15" cy="0" rx="6" ry="5" fill="#7fcf9a"/>' +
+        '<ellipse cx="0" cy="0" rx="14" ry="11" fill="#e9b062"/><ellipse cx="0" cy="0" rx="10.5" ry="8" fill="#b8792f"/>' +
+        '<path d="M-7 0l2-3.5h4l2 3.5l-2 3.5h-4zM1 0l2-3.5h4l2 3.5l-2 3.5h-4z" fill="#e9b062" stroke-width="1"/>' +
+        '<circle cx="17" cy="-2.6" r="1" fill="#2b2347" stroke="none"/><circle cx="17" cy="2.6" r="1" fill="#2b2347" stroke="none"/>' +
+      '</g>');
+  };
   return A;
 })();

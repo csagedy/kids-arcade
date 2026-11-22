@@ -241,6 +241,11 @@
     <div class="grid" id="games"></div>
   </section>
 
+  <section class="sec" id="make">
+    <div class="sec-head"><h2 class="sec-title">Make</h2><span class="sec-sub">draw, build and play music</span></div>
+    <div class="grid" id="make-games"></div>
+  </section>
+
   <section class="sec" id="action">
     <div class="sec-head"><h2 class="marquee">ACTION</h2><span class="sec-sub">timers, lives, high scores</span></div>
     <div class="arcade-floor"><div class="cab-row" id="cabinet"></div></div>
@@ -300,6 +305,13 @@
     { id: 'minigolf',   name: 'Mini Golf',       emoji: '⛳', c1: '#4cc2ff', c2: '#3ddc84', href: 'games/minigolf/index.html', isNew: true }
   ];
 
+  /* Make: open-ended toys with no goal or score (same candy tiles). */
+  var MAKE = [
+    { id: 'scene',      name: 'Scene Maker',     emoji: '🚜', c1: '#3ddc84', c2: '#4cc2ff', href: 'games/scene/index.html', isNew: true },
+    { id: 'draw',       name: 'Doodle Pad',      emoji: '🖍️', c1: '#ff7ac6', c2: '#ffd23f', href: 'games/draw/index.html', isNew: true },
+    { id: 'music',      name: 'Music Pad',       emoji: '🎹', c1: '#7f5cff', c2: '#ff6fb5', href: 'games/music/index.html', isNew: true }
+  ];
+
   /* Action games live in their own "cabinet" section: timers, lives, high
      scores. Kept apart so the puzzle games above stay calm. */
   var ACTION = [
@@ -355,7 +367,7 @@
     var slot = document.getElementById('resume-slot');
     slot.innerHTML = '';
     var last = get('arcade.last'), g = null;
-    GAMES.concat(ACTION, CARDS).forEach(function (x) { if (x.id === last) g = x; });
+    GAMES.concat(MAKE, ACTION, CARDS).forEach(function (x) { if (x.id === last) g = x; });
     if (!g) return;
     var kind = kindOf(g.id);
     var a = document.createElement('a');
@@ -370,12 +382,10 @@
     slot.appendChild(a);
   }
 
-  function renderTiles() {
-    renderResume();
-
-    var root = document.getElementById('games');
+  function renderGrid(list, rootId) {
+    var root = document.getElementById(rootId);
     root.innerHTML = '';
-    GAMES.forEach(function (g, i) {
+    list.forEach(function (g, i) {
       var a = document.createElement('a');
       a.className = 'tile'; a.href = g.href;
       a.style.setProperty('--i', i);
@@ -392,6 +402,13 @@
       bindOpen(a, g.id);
       root.appendChild(a);
     });
+  }
+
+  function renderTiles() {
+    renderResume();
+
+    renderGrid(GAMES, 'games');
+    renderGrid(MAKE, 'make-games');
 
     var cab = document.getElementById('cabinet');
     cab.innerHTML = '';
@@ -608,7 +625,7 @@
     renderTiles();
   }
 
-  window.__arcade = { GAMES: GAMES, ACTION: ACTION, CARDS: CARDS, encode: encode, decode: decode };
+  window.__arcade = { GAMES: GAMES, MAKE: MAKE, ACTION: ACTION, CARDS: CARDS, encode: encode, decode: decode };
 })();
 </script>
 </body>

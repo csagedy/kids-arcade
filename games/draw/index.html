@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="k-app">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#161843">
+<title>Doodle Pad</title>
+<link rel="stylesheet" href="../../kit/kit.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="k-shell k-shell--side dp-shell">
+  <header class="k-bar">
+    <div class="k-bar__start">
+      <a class="k-btn k-btn--icon" href="../../index.html" data-k-icon="back" aria-label="Back to the arcade"></a>
+    </div>
+    <div class="k-bar__mid" id="bar-mid">
+      <div class="k-title dp-title">Doodle Pad</div>
+    </div>
+    <div class="k-bar__end">
+      <button id="undo-btn" class="k-btn k-btn--icon" data-k-icon="undo" aria-label="Undo" disabled></button>
+      <button id="gallery-btn" class="k-btn k-btn--icon dp-gallery-btn" aria-label="My pictures"></button>
+    </div>
+  </header>
+
+  <main class="k-stage dp-stage" id="stage">
+    <div class="dp-page" id="page">
+      <canvas id="paper" aria-hidden="true"></canvas>
+      <canvas id="ink" aria-label="Drawing paper"></canvas>
+      <canvas id="guides" class="dp-guides" aria-hidden="true"></canvas>
+    </div>
+  </main>
+
+  <aside class="k-side dp-side">
+    <div class="dp-panel" id="panel">
+      <div class="dp-group dp-tools" id="tools" role="group" aria-label="Brushes"></div>
+      <div class="dp-group dp-sizes" id="sizes" role="group" aria-label="Sizes"></div>
+      <div class="dp-group dp-colors" id="colors" role="group" aria-label="Colours"></div>
+      <div class="dp-group dp-acts" id="acts">
+        <button id="mirror-btn" type="button" class="k-btn dp-btn dp-act dp-act--a" aria-label="Magic mirror"></button>
+        <button id="paper-btn" type="button" class="k-btn dp-btn dp-act dp-act--a" aria-label="Paper"></button>
+        <button id="new-btn" type="button" class="k-btn dp-btn dp-act dp-act--a" aria-label="New page"></button>
+        <button id="clear-btn" type="button" class="k-btn dp-btn dp-act dp-act--b" aria-label="Wipe the page"></button>
+        <button id="help-btn" type="button" class="k-btn dp-btn dp-act dp-act--b" data-k-icon="help" aria-label="How to play"></button>
+        <button id="mute-btn" type="button" class="k-btn dp-btn dp-act dp-act--b" aria-label="Sound"></button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="../../kit/kit.js"></script>
+<script src="js/game.js"></script>
+<script src="js/art.js"></script>
+<script src="js/brushes.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script>Kit.registerSW('../../sw.js');</script>
+</body>
+</html>

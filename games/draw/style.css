@@ -1,0 +1,210 @@
+/* Doodle Pad on the arcade kit. The kit gives the shell, bar, buttons and
+   overlays; this file draws the page and the tool panel.
+
+   The panel is one grid. Its groups (tools, sizes, colours, actions) are
+   sub-grids on iPads and melt into the parent grid (display: contents) on
+   phones, where everything is laid out as one block of finger-sized cells:
+     phone portrait   7 columns x 5 rows, under the page
+     phone landscape  6 columns x 5 rows beside the page; the action
+                      buttons move up into the bar (ui.js placeActs)
+     iPad portrait    tools + sizes on one row, colours + actions below
+     iPad landscape   a column: tools, sizes, colours, actions */
+
+.dp-stage { touch-action: none; }
+
+/* ---------- the page ---------- */
+.dp-page {
+  position: relative; flex: none;
+  width: 300px; height: 300px;           /* ui.js sizes it */
+  border-radius: var(--k-r-lg);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1), 0 7px 0 var(--k-edge), var(--k-shadow-2);
+  touch-action: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  /* own layer: the drawing repaints, the rest of the screen doesn't */
+  transform: translateZ(0);
+}
+.dp-page canvas {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block;
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.dp-guides { pointer-events: none; }
+.dp-page.dp-out { animation: dp-out 230ms ease-in both; }
+.dp-page.dp-in { animation: dp-in 420ms var(--k-ease-pop) both; }
+@keyframes dp-out { to { transform: translate(-26%, 6%) rotate(-9deg) scale(0.72); opacity: 0; } }
+@keyframes dp-in { from { transform: translateY(14%) scale(0.86); opacity: 0; } }
+
+/* ---------- bar ---------- */
+.dp-gallery-btn { --k-btn-bg: var(--k-purple); --k-btn-edge: var(--k-purple-edge); }
+.dp-gallery-btn .dp-art--bar { font-size: calc(var(--k-icon) * 1.35); }
+.dp-title { color: var(--k-text); }
+.k-bar__mid .dp-acts { display: flex; gap: var(--k-s2); }
+
+/* ---------- panel ---------- */
+.dp-side { padding: 0 12px 10px; }
+.dp-shell { --dp-ink: #4cc2ff; --dp-paper: #fff; }
+.dp-panel {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px 3px;
+  width: 100%; max-width: 440px; margin: 0 auto;
+}
+.dp-group { display: contents; }
+.dp-tool { order: 1; } .dp-size { order: 2; } .dp-act--a { order: 3; } .dp-sw { order: 4; } .dp-act--b { order: 5; }
+
+/* tool, size and action buttons: kit candy buttons that fill their cell */
+.dp-btn {
+  min-width: 0; width: 100%; height: var(--k-tap); padding: 0;
+  border-radius: calc(var(--k-tap) * 0.3);
+}
+.dp-btn .dp-art { width: 82%; height: 82%; display: block; overflow: visible; }
+.dp-btn .k-icon { font-size: var(--k-icon); }
+.dp-art .ink { fill: var(--dp-ink); }
+.dp-art .paper { fill: var(--dp-paper); }
+.dp-btn.k-on {
+  --k-btn-bg: #4a52b8;
+  --k-btn-edge: var(--k-accent-edge);
+  box-shadow: 0 var(--k-depth) 0 var(--k-btn-edge), 0 0 0 3px var(--k-accent), 0 calc(var(--k-depth) + 6px) 14px rgba(255, 210, 63, 0.25),
+              inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+.dp-btn.k-on:active { box-shadow: 0 0 0 3px var(--k-accent); }
+.dp-tool.k-on .dp-art, .dp-tool.k-on .dp-stampface { animation: dp-hop 380ms var(--k-ease-pop); }
+@keyframes dp-hop { 40% { transform: translateY(-12%) rotate(-6deg) scale(1.08); } }
+.dp-stampface { font-size: calc(var(--k-tap) * 0.56); line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+
+.dp-size b {
+  display: block; border-radius: 50%; background: var(--dp-ink);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75), 0 2px 0 2px rgba(0, 0, 0, 0.25);
+}
+.dp-size[data-size="0"] b { width: calc(var(--k-tap) * 0.16); height: calc(var(--k-tap) * 0.16); }
+.dp-size[data-size="1"] b { width: calc(var(--k-tap) * 0.32); height: calc(var(--k-tap) * 0.32); }
+.dp-size[data-size="2"] b { width: calc(var(--k-tap) * 0.54); height: calc(var(--k-tap) * 0.54); }
+.dp-dim { opacity: 0.45; }
+
+/* colour swatches: round candy blobs */
+.dp-sw {
+  position: relative; min-width: 0; height: var(--k-tap); padding: 0; border: none; background: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.dp-sw i {
+  /* exactly square: WebKit draws spread shadows on a slightly oval circle as a rectangle */
+  display: block; flex: none; width: calc(var(--k-tap) * 0.84); height: calc(var(--k-tap) * 0.84);
+  border-radius: 50%; background: var(--c);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.22), inset 0 3px 0 rgba(255, 255, 255, 0.35),
+              0 0 0 2px rgba(255, 255, 255, 0.16), 0 3px 0 rgba(5, 6, 30, 0.45);
+  transition: transform var(--k-fast) var(--k-ease-pop);
+}
+.dp-sw:active i { transform: scale(0.9); }
+.dp-sw.k-on i {
+  transform: scale(1.1);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.22), inset 0 3px 0 rgba(255, 255, 255, 0.35),
+              0 0 0 3px var(--k-bg), 0 0 0 6px #fff, 0 4px 10px 6px rgba(5, 6, 30, 0.35);
+}
+.dp-sw.dp-soft i { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.22), 0 0 0 3px var(--k-bg), 0 0 0 5px rgba(255, 255, 255, 0.45); transform: none; }
+.dp-sw.dp-boing i { animation: dp-boing 360ms var(--k-ease-pop); }
+@keyframes dp-boing { 0% { transform: scale(0.8); } 55% { transform: scale(1.22); } 100% { transform: scale(1.1); } }
+
+/* ---------- phones on their side: 6 columns beside the page ---------- */
+@media (orientation: landscape) and (min-width: 640px) and (max-height: 599px),
+       (orientation: landscape) and (min-width: 640px) and (max-width: 699px) {
+  .dp-shell.k-shell--side { grid-template-columns: minmax(0, 1fr) auto; }
+  .dp-shell > .k-stage { padding-bottom: calc(var(--k-s2) + var(--k-depth)); padding-top: var(--k-s1); }
+  .dp-shell > .dp-side { padding: 0 var(--k-gutter) 6px 2px; justify-content: center; }
+  .dp-panel { grid-template-columns: repeat(6, var(--k-tap)); gap: 0 4px; width: auto; }
+  .dp-btn { margin-bottom: 4px; --k-depth: 4px; }
+  .dp-title { display: none; }
+  .dp-shell .k-bar { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .dp-shell .k-bar__mid { justify-content: center; }
+  .dp-shell .k-bar__mid .dp-btn { width: var(--k-tap); margin-bottom: var(--k-depth); --k-depth: 5px; }
+  #mirror-btn { order: 3; }
+}
+
+/* ---------- iPad portrait: two rows of groups under the page ---------- */
+@media (min-width: 700px) and (min-height: 600px) and (orientation: portrait) {
+  .dp-side { padding: 0 var(--k-gutter) var(--k-s4); }
+  .dp-panel {
+    width: auto; max-width: none;
+    grid-template-columns: auto auto; grid-template-areas: "tools sizes" "colors acts";
+    gap: 10px 14px; justify-content: center;
+  }
+  .dp-group { display: grid; gap: 6px; align-content: start; }
+  .dp-tools { grid-area: tools; grid-template-columns: repeat(8, var(--k-tap)); }
+  .dp-sizes { grid-area: sizes; grid-template-columns: repeat(3, var(--k-tap)); }
+  .dp-colors { grid-area: colors; grid-template-columns: repeat(9, var(--k-tap)); gap: 4px 6px; }
+  .dp-acts { grid-area: acts; grid-template-columns: repeat(3, var(--k-tap)); column-gap: 6px; row-gap: 0; }
+}
+
+/* ---------- iPad landscape: a column beside the page ---------- */
+@media (min-width: 700px) and (min-height: 600px) and (orientation: landscape) {
+  .dp-shell.k-shell--side { grid-template-columns: minmax(0, 1fr) 400px; }
+  .dp-shell > .dp-side { justify-content: center; }
+  .dp-panel { grid-template-columns: minmax(0, 1fr); gap: var(--k-s4); max-width: none; }
+  .dp-group { display: grid; gap: 6px; }
+  .dp-tools { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 8px; }
+  .dp-tools .dp-btn { height: calc(var(--k-tap) + 8px); }
+  .dp-sizes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .dp-colors { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px 2px; }
+  .dp-acts { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+}
+
+/* ---------- sheets: stamps, paper, gallery ---------- */
+.dp-sheet { max-width: 640px; }
+.dp-stamps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: var(--k-s3); }
+.dp-stamp {
+  aspect-ratio: 1; min-height: var(--k-tap); border: none; border-radius: var(--k-r); cursor: pointer;
+  background: rgba(10, 11, 40, 0.35); font-size: calc(var(--k-tap) * 0.72); line-height: 1; padding: 0;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  box-shadow: 0 4px 0 rgba(5, 6, 30, 0.45);
+}
+.dp-stamp:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(5, 6, 30, 0.45); }
+.dp-stamp.k-on { background: #4a52b8; box-shadow: 0 0 0 3px var(--k-accent), 0 4px 0 var(--k-accent-edge); }
+
+.dp-papers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: var(--k-s3); }
+.dp-paper {
+  aspect-ratio: 3 / 4; min-height: var(--k-tap); border: none; border-radius: var(--k-r); cursor: pointer; padding: 0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25), 0 5px 0 rgba(5, 6, 30, 0.5);
+  position: relative; overflow: hidden;
+}
+.dp-paper--stars::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 22% 24%, #fff 0 1.6px, transparent 2.4px),
+    radial-gradient(circle at 70% 18%, #fff 0 1.2px, transparent 2px),
+    radial-gradient(circle at 48% 46%, #fff 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 80% 64%, #fff 0 1.2px, transparent 2px),
+    radial-gradient(circle at 26% 78%, #fff 0 1.4px, transparent 2.2px);
+  opacity: 0.85;
+}
+.dp-paper.k-on { box-shadow: 0 0 0 3px var(--k-bg), 0 0 0 6px var(--k-accent), 0 5px 0 6px rgba(5, 6, 30, 0.4); }
+
+.dp-gal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: var(--k-s3); text-align: left; }
+.dp-gal__new, .dp-gal__pic {
+  display: block; width: 100%; aspect-ratio: 1; border: none; padding: 0; cursor: pointer;
+  border-radius: var(--k-r); overflow: hidden; background: rgba(10, 11, 40, 0.35);
+  box-shadow: 0 5px 0 rgba(5, 6, 30, 0.5);
+}
+.dp-gal__new { display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.18), 0 5px 0 rgba(5, 6, 30, 0.5); }
+.dp-gal__new .dp-art { width: 58%; height: 58%; }
+.dp-gal__new:active, .dp-gal__pic:active { transform: translateY(3px); }
+.dp-gal__pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.dp-gal__item { position: relative; }
+.dp-gal__item.dp-cur .dp-gal__pic { box-shadow: 0 0 0 3px var(--k-bg), 0 0 0 6px var(--k-accent), 0 5px 0 6px rgba(5, 6, 30, 0.4); }
+.dp-gal__del { position: absolute; right: -6px; top: -6px; --k-depth: 4px; }
+.dp-gal__note { grid-column: 1 / -1; margin: 0; color: var(--k-muted); font-size: var(--k-fs-sm); text-align: center; }
+.dp-confirm-pic { display: block; width: 60%; max-width: 220px; margin: 4px auto 0; border-radius: var(--k-r); box-shadow: 0 5px 0 rgba(5, 6, 30, 0.5); }
+
+@media (max-width: 430px) {
+  .dp-gal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dp-papers { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .dp-stamps { gap: 6px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .dp-gal { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dp-papers { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .dp-stamps { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .dp-stamp { font-size: 30px; }
+  .dp-confirm-pic { width: auto; max-height: 110px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dp-page.dp-out, .dp-page.dp-in, .dp-tool.k-on .dp-art, .dp-tool.k-on .dp-stampface, .dp-sw.dp-boing i { animation: none; }
+}

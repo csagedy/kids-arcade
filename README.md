@@ -69,6 +69,42 @@ Puzzles (no timers, no lives; everything saves as you go):
   hole. No failing: water just puts the ball back, and after 8 shots it hops
   in. One player, or two passing the iPad. Saves after every putt.
 
+Make (open-ended toys: no goal, no score):
+
+- **Scene Maker** — an open-ended sticker board: no rules, no score. Pick a
+  place (farm, building site, under the sea, ocean and island, inside the
+  barn, pond, road trip, space, plain sky) and tap or pull stickers out of the
+  tray: 132 hand-drawn stickers in ten picture tabs, including 23 building-site
+  machines and bits and 31 sea creatures and reef things. Drag to move; pinch
+  to size and turn, or use the big buttons (bigger, smaller, flip, to the
+  front, copy, bin) and the yellow turn handle. Drag a sticker back to the tray
+  to throw it away. Tap a sticker and it hops, digs or swims with its own
+  sound; Play makes the whole scene come alive; Surprise drops in a few
+  stickers that suit the place. Undo, clear, and every scene saves as it
+  changes. New scene keeps the old one in My scenes (up to 24, 80 stickers
+  each) to reopen or throw away. Several kids can drag at once.
+- **Doodle Pad** — an open drawing pad with no rules and no score. Marker,
+  waxy crayon, fat paint brush, rainbow, glitter and eraser, each in three
+  sizes, with 18 colours including skin tones. 24 farm and garden stamps (tap
+  to stamp, slide for a trail) and a paint bucket that tucks its colour under
+  the lines. The magic mirror copies every line left/right, and a second tap
+  turns it into an 8-way kaleidoscope. Several fingers can draw at once. Undo
+  goes back many steps, and wiping the page asks first. Seven papers,
+  including a starry night sky. Pictures save themselves as you draw and
+  survive iOS closing the tab; New page keeps the old one in a gallery of
+  thumbnails to reopen or throw away.
+- **Music Pad** — a music toy with no score and no end, in three picture
+  tabs. Xylophone: two rainbow octaves locked to a five-note scale so any
+  mash sounds nice (a dots button switches to all seven notes); every finger
+  plays, sliding glisses, and four instruments are picked by picture. Drums:
+  twelve pads (big drum, snare, cymbal, tom, clap, cowbell, egg shaker, plus
+  a cow, chicken, duck, sheep and frog). Loop maker: 8 steps by 7 rows (five
+  tune notes and two drum rows whose sound can be changed); tap or drag
+  across squares, snail / turtle / rabbit sets the speed, the dice makes a
+  surprise loop and the broom clears it. The red dot records what you play
+  and the last four tunes are kept. Every sound is synthesised; there are no
+  audio files.
+
 ### Action games (the cabinet)
 
 A separate section on the menu, styled as little arcade cabinets, for the
@@ -273,6 +309,22 @@ games/minigolf/                Mini Golf
   js/draw.js                   fit/turn the hole to the screen, static layer + per-frame layer
   js/ui.js                     pull-back putting, turns, banners, scorecard, saves
   tools/check.js               solver + fuzz: every hole can be finished, no ball escapes or sticks
+games/scene/                   Scene Maker
+  js/game.js                   scene model (relative x/y, size, turn, flip, order), undo, gallery storage
+  js/art.js                    drawing helpers, sticker registry, backdrops, general stickers (SceneArt)
+  js/art-build.js              building site backdrop and construction stickers
+  js/art-sea.js                sea backdrops and marine stickers
+  js/ui.js                     tray, multi-touch drag / pinch / turn handle, tool bar, sounds, play mode, sheets
+games/draw/                    Doodle Pad
+  js/game.js                   tools, colours, papers, stamps, mirror transforms, flood fill, undo budget, prefs (no DOM)
+  js/art.js                    SVG pictures for the tool buttons
+  js/brushes.js                incremental brushes, crayon grain, glitter, stamps, paint bucket
+  js/store.js                  pictures in IndexedDB
+  js/ui.js                     page fitting, multi-touch strokes, tile undo, autosave, panel, gallery / paper / stamp sheets
+games/music/                   Music Pad
+  js/game.js                   scales, instruments, drums, loop pattern + surprise generator, tune encoding, saves (no DOM)
+  js/synth.js                  WebAudio voices and drums, master compressor + limiter, reverb, mute / hidden handling
+  js/ui.js                     tabs, multi-touch xylophone, drum pads, loop grid + look-ahead sequencer, record / playback
 games/breakout/ games/snake/ games/missile/
 games/frogger/ games/invaders/ games/pong/ games/asteroids/ games/bee/
                                action games: js/game.js rules, js/ui.js drawing + input
@@ -306,7 +358,7 @@ and (except the cabinet games, which style through `cabinet.css`) a
 Each game lives in its own folder with its own rules and drawing; the look,
 overlays, sounds and storage come from `kit/` (puzzles, cards) or `cabinet/`
 (action games). There is no build step. Adding a game means dropping in a
-folder, adding an entry to `GAMES` / `ACTION` / `CARDS` in the root
+folder, adding an entry to `GAMES` / `MAKE` / `ACTION` / `CARDS` in the root
 `index.html` (plus a picture in `menu-art.js`), and running
 `python3 tools/update-sw.py`.
 
@@ -442,6 +494,9 @@ Never rename a key kids already have scores in. Per game:
 | Four in a Row | `connect4.game`, `connect4.wins`, `connect4.tally` |
 | Mini Golf | `golf.game` (round in progress), `golf.best` (best strokes per hole), `golf.players` |
 | Jigsaw | `jig.p.<picture id>` (puzzle in progress), `jig.done` (picture id -> bit mask of sizes finished, bit k for k×k), `jig.level` (last size); photos live in IndexedDB `jigsaw`/`photos`, so Backup & restore does not carry them |
+| Scene Maker | `scene.cur` (scene on screen), `scene.gallery` (saved scenes, newest first, at most 24), `scene.tab` (last sticker tab) |
+| Doodle Pad | `draw.prefs` (tool, colour, size, stamp, mirror, paper), `draw.current` (id of the open picture); pictures live in IndexedDB `draw` (`pics`, `ink`), so Backup & restore does not carry them |
+| Music Pad | `music.prefs`, `music.loop` (the loop grid and the two drum-row sounds), `music.tunes` (up to 4 recordings), `music.n` (picks the next tune's animal) |
 | Snake / Pong | `snake.wrap`; `pong.diff`, `pong.wins` (high scores in `cab.hi.*`) |
 | Crazy Eights | `crazy8.game`, `crazy8.opts`, `crazy8.wins` |
 | Go Fish | `gofish.game`, `gofish.wins` |
@@ -476,8 +531,8 @@ Never rename a key kids already have scores in. Per game:
 
 ### The menu
 
-`index.html` uses the kit too. Puzzle tiles are drawn from `GAMES` (`c1`/`c2`
-are the tile gradient), cabinets from `ACTION`, card tiles from `CARDS`
+`index.html` uses the kit too. Puzzle tiles are drawn from `GAMES` and the Make section's from `MAKE`
+(`c1`/`c2` are the tile gradient), cabinets from `ACTION`, card tiles from `CARDS`
 (a marked slot for new card games; `corner` / `cornerColor` set the rank in
 the card's corner). Each tile's picture is `MENU_ART[id]()` in
 `menu-art.js` (puzzles 120 x 90 on the gradient, cabinets 100 x 75 on a black

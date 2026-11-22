@@ -1,0 +1,248 @@
+/* Scene Maker on the arcade kit. The kit gives the shell, buttons and
+   overlays; this file draws the scene (a 4:3 .k-fit box), the stickers,
+   the selection handles and the sticker tray.
+
+   Stickers move with transform only. Each sticker is .st (position,
+   rotation; width = its size in px) > .st-in (tap and play animations) >
+   svg (mirroring), so the three never fight over one transform. */
+
+/* ---------- the scene ---------- */
+.scene {
+  border-radius: 20px;
+  background: #8fd8ff;
+  box-shadow: 0 7px 0 var(--k-edge), var(--k-shadow-2);
+  touch-action: none;
+}
+.scene .bg, .scene .stickers {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+}
+.scene .stickers { transform: translateZ(0); }     /* makes Safari clip the moving children to the rounded corners */
+.bg svg { display: block; width: 100%; height: 100%; }
+@media (max-width: 699px), (max-height: 599px) { .scene { border-radius: 14px; } }
+
+.st { position: absolute; left: 0; top: 0; width: 100px; height: 100px; pointer-events: none; }
+.st-in { width: 100%; height: 100%; transform-origin: 50% 60%; }
+.st svg { display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; transition: transform 0.25s var(--k-ease); }
+.st svg * { pointer-events: visiblePainted; }
+.st.flip svg { transform: scaleX(-1); }
+.st.ease { transition: transform 0.2s var(--k-ease), width 0.2s var(--k-ease), height 0.2s var(--k-ease); }
+.eye { transform-box: fill-box; transform-origin: center; }
+
+/* a sticker in the air (from the tray, or being dragged) */
+.float { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.float * { pointer-events: none !important; }
+.st.lift .st-in { filter: drop-shadow(0 10px 8px rgba(5, 6, 30, 0.38)); }
+
+/* ---------- selection: frame, turn handle, tool bar ---------- */
+.sel {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+  border: 3px dashed rgba(255, 255, 255, 0.95); border-radius: 18%;
+  box-shadow: 0 0 0 2px rgba(27, 29, 74, 0.45), inset 0 0 0 2px rgba(27, 29, 74, 0.3);
+}
+.sel.ease { transition: transform 0.2s var(--k-ease), width 0.2s var(--k-ease), height 0.2s var(--k-ease); }
+.turn {
+  position: absolute; right: calc(var(--k-tap) * -0.55); bottom: calc(var(--k-tap) * -0.55);
+  width: var(--k-tap); height: var(--k-tap); padding: 0; border: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: grab;
+  background: var(--k-accent); color: var(--k-accent-ink); font-size: calc(var(--k-icon) * 0.9);
+  box-shadow: 0 4px 0 var(--k-accent-edge), 0 6px 12px rgba(5, 6, 30, 0.4);
+  touch-action: none;
+}
+.tools {
+  position: absolute; left: 0; top: 0; z-index: 3;
+  display: flex; gap: 6px; padding: 6px 6px 1px;
+  border-radius: calc(var(--k-r) + 6px);
+  background: rgba(22, 24, 67, 0.9); box-shadow: var(--k-shadow-2);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.tools .k-btn { margin-bottom: var(--k-depth); }
+@media (max-width: 399px), (max-height: 420px) { .tools { gap: 4px; padding: 5px 5px 0; } }
+
+/* ---------- icons drawn for this game (same stroke style as Kit.icon) ---------- */
+[data-ico] { display: flex; font-size: var(--k-icon); }
+.k-btn [data-ico] .k-icon { font-size: var(--k-icon); }
+
+/* ---------- the sticker tray ---------- */
+.k-shell--side > .k-side.tray, .tray {
+  position: relative; flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: var(--k-s2);
+}
+.tray-in {
+  position: relative; flex: 1 1 0; min-height: 0;
+  display: flex; flex-direction: column; gap: var(--k-s2); padding: var(--k-s2);
+  border-radius: var(--k-r-lg); background: var(--k-surface-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 5px 0 var(--k-edge);
+}
+.tabs { flex: none; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.tab {
+  height: var(--k-tap); min-width: 0; padding: 4px; margin: 0 0 4px; border: none; border-radius: var(--k-r-sm);
+  background: var(--k-surface-2); box-shadow: 0 4px 0 var(--k-edge); cursor: pointer;
+  transition: transform 70ms ease-out;
+}
+.tab svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.tab:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--k-edge); }
+.tab.on { background: var(--k-accent); box-shadow: 0 4px 0 var(--k-accent-edge); }
+.tab:focus-visible, .ti:focus-visible { outline: 3px solid var(--k-accent); outline-offset: 2px; }
+
+.grid-wrap {
+  flex: 1 1 0; min-height: 0; border-radius: var(--k-r);
+  background: rgba(10, 11, 40, 0.32);
+  overflow-x: auto; overflow-y: hidden; touch-action: pan-x;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none;
+}
+.grid-wrap::-webkit-scrollbar { display: none; }
+.grid {
+  display: grid; gap: 8px; padding: 8px;
+  grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 2), var(--cell, 80px)); grid-auto-columns: var(--cell, 80px);
+  width: max-content; height: 100%;
+}
+.ti {
+  position: relative; padding: 7%; border: none; border-radius: var(--k-r);
+  background: rgba(255, 255, 255, 0.07); cursor: grab;
+  transition: transform 90ms ease-out, background 90ms;
+}
+.ti svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.ti.press { background: rgba(255, 255, 255, 0.18); transform: scale(0.93); }
+.ti.out { opacity: 0.35; }
+
+/* drag a placed sticker over the tray to throw it away */
+.bin {
+  position: absolute; inset: 0; z-index: 2; border-radius: inherit;
+  display: none; align-items: center; justify-content: center; pointer-events: none;
+  background: rgba(255, 93, 115, 0.2); box-shadow: inset 0 0 0 4px var(--k-bad);
+}
+.bin [data-ico] { font-size: 64px; color: #fff; filter: drop-shadow(0 3px 0 var(--k-bad-edge)); }
+.binning .bin { display: flex; }
+.bin-hot .bin { background: rgba(255, 93, 115, 0.55); }
+.bin-hot .bin [data-ico] { transform: scale(1.2); }
+
+.tray-tools { display: none; }
+
+/* ---------- portrait: the tray sits under the scene and scrolls sideways ---------- */
+@media not all and (orientation: landscape), (max-width: 639px) {
+  .k-stage {
+    flex: none;
+    height: min(calc((100vw - var(--k-safe-l) - var(--k-safe-r) - 2 * var(--k-gutter)) * 0.75 + var(--k-s3) + var(--k-s3) + 7px), 64vh);
+    padding-bottom: calc(var(--k-s3) + 7px);
+  }
+  .k-side.tray { flex: 1 1 0; min-height: 0; padding: 0 var(--k-gutter) var(--k-s2); }
+}
+/* narrow phones: five tabs a row, and the bar's clear / help / sound move into the tray */
+@media (max-width: 559px) {
+  .tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 499px) {
+  .wide-only { display: none !important; }
+  .tray-tools { display: flex; flex: none; justify-content: center; gap: var(--k-s4); }
+  .tray-tools .k-btn { margin-bottom: var(--k-depth); }
+}
+
+/* ---------- landscape: the tray is a column beside the scene and scrolls down ---------- */
+@media (orientation: landscape) and (min-width: 640px) {
+  .k-shell--side > .k-side.tray { justify-content: stretch; padding: var(--k-s3) var(--k-gutter) var(--k-s3) var(--k-s2); }
+  .tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .grid-wrap { overflow-x: hidden; overflow-y: auto; touch-action: pan-y; }
+  .grid {
+    grid-auto-flow: row; grid-template-rows: none;
+    grid-template-columns: repeat(var(--cols, 3), var(--cell, 80px)); grid-auto-rows: var(--cell, 80px);
+    width: auto; height: auto;
+  }
+}
+@media (orientation: landscape) and (max-height: 420px) {
+  .tab { height: 42px; }
+}
+
+/* ---------- sheets: backdrop picker and the gallery ---------- */
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: var(--k-s3); margin-top: var(--k-s3); text-align: left; }
+.pick {
+  position: relative; display: block; width: 100%; padding: 0; border: none; border-radius: var(--k-r);
+  overflow: hidden; background: var(--k-bg-deep); box-shadow: 0 4px 0 var(--k-edge); cursor: pointer;
+  padding-top: 75%;
+}
+.pick > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pick.on { box-shadow: 0 0 0 4px var(--k-accent), 0 4px 0 var(--k-edge); }
+.pick:active { transform: scale(0.97); }
+.pick-new { display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.25), 0 4px 0 var(--k-edge); }
+.pick-new .plus {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 54px; color: var(--k-accent);
+}
+.gal-item { position: relative; }
+.gal-del {
+  position: absolute; top: -8px; right: -8px; z-index: 1;
+}
+.gal-del.k-btn--icon { width: var(--k-tap); height: var(--k-tap); }
+.gal-now { position: absolute; left: 8px; top: 8px; z-index: 1; color: var(--k-accent); font-size: 26px; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.4)); pointer-events: none; }
+
+/* ---------- animations ---------- */
+.st-in.s-in { animation: s-in 0.4s var(--k-ease-pop) both; }
+@keyframes s-in { from { transform: scale(0.2); } }
+
+/* play mode: the scene comes alive */
+.alive .st-in[data-alive="bob"] { animation: s-bob 2.4s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="drift"] { animation: s-drift 7s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="sway"] { transform-origin: 50% 92%; animation: s-sway 3.2s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="twinkle"] { animation: s-twinkle 1.8s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="float"] { animation: s-float 3.6s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="rock"] { animation: s-rock 1.4s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in[data-alive="swim"] { animation: s-swim 4s ease-in-out var(--d, 0s) infinite alternate; }
+.alive .st-in .eye { animation: s-blink2 4.6s var(--d, 0s) infinite; }
+.alive .s-spin { transform-box: fill-box; transform-origin: center; animation: s-turn 4s linear infinite; }
+@keyframes s-bob { from { transform: translateY(0); } to { transform: translateY(-5%); } }
+@keyframes s-drift { from { transform: translateX(-7%); } to { transform: translateX(7%); } }
+@keyframes s-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+@keyframes s-twinkle { from { transform: scale(0.94); } to { transform: scale(1.06); } }
+@keyframes s-float { from { transform: translateY(3%); } to { transform: translateY(-6%); } }
+@keyframes s-rock { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg) translateY(-1.5%); } }
+@keyframes s-swim { 0% { transform: translateX(-6%) rotate(2deg); } 100% { transform: translateX(6%) rotate(-2deg); } }
+@keyframes s-blink2 { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes s-turn { to { transform: rotate(360deg); } }
+
+/* backdrop parts while playing */
+.alive .b-drift { animation: b-drift 12s ease-in-out infinite alternate; }
+.alive .b-sway { transform-box: fill-box; transform-origin: 50% 100%; animation: b-sway 3.4s ease-in-out infinite alternate; }
+.alive .b-twinkle { animation: b-tw 1.4s ease-in-out infinite alternate; }
+.alive .b-ripple { animation: b-rip 2.6s ease-in-out infinite alternate; }
+.alive .b-rise { animation: b-rise 4s linear infinite; }
+.alive .b-glow { animation: b-glow 1.2s ease-in-out infinite alternate; }
+.alive .b-ray { animation: b-ray 4s ease-in-out infinite alternate; }
+@keyframes b-drift { to { transform: translateX(34px); } }
+@keyframes b-sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+@keyframes b-tw { to { opacity: 0.25; } }
+@keyframes b-rip { to { transform: translateX(10px); } }
+@keyframes b-rise { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-90px); opacity: 0; } }
+@keyframes b-glow { to { opacity: 0.55; } }
+@keyframes b-ray { to { opacity: 0.55; } }
+
+/* tap actions (declared after play mode so they win while they run) */
+.st .st-in.act-hop { animation: s-hop 0.62s ease-out; }
+.st .st-in.act-wiggle { animation: s-wiggle 0.6s ease-in-out; }
+.st .st-in.act-spin { animation: s-spin 0.7s var(--k-ease); }
+.st .st-in.act-pulse { animation: s-pulse 0.5s var(--k-ease-pop); }
+.st .st-in.act-sway { transform-origin: 50% 92%; animation: s-wiggle 0.8s ease-in-out; }
+.st .st-in.act-dig { transform-origin: 20% 90%; animation: s-dig 0.9s ease-in-out; }
+.st .st-in.act-tip { transform-origin: 15% 90%; animation: s-tip 0.9s ease-in-out; }
+.st .st-in.act-lift { animation: s-lift 0.9s ease-in-out; }
+.st .st-in.act-rock { transform-origin: 50% 90%; animation: s-rocky 0.7s ease-in-out; }
+.st .st-in.act-swim { animation: s-swimtap 0.8s ease-in-out; }
+.st .st-in.act-flap { animation: s-flap 0.7s ease-in-out; }
+.st .st-in.act-float { animation: s-lift 1s ease-in-out; }
+.st .st-in[class*="act-"] .eye { animation: s-blink 0.45s 0.1s; }
+@keyframes s-hop { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-20%) scale(1.03, 0.97); } 55% { transform: translateY(0) scale(1.08, 0.9); } 75% { transform: translateY(-5%); } }
+@keyframes s-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-12deg); } 45% { transform: rotate(10deg); } 70% { transform: rotate(-5deg); } }
+@keyframes s-spin { to { transform: rotate(360deg); } }
+@keyframes s-pulse { 40% { transform: scale(1.2); } }
+@keyframes s-dig { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 50% { transform: rotate(3deg) translateY(2%); } 75% { transform: rotate(-3deg); } }
+@keyframes s-tip { 0%, 100% { transform: rotate(0); } 35%, 60% { transform: rotate(-9deg); } }
+@keyframes s-lift { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-12%); } 70% { transform: translateY(-9%); } }
+@keyframes s-rocky { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-4deg) translateX(-2%); } 60% { transform: rotate(3deg) translateX(3%); } }
+@keyframes s-swimtap { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(10%) rotate(-6deg); } 65% { transform: translateX(-4%) rotate(4deg); } }
+@keyframes s-flap { 0%, 100% { transform: translateY(0) scaleY(1); } 25% { transform: translateY(-10%) scaleY(0.85); } 50% { transform: translateY(-14%) scaleY(1.05); } 75% { transform: translateY(-6%) scaleY(0.9); } }
+@keyframes s-blink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.1); } }
+
+.st.gone .st-in { animation: s-gone 0.28s ease-in forwards !important; }
+@keyframes s-gone { 30% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .st-in, .st-in *, .bg *, .st.gone .st-in { animation: none !important; }
+  .st svg, .st.ease, .sel.ease { transition: none; }
+}

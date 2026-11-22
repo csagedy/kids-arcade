@@ -1,6 +1,6 @@
 /* Offline cache for the arcade. Bump CACHE whenever files change, otherwise
    phones keep serving the old copy. */
-var CACHE = 'arcade-v28';
+var CACHE = 'arcade-v32';
 
 var FILES = [
   './',
@@ -73,6 +73,15 @@ var FILES = [
   './games/dots/js/game.js',
   './games/dots/js/pictures-data.js',
   './games/dots/js/ui.js',
+  './games/draw/icon.png',
+  './games/draw/index.html',
+  './games/draw/manifest.webmanifest',
+  './games/draw/style.css',
+  './games/draw/js/art.js',
+  './games/draw/js/brushes.js',
+  './games/draw/js/game.js',
+  './games/draw/js/store.js',
+  './games/draw/js/ui.js',
   './games/flow/icon.png',
   './games/flow/index.html',
   './games/flow/manifest.webmanifest',
@@ -144,6 +153,13 @@ var FILES = [
   './games/missile/manifest.webmanifest',
   './games/missile/js/game.js',
   './games/missile/js/ui.js',
+  './games/music/icon.png',
+  './games/music/index.html',
+  './games/music/manifest.webmanifest',
+  './games/music/style.css',
+  './games/music/js/game.js',
+  './games/music/js/synth.js',
+  './games/music/js/ui.js',
   './games/nonogram/icon.png',
   './games/nonogram/index.html',
   './games/nonogram/manifest.webmanifest',
@@ -156,6 +172,15 @@ var FILES = [
   './games/pong/manifest.webmanifest',
   './games/pong/js/game.js',
   './games/pong/js/ui.js',
+  './games/scene/icon.png',
+  './games/scene/index.html',
+  './games/scene/manifest.webmanifest',
+  './games/scene/style.css',
+  './games/scene/js/art-build.js',
+  './games/scene/js/art-sea.js',
+  './games/scene/js/art.js',
+  './games/scene/js/game.js',
+  './games/scene/js/ui.js',
   './games/shapes/icon.png',
   './games/shapes/index.html',
   './games/shapes/manifest.webmanifest',
